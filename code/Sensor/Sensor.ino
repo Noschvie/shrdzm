@@ -1,21 +1,23 @@
 #include "config/config.h"
 
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
 #include <Ticker.h>                                           // For LED status
+#include <EEPROM.h>
 
-ESP8266WebServer server(80);
-bool OTAModeEnabled = false;
+bool PairingEnabled = false;
 Ticker ticker;
 bool forceReset = false;
 
+uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};
+
+
 // 5C:CF:7F:15:B7:33
 uint8_t trigMac[6] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};// MAC ADDRESS OF ALL TRIG BOARDS 6 bytes
+uint8_t* gatewayMac;
 //uint8_t gatewayMac[6];
 
 // A4:CF:12:D5:D7:67
-uint8_t gatewayMac[6] = {0xCE, 0x50, 0xE3, 0xD5, 0xD7, 0x67};
+//uint8_t gatewayMac[6] = {0xCE, 0x50, 0xE3, 0xD5, 0xD7, 0x67};
 
 uint8_t key[16] = {0x51, 0xA0, 0xDE, 0xC5, 0x46, 0xC6, 0x77, 0xCD,
                    0x99, 0xE8, 0x61, 0xF9, 0x08, 0x77, 0x7D, 0x00
@@ -26,12 +28,48 @@ extern "C" {
   #include <user_interface.h>
 }
 
+void writeGatewayAddressToEEPROM(uint8_t *xmac)
+{
+  int i;
+
+  xmac[0] = 0xCE;
+  xmac[1] = 0x50;
+  xmac[2] = 0xE3;
+
+  for(i=0;i<6;i++)
+  {
+    EEPROM.write(i,xmac[i]);
+  }
+  EEPROM.commit();
+}
+
+uint8_t* readGatewayAddressFromEEPROM()
+{
+  int i;
+  uint8_t xmac[6];
+
+  for(i=0;i<6;i++)
+  {    
+    xmac[i]=EEPROM.read(i);
+  }  
+
+  return xmac;
+}
+ 
 void initVariant() 
 {
-//  WiFi.softAP("SHRDZM", "135790192384", 1, 1);//actually keeps the AP non-visible, so doesn't matter too much
   WiFi.mode(WIFI_AP);
-  wifi_set_macaddr(SOFTAP_IF, &trigMac[0]);
-  //Serial.println("TEST");
+
+  pinMode(PAIRING_PIN, INPUT_PULLUP);
+
+  if(digitalRead(PAIRING_PIN) == false)
+  {
+    wifi_set_macaddr(SOFTAP_IF, &broadcastMac[0]);
+  }
+  else
+  {
+    wifi_set_macaddr(SOFTAP_IF, &trigMac[0]);
+  }
 }
 
 String macToStr(const uint8_t* mac)
@@ -53,16 +91,28 @@ void tick()
 
 void setup() 
 {
-  pinMode(SETUP_PIN, INPUT_PULLUP);
+  EEPROM.begin(512);
+  
+  pinMode(PAIRING_PIN, INPUT_PULLUP);
 
 #ifdef DEBUG
   Serial.begin(9600); Serial.println();
 #endif
 
-  if(digitalRead(SETUP_PIN) == false)
+  if(digitalRead(PAIRING_PIN) == false)
   {
+    Serial.println("Stored GatewayAddress from EEPROM : "+macToStr(readGatewayAddressFromEEPROM()));
+    
+/*    uint8_t  MAC_softAP[]          = {0,0,0,0,0,0}; 
+    uint8_t* MAC  = WiFi.softAPmacAddress(MAC_softAP);                   //get MAC address of softAP interface
+    for (int i = 0; i < sizeof(MAC)+2; ++i){                                                          //this line needs cleaning up.
+         Serial.print(":");
+         Serial.print(MAC[i],HEX);
+         MAC_softAP[i] = MAC[i];                                         //copy back to global variable
+    } */
+    
 #ifdef DEBUG
-  Serial.println("OTRModeEnabled = true, webserver started");
+  Serial.println("PairingEnabled");
 
   Serial.print("MAC: ");
   Serial.println(WiFi.macAddress());  
@@ -73,24 +123,40 @@ void setup()
 
     uint8_t xmac[6];
     WiFi.macAddress(xmac);
-    String ssid = "SHRDZM-"+macToStr(xmac);
-    ssid.replace(":", "");
-    ssid.toUpperCase();
+    String deviceName = macToStr(xmac);
+    deviceName.replace(":", "");
+    deviceName.toUpperCase();
 
-    WiFi.softAP(ssid);
+    // listen on ESPNow SensorGateway to pair with them
+    esp_now_init();
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+    esp_now_add_peer(&broadcastMac[0], ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+    esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
+    {
+      char payload[20];
+      memcpy(payload, data, len);
+      String pl(payload);
 
-    server.on("/", handleRoot);
-    server.begin();
+      if(pl == "PAIRWITHME")
+      {
+        Serial.println("Gateway Address is "+macToStr(mac));
+        writeGatewayAddressToEEPROM(mac);
+      }
 
+      delay(100);
+      ESP.restart();
+    });       
 
  //   ticker.detach();
  //   ticker.attach(1.0, tick);
 
-    OTAModeEnabled = true;    
+    PairingEnabled = true;    
   }
   else
   {
     esp_now_init();
+
+    gatewayMac = readGatewayAddressFromEEPROM();
     esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
     esp_now_add_peer(gatewayMac, ESP_NOW_ROLE_SLAVE, 1, key, 16);
     esp_now_set_peer_key(gatewayMac, key, 16);
@@ -108,15 +174,6 @@ void setup()
   }
 }
 
-void handleRoot() 
-{
-  server.send(200, "text/html", "<h1>You are connected</h1>");
-}
-
 void loop() 
 { 
-  if(OTAModeEnabled)
-  {
-    server.handleClient();
-  }  
 }
