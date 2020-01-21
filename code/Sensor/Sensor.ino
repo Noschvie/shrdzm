@@ -1,12 +1,22 @@
 #include "config/config.h"
+#include "SensorDataExchange.h"
 
 #include <ESP8266WiFi.h>
 #include <Ticker.h>                                           // For LED status
 #include <EEPROM.h>
 
+#ifdef DHT22_SUPPORT
+#include "DHTesp.h"
+#endif
+
 bool PairingEnabled = false;
 Ticker ticker;
 bool forceReset = false;
+volatile boolean callbackCalled;
+
+#ifdef DHT22_SUPPORT
+DHTesp dht;
+#endif
 
 uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};
 uint8_t trigMac[6] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};// MAC ADDRESS OF ALL TRIG BOARDS 6 bytes
@@ -133,6 +143,21 @@ void setup()
   }
   else
   {
+    char payload[100];//limit is liek 200bytes, but we don't need anything close to that
+//    String pl[];
+
+    SensorDataExchange sde;
+    sde.AddSensorData("test", "TEST");
+    
+#ifdef DHT22_SUPPORT
+  dht.setup(DHTPIN, DHTesp::DHT22);    
+//  pl = readDHT22();
+
+  Serial.print("Count = ");
+//  Serial.print(sizeof(pl));
+#endif
+
+    
     esp_now_init();
 
     readGatewayAddressFromEEPROM();
@@ -142,11 +167,12 @@ void setup()
     esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
     {//this is the function that is called to send data
       Serial.printf("send_cb, send done, status = %i\n", sendStatus);
+      callbackCalled = true;
     });
 
-    char payload[100];//limit is liek 200bytes, but we don't need anything close to that
-    sprintf(payload, "TEST");
 
+//    sprintf(payload, pl);
+//    pl.toCharArray(payload,100);
     uint8_t bs[strlen(payload)];
     memcpy(bs, &payload, strlen(payload));
     esp_now_send(gatewayMac, bs, strlen(payload));
@@ -156,4 +182,51 @@ void setup()
 
 void loop() 
 { 
+  if (callbackCalled || (millis() > SEND_TIMEOUT)) 
+  {
+    gotoSleep();
+  }  
+}
+
+String* readDHT22()
+{
+#ifdef DHT22_SUPPORT
+  delay(dht.getMinimumSamplingPeriod());
+
+  String *pl = new String[2];
+  pl[0] = "$[D]$Humidity:"+String(dht.getHumidity());
+  pl[1] = "$[D]$Temperature:"+String(dht.getTemperature());
+
+//  String pl = "$[D]$H:"+String(dht.getHumidity())+"$T:;
+
+/*  sensorData.humidity = dht.getHumidity();
+  sensorData.temp = dht.getTemperature();
+
+  sensorData.battery = 0.0f;  
+  sensorData.batteryState = "OK";
+
+  return (dht.getStatus() == 0) ? true : false; */
+  return pl;
+#endif
+}
+
+void gotoSleep() 
+{  
+  int sleepSecs = SLEEP_SECS; 
+#ifdef DEBUG
+  Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 
+#endif
+
+#ifdef ATTINY_SUPPORT
+  digitalWrite(ATTINYPIN, HIGH);
+  #ifdef DEBUG
+      Serial.println("Port "+String(ATTINYPIN)+" set to HIGH");
+  #endif    
+  //delay(1000);
+  digitalWrite(ATTINYPIN, LOW);
+  //pinMode(ATTINYPIN, INPUT);
+#endif
+
+  ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
+  delay(100);
 }
