@@ -13,7 +13,7 @@ uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};
 
 // 5C:CF:7F:15:B7:33
 uint8_t trigMac[6] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};// MAC ADDRESS OF ALL TRIG BOARDS 6 bytes
-uint8_t* gatewayMac;
+uint8_t gatewayMac[6];
 //uint8_t gatewayMac[6];
 
 // A4:CF:12:D5:D7:67
@@ -43,17 +43,13 @@ void writeGatewayAddressToEEPROM(uint8_t *xmac)
   EEPROM.commit();
 }
 
-uint8_t* readGatewayAddressFromEEPROM()
+void readGatewayAddressFromEEPROM()
 {
   int i;
-  uint8_t xmac[6];
-
   for(i=0;i<6;i++)
   {    
-    xmac[i]=EEPROM.read(i);
+    gatewayMac[i]=EEPROM.read(i);
   }  
-
-  return xmac;
 }
  
 void initVariant() 
@@ -101,16 +97,6 @@ void setup()
 
   if(digitalRead(PAIRING_PIN) == false)
   {
-    Serial.println("Stored GatewayAddress from EEPROM : "+macToStr(readGatewayAddressFromEEPROM()));
-    
-/*    uint8_t  MAC_softAP[]          = {0,0,0,0,0,0}; 
-    uint8_t* MAC  = WiFi.softAPmacAddress(MAC_softAP);                   //get MAC address of softAP interface
-    for (int i = 0; i < sizeof(MAC)+2; ++i){                                                          //this line needs cleaning up.
-         Serial.print(":");
-         Serial.print(MAC[i],HEX);
-         MAC_softAP[i] = MAC[i];                                         //copy back to global variable
-    } */
-    
 #ifdef DEBUG
   Serial.println("PairingEnabled");
 
@@ -156,11 +142,12 @@ void setup()
   {
     esp_now_init();
 
-    gatewayMac = readGatewayAddressFromEEPROM();
+    readGatewayAddressFromEEPROM();
     esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
     esp_now_add_peer(gatewayMac, ESP_NOW_ROLE_SLAVE, 1, key, 16);
     esp_now_set_peer_key(gatewayMac, key, 16);
-    esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) {//this is the function that is called to send data
+    esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
+    {//this is the function that is called to send data
       Serial.printf("send_cb, send done, status = %i\n", sendStatus);
     });
 
