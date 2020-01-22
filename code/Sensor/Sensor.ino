@@ -143,20 +143,20 @@ void setup()
   }
   else
   {
-    char payload[100];//limit is liek 200bytes, but we don't need anything close to that
-//    String pl[];
+#ifdef SENSORPOWER_SUPPORT
+  pinMode(SENSORPOWERPIN,OUTPUT);
+  digitalWrite(SENSORPOWERPIN,HIGH);
+  #ifdef DEBUG
+      Serial.println("SENSORPOWER Support enabled on port "+String(SENSORPOWERPIN));
+  #endif    
+#endif
 
     SensorDataExchange sde;
-    sde.AddSensorData("test", "TEST");
     
 #ifdef DHT22_SUPPORT
   dht.setup(DHTPIN, DHTesp::DHT22);    
-//  pl = readDHT22();
-
-  Serial.print("Count = ");
-//  Serial.print(sizeof(pl));
+  readDHT22(&sde);
 #endif
-
     
     esp_now_init();
 
@@ -167,46 +167,39 @@ void setup()
     esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
     {//this is the function that is called to send data
       Serial.printf("send_cb, send done, status = %i\n", sendStatus);
-      callbackCalled = true;
+ //     callbackCalled = true;
     });
 
 
-//    sprintf(payload, pl);
-//    pl.toCharArray(payload,100);
-    uint8_t bs[strlen(payload)];
-    memcpy(bs, &payload, strlen(payload));
-    esp_now_send(gatewayMac, bs, strlen(payload));
-    
+    for (int i = 0; i < sde.GetCount(); i++) 
+    {
+      String m = sde.GetMessage(i);
+
+      uint8_t bs[m.length()];
+      memcpy(bs, m.c_str(), sizeof(bs));
+      
+      esp_now_send(gatewayMac, bs, sizeof(bs)); 
+    }
   }
 }
 
 void loop() 
 { 
+  if(PairingEnabled)
+    return;
   if (callbackCalled || (millis() > SEND_TIMEOUT)) 
   {
     gotoSleep();
   }  
 }
 
-String* readDHT22()
-{
+void readDHT22(SensorDataExchange *sde)
+{ 
 #ifdef DHT22_SUPPORT
   delay(dht.getMinimumSamplingPeriod());
 
-  String *pl = new String[2];
-  pl[0] = "$[D]$Humidity:"+String(dht.getHumidity());
-  pl[1] = "$[D]$Temperature:"+String(dht.getTemperature());
-
-//  String pl = "$[D]$H:"+String(dht.getHumidity())+"$T:;
-
-/*  sensorData.humidity = dht.getHumidity();
-  sensorData.temp = dht.getTemperature();
-
-  sensorData.battery = 0.0f;  
-  sensorData.batteryState = "OK";
-
-  return (dht.getStatus() == 0) ? true : false; */
-  return pl;
+  sde->AddSensorData("temperature", String(dht.getTemperature()));
+  sde->AddSensorData("humidity", String(dht.getHumidity()));
 #endif
 }
 

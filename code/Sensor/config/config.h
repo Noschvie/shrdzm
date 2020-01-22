@@ -3,7 +3,7 @@
 #define SLEEP_SECS 2 * 60 
 #define SEND_TIMEOUT 245  // 245 millis seconds timeout 
 #define LEDPIN 		2
-#define PAIRING_PIN	12
+#define PAIRING_PIN	13
 
 #define SENSORPOWER_SUPPORT
 
@@ -21,6 +21,6 @@
 #endif
 
 #ifdef SENSORPOWER_SUPPORT
-#define SENSORPOWERPIN 13  // sensor is powerd by this pin
+#define SENSORPOWERPIN 14  // sensor is powerd by this pin
 #endif
 
