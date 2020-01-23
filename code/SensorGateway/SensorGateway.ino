@@ -18,15 +18,16 @@ uint8_t key[16] = {0x51, 0xA0, 0xDE, 0xC5, 0x46, 0xC6, 0x77, 0xCD,
                   };
 
 Ticker ticker;
-//bool PairingEnabled = false;
-bool PairingEnabled = true;
 int pairingCount = 0;
-
+String deviceName;
 
 void pairingTicker()
 {
     digitalWrite(LEDPIN, LOW);
+
+#ifdef DEBUG
     Serial.println("Pairing request sent...");
+#endif
 
     char payload[20];//limit is liek 200bytes, but we don't need anything close to that
     sprintf(payload, "PAIRWITHME");
@@ -38,7 +39,11 @@ void pairingTicker()
     pairingCount++;
     if(pairingCount == 12)
     {
+      Serial.println("$[I]$"+deviceName+"$pairing:finished");
+      
+#ifdef DEBUG
       Serial.println("Pairing finished...");
+#endif
       ticker.detach();
     }
     digitalWrite(LEDPIN, HIGH);
@@ -50,6 +55,7 @@ void initVariant()
   WiFi.mode(WIFI_AP);
 
   WiFi.macAddress(gatewayMac);
+
   gatewayMac[0] = 0xCE;
   gatewayMac[1] = 0x50;
   gatewayMac[2] = 0xE3;
@@ -60,8 +66,12 @@ void initVariant()
 void setup() 
 {
   Serial.begin(9600);
-  Serial.print("MAC: ");
-  Serial.println(WiFi.macAddress());//take this and use it to modify the mac address above
+
+  WiFi.macAddress(gatewayMac);
+
+  deviceName = macToStr(gatewayMac);
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
 
   esp_now_init();
   esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
@@ -71,7 +81,7 @@ void setup()
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
     Serial.write(data, len);
-    Serial.println("");
+    Serial.println();
   });
 }
 
@@ -92,6 +102,8 @@ void loop()
       }
       else if(cmd == "pair")
       {
+        Serial.println("$[I]$"+deviceName+"$pairing:started");
+
 #ifdef DEBUG
         Serial.println("Pairing running...");
 #endif        
@@ -142,4 +154,15 @@ String readSerial()
   #endif     
 
   return cmd;
+}
+
+String macToStr(const uint8_t* mac)
+{
+  String result;
+  for (int i = 0; i < 6; ++i) {
+    result += String(mac[i], 16);
+    if (i < 5)
+      result += ':';
+  }
+  return result;
 }

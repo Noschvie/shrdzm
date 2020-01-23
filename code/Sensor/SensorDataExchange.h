@@ -526,6 +526,8 @@ class SensorDataExchange
         DataItem(String name, String value);
     };      
     SimpleList<DataItem>* list;
+    String deviceName;
+    String macToStr(const uint8_t* mac);    
   public:
     int GetCount();
     SensorDataExchange();

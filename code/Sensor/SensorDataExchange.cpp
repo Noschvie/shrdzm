@@ -1,5 +1,5 @@
 #include "SensorDataExchange.h"
-
+#include <ESP8266WiFi.h>
 
 SensorDataExchange::DataItem::DataItem(String name, String value)
 {
@@ -10,6 +10,12 @@ SensorDataExchange::DataItem::DataItem(String name, String value)
 SensorDataExchange::SensorDataExchange()
 {
   list = new SimpleList<DataItem>();
+
+  uint8_t xmac[6];
+  WiFi.macAddress(xmac);
+  deviceName = macToStr(xmac);
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
 }
 
 SensorDataExchange::~SensorDataExchange()
@@ -34,15 +40,18 @@ String SensorDataExchange::GetMessage(int pos)
 {
   DataItem di = list->get(pos);
 
-  String r = "$[D]$"+di.nameI+":"+di.valueI;
-  
-/*  char payload[50];//limit is liek 200bytes, but we don't need anything close to that
-  sprintf(payload, "$[D]$%s:%s", di.nameI.c_str(), di.valueI.c_str());
+  String r = "$[D]$"+deviceName+"$"+di.nameI+":"+di.valueI;
 
-  //Serial.printf("payload = %s\n", payload);
-
-  uint8_t bs[strlen(payload)];
-  memcpy(bs, &payload, strlen(payload)); */
-  
   return r;
+}
+
+String SensorDataExchange::macToStr(const uint8_t* mac)
+{
+  String result;
+  for (int i = 0; i < 6; ++i) {
+    result += String(mac[i], 16);
+    if (i < 5)
+      result += ':';
+  }
+  return result;
 }

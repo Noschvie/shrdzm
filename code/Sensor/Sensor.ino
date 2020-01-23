@@ -108,13 +108,10 @@ void setup()
 #endif
 
     pinMode(LEDPIN, OUTPUT);
-    ticker.attach(1.0, tick);    
+    ticker.attach(0.5, tick);    
 
     uint8_t xmac[6];
     WiFi.macAddress(xmac);
-    String deviceName = macToStr(xmac);
-    deviceName.replace(":", "");
-    deviceName.toUpperCase();
 
     // listen on ESPNow SensorGateway to pair with them
     esp_now_init();
@@ -135,9 +132,6 @@ void setup()
       delay(100);
       ESP.restart();
     });       
-
- //   ticker.detach();
- //   ticker.attach(1.0, tick);
 
     PairingEnabled = true;    
   }
@@ -161,7 +155,7 @@ void setup()
     esp_now_init();
 
     readGatewayAddressFromEEPROM();
-    esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
     esp_now_add_peer(gatewayMac, ESP_NOW_ROLE_SLAVE, 1, key, 16);
     esp_now_set_peer_key(gatewayMac, key, 16);
     esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
