@@ -9,6 +9,11 @@
 #include "DHTesp.h"
 #endif
 
+#ifdef BH1750_SUPPORT
+#include <BH1750FVI.h>
+BH1750FVI LightSensor(BH1750FVI::k_DevModeContLowRes);
+#endif
+
 bool PairingEnabled = false;
 Ticker ticker;
 bool forceReset = false;
@@ -17,6 +22,7 @@ volatile boolean callbackCalled;
 #ifdef DHT22_SUPPORT
 DHTesp dht;
 #endif
+
 
 uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};
 uint8_t trigMac[6] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};// MAC ADDRESS OF ALL TRIG BOARDS 6 bytes
@@ -146,10 +152,18 @@ void setup()
 #endif
 
     SensorDataExchange sde;
+
+#ifdef BH1750_SUPPORT
+  LightSensor.begin();  
+#endif
     
 #ifdef DHT22_SUPPORT
   dht.setup(DHTPIN, DHTesp::DHT22);    
   readDHT22(&sde);
+#endif
+
+#ifdef BH1750_SUPPORT
+  readBH1750(&sde);
 #endif
     
     esp_now_init();
@@ -196,6 +210,13 @@ void readDHT22(SensorDataExchange *sde)
   sde->AddSensorData("humidity", String(dht.getHumidity()));
 #endif
 }
+
+#ifdef BH1750_SUPPORT
+void readBH1750(SensorDataExchange *sde)
+{
+  sde->AddSensorData("illuminance", String(LightSensor.GetLightIntensity()));
+}
+#endif
 
 void gotoSleep() 
 {  

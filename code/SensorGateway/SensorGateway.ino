@@ -82,7 +82,7 @@ void setup()
   {
     Serial.write(data, len);
     Serial.println();
-  });
+    });
 }
 
 void loop() 

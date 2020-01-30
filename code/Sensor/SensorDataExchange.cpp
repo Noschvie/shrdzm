@@ -25,8 +25,6 @@ SensorDataExchange::~SensorDataExchange()
 
 void SensorDataExchange::AddSensorData(String name, String value)
 {
-  Serial.println("class works");
-
   DataItem ndi(name, value);  
   list->add(ndi);
 }

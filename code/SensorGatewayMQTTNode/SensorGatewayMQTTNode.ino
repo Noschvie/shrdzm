@@ -2,9 +2,25 @@
 
 #include <SoftwareSerial.h>
 #include "StringSplitter.h"
+#include <MQTT.h>
+#include <ESP8266WiFi.h>
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h> 
 
 SoftwareSerial swSer;
+WiFiServer server(80);
 
+String macToStr(const uint8_t* mac)
+{
+  String result;
+  for (int i = 0; i < 6; ++i) {
+    result += String(mac[i], 16);
+    if (i < 5)
+      result += ':';
+  }
+  return result;
+}
 
 void setup() 
 {  
@@ -15,15 +31,28 @@ void setup()
 #ifdef SERIALBAUD
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
 #else
-  swSer.begin(9600, SWSERIAL_8N1, 14, 12, false, 95, 11);
+  swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
 #endif
 
-  
+  WiFiManager wifiManager;
+
+  uint8_t xmac[6];
+  WiFi.macAddress(xmac);
+
+  String APName = "SHRDZM-"+macToStr(xmac);
+  APName.replace(":", "");
+
+  //wifiManager.resetSettings();
+
+  wifiManager.autoConnect(APName.c_str());
+
+  server.begin();    
 }
 
 void loop() 
 {
-
+  WiFiClient client = server.available();
+  
   if (swSer.available() > 0)
   {
     String cmd = readSerial();
