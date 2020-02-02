@@ -23,7 +23,7 @@ typedef struct
 SoftwareSerial swSer;
 WiFiServer server(80);
 configData_t cfg;
-int cfgStart= 512;
+int cfgStart= 0;
 bool shouldSaveConfig = false;
 
 const char* MQTTHost = "127.0.0.1";
@@ -48,6 +48,10 @@ void eraseConfig()
   delay(200);
   EEPROM.commit();
   EEPROM.end();
+
+#ifdef DEBUG
+  Serial.println("config erased!");
+#endif  
 }
 
 void saveConfig() 
@@ -58,6 +62,13 @@ void saveConfig()
   delay(200);
   EEPROM.commit();                      // Only needed for ESP8266 to get data written
   EEPROM.end();                         // Free RAM copy of structure
+
+#ifdef DEBUG  
+  Serial.println("new configuration stored");
+  
+  Serial.println("MQTT Server :"+String(cfg.MQTTHost));
+#endif  
+  
 }
 
 void loadConfig() 
@@ -104,9 +115,15 @@ void setup()
     MQTTHost = cfg.MQTTHost;
     MQTTPort = cfg.MQTTPort;
     MQTTUser = cfg.MQTTUser;
-    MQTTPassword = cfg.MQTTPassword;
+    MQTTPassword = cfg.MQTTPassword;    
   }
- 
+  else
+  {
+#ifdef DEBUG  
+    Serial.println();
+    Serial.println("no valid configuration found. Will use default and start AP");
+#endif  
+  }
   
   WiFiManagerParameter custom_mqtt_server("server", "mqtt server", MQTTHost, 60);
   WiFiManagerParameter custom_mqtt_port("port", "mqtt port", MQTTPort, 10);
@@ -121,9 +138,12 @@ void setup()
 
   String APName = "SHRDZM-"+macToStr(xmac);
   APName.replace(":", "");
-
-  wifiManager.resetSettings();
-
+  APName.toUpperCase();
+  WiFi.hostname(APName.c_str());
+  
+  WiFiManagerParameter custom_text0("<p><strong> MQTT Settings</p> </strong>");
+  wifiManager.addParameter(&custom_text0);
+  
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_mqtt_user);
@@ -138,6 +158,7 @@ void setup()
 
   if (shouldSaveConfig)
   {
+    cfg.valid = 1;
     saveConfig();
   }
 
@@ -164,7 +185,6 @@ void loop()
     StringSplitter *splitter = new StringSplitter(cmd, '$', 5);
     int itemCount = splitter->getItemCount();
   
-
     for(int i = 0; i < itemCount; i++)
     {
       String item = splitter->getItemAtIndex(i);
@@ -174,9 +194,6 @@ void loop()
 
     delete splitter;
   }    
-
-  
-  
 }
 
 String readSerial() 
