@@ -36,6 +36,8 @@ volatile boolean callbackCalled;
 DHTesp dht;
 #endif
 
+int callbackCounter = 0;
+volatile int sensorCount = 0;
 
 uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};
 uint8_t trigMac[6] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};// MAC ADDRESS OF ALL TRIG BOARDS 6 bytes
@@ -186,6 +188,8 @@ void setup()
 #ifdef HTU21D_SUPPORT
   readHTU21D(&sde);
 #endif
+
+    sensorCount = sde.GetCount();
     
     esp_now_init();
 
@@ -196,17 +200,23 @@ void setup()
     esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
     {//this is the function that is called to send data
       Serial.printf("send_cb, send done, status = %i\n", sendStatus);
- //     callbackCalled = true;
+      callbackCounter++;
+
+      if(callbackCounter == sensorCount)
+      {
+       callbackCalled = true;
+      }
     });
 
 
     for (int i = 0; i < sde.GetCount(); i++) 
     {
       String m = sde.GetMessage(i);
-
+#ifdef DEBUG
+      Serial.println(m);
+#endif
       uint8_t bs[m.length()];
       memcpy(bs, m.c_str(), sizeof(bs));
-      
       esp_now_send(gatewayMac, bs, sizeof(bs)); 
     }
   }
