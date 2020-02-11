@@ -14,6 +14,19 @@
 BH1750FVI LightSensor(BH1750FVI::k_DevModeContLowRes);
 #endif
 
+#ifdef DS18B20_SUPPORT
+#include <OneWire.h>
+#include <DallasTemperature.h>
+OneWire oneWire(DS18B20PIN);
+DallasTemperature dallas(&oneWire);
+#endif
+
+#ifdef HTU21D_SUPPORT
+#include <Wire.h>
+#include <HTU21D.h>
+HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14);
+#endif
+
 bool PairingEnabled = false;
 Ticker ticker;
 bool forceReset = false;
@@ -165,6 +178,14 @@ void setup()
 #ifdef BH1750_SUPPORT
   readBH1750(&sde);
 #endif
+
+#ifdef DS18B20_SUPPORT
+  readDS18B20(&sde);
+#endif
+
+#ifdef HTU21D_SUPPORT
+  readHTU21D(&sde);
+#endif
     
     esp_now_init();
 
@@ -200,6 +221,60 @@ void loop()
     gotoSleep();
   }  
 }
+
+void readHTU21D(SensorDataExchange *sde)
+{
+#ifdef HTU21D_SUPPORT  
+  myHTU21D.begin();
+  
+  sde->AddSensorData("humidity", String(myHTU21D.readHumidity()));
+  sde->AddSensorData("temperature", String(myHTU21D.readTemperature()));  
+#endif
+}
+
+void readDS18B20(SensorDataExchange *sde)
+{
+#ifdef DS18B20_SUPPORT
+  dallas.begin();
+  DeviceAddress thermometerAddress;
+
+
+  for (int i = 0; i < dallas.getDeviceCount(); i++) 
+  {
+    if(dallas.getAddress(thermometerAddress, i))
+    {
+      dallas.setResolution(thermometerAddress, 12);
+    }
+  }
+
+  dallas.requestTemperatures();
+
+  for (int i = 0; i < dallas.getDeviceCount(); i++) 
+  {
+      if(dallas.getAddress(thermometerAddress, i))
+      {        
+        sde->AddSensorData("temperature_"+getAddressString(thermometerAddress), String(dallas.getTempC(thermometerAddress)));
+      }
+  }
+  
+#endif
+}
+
+#ifdef DS18B20_SUPPORT
+String getAddressString(DeviceAddress thermometerAddress)
+{
+  String a;
+
+  for(int i = 5; i<8; i++)
+  {
+    if( thermometerAddress[i] < 16)
+      a+= "0";
+    a+= String(thermometerAddress[i], HEX);
+  }
+
+  return a;
+}
+#endif
 
 void readDHT22(SensorDataExchange *sde)
 { 
