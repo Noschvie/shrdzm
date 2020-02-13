@@ -36,7 +36,7 @@ volatile boolean callbackCalled;
 DHTesp dht;
 #endif
 
-int callbackCounter = 0;
+volatile int callbackCounter = 0;
 volatile int sensorCount = 0;
 
 uint8_t broadcastMac[] = {0x46, 0x33, 0x33, 0x33, 0x33, 0x33};

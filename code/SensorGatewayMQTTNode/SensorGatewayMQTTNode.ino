@@ -20,7 +20,7 @@ typedef struct
   char MQTTPassword[41];          
 } configData_t;
 
-SoftwareSerial swSer;
+SoftwareSerial swSer(14,12);
 WiFiServer server(80);
 configData_t cfg;
 int cfgStart= 0;
@@ -105,7 +105,8 @@ void setup()
 #endif  
 
 #ifdef SERIALBAUD
-  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+//  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+  swSer.begin(SERIALBAUD);  
 #else
   swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
 #endif
@@ -167,36 +168,84 @@ void setup()
 
 void loop() 
 {
-  WiFiClient client = server.available();
+  WiFiClient client = server.available();  
 
   if (client) 
   {   
     Serial.println("New Client.");
   }
 
-  if (swSer.available() > 0)
+  while (swSer.available()) 
   {
-    String cmd = readSerial();
+    if ( swSer.read() == '*' ) 
+    {
+      while ( ! swSer.available() ) 
+      { 
+        delay(1); 
+      }
+      String cmd = readSerialSS();
 
 #ifdef DEBUG
-    Serial.println("Command : "+cmd);
+    //  Serial.println("Command : "+cmd);
 #endif        
 
-    StringSplitter *splitter = new StringSplitter(cmd, '$', 5);
-    int itemCount = splitter->getItemCount();
+      StringSplitter *splitter = new StringSplitter(cmd, '$', 3);
+      int itemCount = splitter->getItemCount();
+    
+      for(int i = 0; i < itemCount; i++)
+      {
+        String item = splitter->getItemAtIndex(i);
+        
+        Serial.println(String(i)+":"+item);
+      }    
   
-    for(int i = 0; i < itemCount; i++)
-    {
-      String item = splitter->getItemAtIndex(i);
-      
-      Serial.println(String(i)+":"+item);
-    }    
+      delete splitter;       
+    }
+  }
 
-    delete splitter;
-  }    
+  if (Serial.available() > 0)
+  {
+    String cmd = readSerialHW();
+
+    if(cmd == "$reset")
+    {
+#ifdef DEBUG
+      Serial.println("Reset..");
+#endif        
+      ESP.restart();      
+    }
+    else if(cmd == "$pair")
+    {
+      swSer.write("$pair");
+      swSer.write('\n');    
+    }
+  }
 }
 
-String readSerial() 
+String readSerialSS()
+{
+  char cc[4];
+  while (swSer.available() < 3) { delay(1); }
+
+  cc[0] = swSer.read();
+  cc[1] = swSer.read();
+  cc[2] = swSer.read();
+  cc[3] = 0;
+
+  int len =  String(cc).toInt();
+  char buffer[len+1];
+  buffer[len] = 0;
+  
+  while (swSer.available() < 1) { delay(1); }
+
+  while (swSer.available() < len) { delay(1); }
+    
+  swSer.readBytes(buffer, len);  
+  
+  return String(buffer);
+}
+
+String readSerialHW()
 {
   String cmd = "";
   byte inByte = 0;
@@ -205,10 +254,21 @@ String readSerial()
   
   while (!finished)
   {
-    while (swSer.available() > 0)     
+    while (Serial.available() == 0 && counter < 50) 
+    { 
+      delay(1); 
+      counter++;
+    }
+    if(counter == 50)
+    {
+      finished = true;
+    }
+    else
     {
       counter = 0;
-      inByte = swSer.read();
+      inByte = Serial.read();
+
+      yield();
       
       if (inByte == '\n')
       {
@@ -219,8 +279,9 @@ String readSerial()
         cmd += (char)inByte;
       }
     }    
-    yield();
   }  
 
-  return cmd;
+  delay(100);
+  
+  return cmd;  
 }

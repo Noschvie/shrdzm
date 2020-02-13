@@ -39,7 +39,7 @@ void pairingTicker()
     pairingCount++;
     if(pairingCount == 12)
     {
-      Serial.println("$[I]$"+deviceName+"$pairing:finished");
+      Serial.println("*034[I]$"+deviceName+"$pairing:finished");
       
 #ifdef DEBUG
       Serial.println("Pairing finished...");
@@ -81,7 +81,10 @@ void setup()
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
     Serial.write(data, len);
-    Serial.println();
+    delay(100);
+    Serial.print('\n');
+    delay(100);
+//    Serial.println();
     });
 }
 
@@ -102,7 +105,7 @@ void loop()
       }
       else if(cmd == "pair")
       {
-        Serial.println("$[I]$"+deviceName+"$pairing:started");
+        Serial.println("*033[I]$"+deviceName+"$pairing:started");
 
 #ifdef DEBUG
         Serial.println("Pairing running...");

@@ -37,8 +37,13 @@ int SensorDataExchange::GetCount()
 String SensorDataExchange::GetMessage(int pos)
 {
   DataItem di = list->get(pos);
+  char buffer[4];
 
-  String r = "$[D]$"+deviceName+"$"+di.nameI+":"+di.valueI;
+  String r = "[D]$"+deviceName+"$"+di.nameI+":"+di.valueI;
+  int c = r.length();
+
+  sprintf(buffer, "%03d", c);
+  r = "*"+String(buffer)+r;
 
   return r;
 }
