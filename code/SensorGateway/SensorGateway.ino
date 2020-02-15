@@ -17,38 +17,48 @@ uint8_t key[16] = {0x51, 0xA0, 0xDE, 0xC5, 0x46, 0xC6, 0x77, 0xCD,
                    0x99, 0xE8, 0x61, 0xF9, 0x08, 0x77, 0x7D, 0x00
                   };
 
-Ticker ticker;
+Ticker ticker, pairingTickerBlink;
 int pairingCount = 0;
 String deviceName;
+volatile bool pairingOngoing = false;
+
+void pairingTickerLED()
+{
+  if(pairingOngoing)
+  {
+    int state = digitalRead(LEDPIN);
+    digitalWrite(LEDPIN, !state); 
+  }
+  else
+  {
+    digitalWrite(LEDPIN, HIGH);
+    pairingTickerBlink.detach();
+  }
+}
 
 void pairingTicker()
 {
-    digitalWrite(LEDPIN, LOW);
-
 #ifdef DEBUG
     Serial.println("Pairing request sent...");
 #endif
 
-    char payload[20];//limit is liek 200bytes, but we don't need anything close to that
-    sprintf(payload, "PAIRWITHME");
+    String pl = "PAIRWITHME";
 
-    uint8_t bs[strlen(payload)];
-    memcpy(bs, &payload, strlen(payload));
-    esp_now_send(broadcastMac, bs, strlen(payload));
+    uint8_t bs[pl.length()];
+    memcpy(bs, pl.c_str(), sizeof(bs));
+    esp_now_send(broadcastMac, bs, sizeof(bs));
 
     pairingCount++;
     if(pairingCount == 12)
     {
       Serial.println("*034[I]$"+deviceName+"$pairing:finished");
-      
+      pairingOngoing = false;
 #ifdef DEBUG
       Serial.println("Pairing finished...");
 #endif
       ticker.detach();
     }
-    digitalWrite(LEDPIN, HIGH);
 }
-
 
 void initVariant() 
 {
@@ -111,7 +121,11 @@ void loop()
         Serial.println("Pairing running...");
 #endif        
         pairingCount = 0;
+        pinMode(LEDPIN, OUTPUT);
+        pairingOngoing = true;
+
         ticker.attach(5.0, pairingTicker);            
+        pairingTickerBlink.attach(1.0, pairingTickerLED);            
       }
     }
   }

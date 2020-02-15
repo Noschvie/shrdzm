@@ -27,10 +27,11 @@ DallasTemperature dallas(&oneWire);
 HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14);
 #endif
 
-bool PairingEnabled = false;
+volatile bool PairingEnabled = false;
 Ticker ticker;
 bool forceReset = false;
 volatile boolean callbackCalled;
+volatile bool sendPairingInfo = false;
 
 #ifdef DHT22_SUPPORT
 DHTesp dht;
@@ -60,20 +61,25 @@ void writeGatewayAddressToEEPROM(uint8_t *xmac)
   xmac[1] = 0x50;
   xmac[2] = 0xE3;
 
+  EEPROM.begin(512);
   for(i=0;i<6;i++)
   {
     EEPROM.write(i,xmac[i]);
   }
   EEPROM.commit();
+  EEPROM.end();  
 }
 
 void readGatewayAddressFromEEPROM()
 {
   int i;
+
+  EEPROM.begin(512);  
   for(i=0;i<6;i++)
   {    
     gatewayMac[i]=EEPROM.read(i);
   }  
+  EEPROM.end();  
 }
  
 void initVariant() 
@@ -110,9 +116,7 @@ void tick()
 }
 
 void setup() 
-{
-  EEPROM.begin(512);
-  
+{  
   pinMode(PAIRING_PIN, INPUT_PULLUP);
 
 #ifdef DEBUG
@@ -121,6 +125,8 @@ void setup()
 
   if(digitalRead(PAIRING_PIN) == false)
   {
+    PairingEnabled = true;    
+    
 #ifdef DEBUG
   Serial.println("PairingEnabled");
 
@@ -141,20 +147,26 @@ void setup()
     esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
     {
       char payload[20];
+      memset(payload, 0, sizeof(payload));
       memcpy(payload, data, len);
       String pl(payload);
 
+      Serial.println(pl);
+
+
       if(pl == "PAIRWITHME")
       {
-        Serial.println("Gateway Address is "+macToStr(mac));
+        Serial.print("Gateway Address is ");        
+        Serial.println(macToStr(mac));
         writeGatewayAddressToEEPROM(mac);
+        readGatewayAddressFromEEPROM();
+
+        sendPairingInfo = true;
       }
 
-      delay(100);
-      ESP.restart();
+      PairingEnabled = false;
     });       
-
-    PairingEnabled = true;    
+    
   }
   else
   {
@@ -222,10 +234,57 @@ void setup()
   }
 }
 
+void sendPairingInfoCall()
+{
+    wifi_set_macaddr(SOFTAP_IF, &trigMac[0]);
+
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+    esp_now_add_peer(gatewayMac, ESP_NOW_ROLE_SLAVE, 1, key, 16);
+    esp_now_set_peer_key(gatewayMac, key, 16);
+    esp_now_register_send_cb([](uint8_t* mac, uint8_t sendStatus) 
+    {//this is the function that is called to send data
+      Serial.printf("pairing info sent with status = %i\n", sendStatus);
+
+      PairingEnabled = false;
+      callbackCalled = true;
+    });  
+
+    uint8_t pmac[6];
+    char buffer[4];
+    WiFi.macAddress(pmac);
+    String deviceName = macToStr(pmac);
+    deviceName.replace(":", "");
+    deviceName.toUpperCase();
+
+    String r = "[P]$"+deviceName+"$paired:OK";
+    int c = r.length();
+  
+    sprintf(buffer, "%03d", c);
+    r = "*"+String(buffer)+r;
+  
+    uint8_t bs[r.length()];
+    memcpy(bs, r.c_str(), sizeof(bs));
+    esp_now_send(gatewayMac, bs, sizeof(bs));
+}
+
 void loop() 
 { 
   if(PairingEnabled)
+  {
     return;
+  }
+  else if(sendPairingInfo)
+  {
+    Serial.println("will send pairing info now");        
+
+    PairingEnabled = true;
+    sendPairingInfoCall();
+    
+    delay(100);
+    ESP.restart();
+  }
+
+
   if (callbackCalled || (millis() > SEND_TIMEOUT)) 
   {
     gotoSleep();
