@@ -7,7 +7,24 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h> 
+#include <PubSubClient.h>
 #include <EEPROM.h>
+
+String MQTT_TOPIC;
+String subcribeTopic;
+String nodeName;
+
+#ifdef RCSWITCH_SUPPORT
+#include <RCSwitch.h>
+RCSwitch mySwitch = RCSwitch();
+unsigned long lastRCMillis = 0;
+
+#ifdef RCSENDPIN  
+  String subcribeTopicRCSEND;
+#endif
+
+#endif
+
 
 typedef struct 
 {
@@ -22,6 +39,9 @@ typedef struct
 
 SoftwareSerial swSer(14,12);
 WiFiServer server(80);
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 configData_t cfg;
 int cfgStart= 0;
 bool shouldSaveConfig = false;
@@ -96,6 +116,22 @@ void setup()
 
 //  eraseConfig();
 //  wifiManager.resetSettings();
+
+
+#ifdef RCSWITCH_SUPPORT
+  mySwitch.enableReceive(RCSWITCHPIN);
+#ifdef DEBUG
+  Serial.println("RCSWITCH_SUPPORT on Port "+String(RCSWITCHPIN));
+#endif
+
+#ifdef RCSENDPIN
+  mySwitch.enableTransmit(RCSENDPIN);
+#ifdef DEBUG
+  Serial.println("RCSENDPIN on Port "+String(RCSENDPIN));
+#endif
+#endif
+#endif
+
   
   loadConfig();  
 #ifdef DEBUG  
@@ -163,18 +199,112 @@ void setup()
     saveConfig();
   }
 
-  server.begin();    
+#ifdef MQTT_SUBSCRIBE_TOPIC
+  MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
+#else
+  MQTT_TOPIC = "SHRDZM/"+macToStr(xmac);
+  MQTT_TOPIC.replace(":", "");
+  MQTT_TOPIC.toUpperCase();
+#endif
+
+  nodeName = MQTT_TOPIC;
+
+  subcribeTopic = String(MQTT_TOPIC)+"/set";
+
+#ifdef RCSENDPIN  
+  subcribeTopicRCSEND = String(MQTT_TOPIC)+"/RCSend";
+#endif
+
+#ifdef DEBUG
+  Serial.println("MQTT_TOPIC : "+String(MQTT_TOPIC));
+  Serial.println("MQTT_TOPIC_SUBSCRIBE : "+String(subcribeTopic));
+
+#ifdef RCSENDPIN  
+  Serial.println("MQTT_TOPIC_SUBSCRIBE RCSend : "+String(subcribeTopicRCSEND));
+#endif
+#endif
+
+//  server.begin();    
+  client.setServer(MQTTHost, String(MQTTPort).toInt());
 }
 
+void sendSensorData(String data)
+{
+  StringSplitter *splitter = new StringSplitter(data, '$', 3);
+  int itemCount = splitter->getItemCount();
+  String subject = "SHRDZM/";
+
+  if(itemCount == 3)
+  {
+    if(splitter->getItemAtIndex(0) == "[D]")
+    {
+      if(splitter->getItemAtIndex(2).indexOf(':') > 0)
+      {
+        String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
+        String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));
+        subject += splitter->getItemAtIndex(1)+"/sensor/"+t;
+
+        client.publish(subject.c_str(), v.c_str());
+      }
+    }
+  }
+
+  delete splitter;         
+}
+
+void sendRCData(String data)
+{
+#ifdef DEBUG   
+    Serial.println("Publish : topic : "+(String(MQTT_TOPIC)+"/RCData")+" Value: "+data);
+#endif
+
+  client.publish((String(MQTT_TOPIC)+"/RCData").c_str(), data.c_str());
+}
 
 void loop() 
 {
-  WiFiClient client = server.available();  
+#ifdef RCSWITCH_SUPPORT
+  if (mySwitch.available()) 
+  {
+    if(millis() - lastRCMillis >= 1000)
+    {
+      unsigned long RCData = mySwitch.getReceivedValue();
+      sendRCData(String(RCData));
+
+  #ifdef DEBUG
+      Serial.println("Incoming RCData : "+String(RCData));
+  #endif    
+    }
+
+    lastRCMillis = millis();
+    mySwitch.resetAvailable();
+  }
+#endif
+
+  if (!client.connected()) 
+  {
+    Serial.println("trying to connect to mqtt...");
+    if (client.connect(nodeName.c_str(),
+          MQTTUser, 
+          MQTTPassword
+          )) 
+    {
+      Serial.println("MQTT server connected");
+    }
+    else
+    {
+      Serial.print("connecting to mqtt broker failed, rc: ");
+      Serial.println(client.state());
+      delay(5000);
+    }
+  }
+  
+/*  WiFiClient client = server.available();  
 
   if (client) 
   {   
     Serial.println("New Client.");
-  }
+  } */
 
   while (swSer.available()) 
   {
@@ -187,20 +317,9 @@ void loop()
       String cmd = readSerialSS();
 
 #ifdef DEBUG
-    //  Serial.println("Command : "+cmd);
+      Serial.println("Command : "+cmd);
 #endif        
-
-      StringSplitter *splitter = new StringSplitter(cmd, '$', 3);
-      int itemCount = splitter->getItemCount();
-    
-      for(int i = 0; i < itemCount; i++)
-      {
-        String item = splitter->getItemAtIndex(i);
-        
-        Serial.println(String(i)+":"+item);
-      }    
-  
-      delete splitter;       
+      sendSensorData(cmd);      
     }
   }
 
@@ -220,6 +339,16 @@ void loop()
       swSer.write("$pair");
       swSer.write('\n');    
     }
+    else if(cmd == "$init")
+    {
+      WiFiManager wifiManager;
+      
+      eraseConfig();
+      wifiManager.resetSettings();
+      delay(100);
+
+      ESP.restart();            
+    }    
   }
 }
 

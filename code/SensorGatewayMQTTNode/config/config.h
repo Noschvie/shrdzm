@@ -7,7 +7,6 @@
 #define RCSWITCH_SUPPORT
 
 
-
 #ifdef RCSWITCH_SUPPORT
 #define RCSWITCHPIN 0
 #define RCSENDPIN	15
