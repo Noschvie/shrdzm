@@ -283,13 +283,13 @@ void loop()
 
   if (!client.connected()) 
   {
-    Serial.println("trying to connect to mqtt...");
+//    Serial.println("trying to connect to mqtt...");
     if (client.connect(nodeName.c_str(),
           MQTTUser, 
           MQTTPassword
           )) 
     {
-      Serial.println("MQTT server connected");
+//      Serial.println("MQTT server connected");
     }
     else
     {

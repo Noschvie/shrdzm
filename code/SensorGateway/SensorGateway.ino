@@ -90,6 +90,17 @@ void setup()
   esp_now_set_peer_key(&trigMac[0], &key[0], 16);
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
+    String str((char*)data);
+    if(str.substring(4,7) == "[S]")
+    {
+      String pl = "TESTTESTTEST";
+  
+      uint8_t bs[pl.length()];
+      memcpy(bs, pl.c_str(), sizeof(bs));
+      esp_now_send(mac, bs, sizeof(bs));
+    }
+
+    
     Serial.write(data, len);
     delay(100);
     Serial.print('\n');

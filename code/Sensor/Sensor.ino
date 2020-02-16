@@ -201,7 +201,7 @@ void setup()
   readHTU21D(&sde);
 #endif
 
-    sensorCount = sde.GetCount();
+    sensorCount = sde.GetCount()+1;
     
     esp_now_init();
 
@@ -231,6 +231,38 @@ void setup()
       memcpy(bs, m.c_str(), sizeof(bs));
       esp_now_send(gatewayMac, bs, sizeof(bs)); 
     }
+
+    // send setupready
+
+    //!!!!!!!!!!!!!!!!!!
+    esp_now_add_peer(&trigMac[0], ESP_NOW_ROLE_CONTROLLER, 1, &key[0], 16);
+    esp_now_set_peer_key(&trigMac[0], &key[0], 16);
+    esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
+    {
+      Serial.write(data, len);
+      delay(100);
+      Serial.print('\n');
+      delay(100);
+    });
+    //!!!!!!!!!!!!!!!!!!
+    
+    uint8_t pmac[6];
+    char buffer[4];
+    WiFi.macAddress(pmac);
+    String deviceName = macToStr(pmac);
+    deviceName.replace(":", "");
+    deviceName.toUpperCase();
+
+    String r = "[S]$"+deviceName+"$setup:ready";
+    int c = r.length();
+  
+    sprintf(buffer, "%03d", c);
+    r = "*"+String(buffer)+r;
+
+    uint8_t bs[r.length()];
+    memcpy(bs, r.c_str(), sizeof(bs));
+    esp_now_send(gatewayMac, bs, sizeof(bs)); 
+
   }
 }
 
