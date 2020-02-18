@@ -1,5 +1,8 @@
+#include <FS.H>
+#include <ArduinoJson.h>
 #include "config/config.h"
 #include "SensorDataExchange.h"
+#include "StringSplitter.h"
 
 #include <ESP8266WiFi.h>
 #include <Ticker.h>                                           // For LED status
@@ -32,6 +35,9 @@ Ticker ticker;
 bool forceReset = false;
 volatile boolean callbackCalled;
 volatile bool sendPairingInfo = false;
+String deviceName;
+DynamicJsonDocument configdoc(512);
+unsigned long clockmillis = SEND_TIMEOUT;
 
 #ifdef DHT22_SUPPORT
 DHTesp dht;
@@ -115,14 +121,89 @@ void tick()
   digitalWrite(LEDPIN, !state);     // set pin to the opposite state
 }
 
+void setDeviceName()
+{
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+}
+
+bool readConfig()
+{
+    if (SPIFFS.exists("/shrdzm_config.json")) 
+    {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/shrdzm_config.json", "r");
+      if (configFile) 
+      {
+        Serial.println("opened config file");
+        // Allocate a buffer to store contents of the file.
+
+        String content;
+        
+        for(int i=0;i<configFile.size();i++) //Read upto complete file size
+        {
+          content += (char)configFile.read();
+        }
+
+        DeserializationError error = deserializeJson(configdoc, content);
+        if (error)
+        {
+          Serial.println("Error at deserializeJson");
+      
+          return false;
+        }
+
+        configFile.close();
+      }
+    }
+    else
+    {
+      Serial.println("shrdzm_config.json does not exist");
+      return false;
+    }
+}
+
+bool writeConfig()
+{
+    File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+    if (!configFile) 
+    {
+      Serial.println("failed to open config file for writing");
+      return false;
+    }
+
+    serializeJson(configdoc, configFile);
+    configFile.close();
+}
+
 void setup() 
 {  
-  pinMode(PAIRING_PIN, INPUT_PULLUP);
-
 #ifdef DEBUG
   Serial.begin(9600); Serial.println();
 #endif
 
+  SPIFFS.begin();
+  if(!readConfig())
+  {
+    int i = SLEEP_SECS;
+    configdoc["interval"] = i;
+
+    writeConfig();
+  }
+  
+  pinMode(PAIRING_PIN, INPUT_PULLUP);
+
+
+#ifdef DEBUG
+  Serial.println("Will try to read config...");
+#endif
+
+  setDeviceName();
+  
   if(digitalRead(PAIRING_PIN) == false)
   {
     PairingEnabled = true;    
@@ -169,7 +250,7 @@ void setup()
     
   }
   else
-  {
+  {        
 #ifdef SENSORPOWER_SUPPORT
   pinMode(SENSORPOWERPIN,OUTPUT);
   digitalWrite(SENSORPOWERPIN,HIGH);
@@ -233,29 +314,41 @@ void setup()
     }
 
     // send setupready
-
-    //!!!!!!!!!!!!!!!!!!
     esp_now_add_peer(&trigMac[0], ESP_NOW_ROLE_CONTROLLER, 1, &key[0], 16);
     esp_now_set_peer_key(&trigMac[0], &key[0], 16);
     esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
     {
-      Serial.write(data, len);
-      delay(100);
-      Serial.print('\n');
+      String str((char*)data);
+
+      StringSplitter *splitter = new StringSplitter(str, '%', 3);
+      int itemCount = splitter->getItemCount();
+      
+      if(itemCount == 3 && 
+            splitter->getItemAtIndex(0) == "S" &&
+            splitter->getItemAtIndex(1) == deviceName)
+      {
+        PairingEnabled = true;
+        Serial.println(splitter->getItemAtIndex(2)); 
+
+        if(splitter->getItemAtIndex(2).indexOf(':') > 0)
+        {
+          String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
+          String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
+
+          configdoc[t] = v;          
+          
+          writeConfig();
+        }
+        PairingEnabled = false;
+      }
+      
       delay(100);
     });
-    //!!!!!!!!!!!!!!!!!!
-    
-    uint8_t pmac[6];
-    char buffer[4];
-    WiFi.macAddress(pmac);
-    String deviceName = macToStr(pmac);
-    deviceName.replace(":", "");
-    deviceName.toUpperCase();
 
     String r = "[S]$"+deviceName+"$setup:ready";
     int c = r.length();
   
+    char buffer[4];
     sprintf(buffer, "%03d", c);
     r = "*"+String(buffer)+r;
 
@@ -263,6 +356,7 @@ void setup()
     memcpy(bs, r.c_str(), sizeof(bs));
     esp_now_send(gatewayMac, bs, sizeof(bs)); 
 
+    clockmillis = millis();
   }
 }
 
@@ -300,7 +394,7 @@ void sendPairingInfoCall()
 }
 
 void loop() 
-{ 
+{   
   if(PairingEnabled)
   {
     return;
@@ -319,6 +413,9 @@ void loop()
 
   if (callbackCalled || (millis() > SEND_TIMEOUT)) 
   {
+    if(millis() < SETUPWAIT_TIMEOUT+clockmillis)
+      return;
+    
     gotoSleep();
   }  
 }
@@ -396,7 +493,7 @@ void readBH1750(SensorDataExchange *sde)
 
 void gotoSleep() 
 {  
-  int sleepSecs = SLEEP_SECS; 
+  int sleepSecs = configdoc["interval"]; 
 #ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 
 #endif

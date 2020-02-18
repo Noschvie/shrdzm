@@ -1,6 +1,7 @@
 #include "config/config.h"
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 #include "Ticker.h"
+#include "StringSplitter.h"
 
 extern "C" {
 #include <espnow.h>
@@ -91,20 +92,29 @@ void setup()
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
     String str((char*)data);
+
+    StringSplitter *splitter = new StringSplitter(str, '$', 3);
+    int itemCount = splitter->getItemCount();
+    
     if(str.substring(4,7) == "[S]")
     {
-      String pl = "TESTTESTTEST";
-  
-      uint8_t bs[pl.length()];
-      memcpy(bs, pl.c_str(), sizeof(bs));
-      esp_now_send(mac, bs, sizeof(bs));
-    }
+      if(itemCount == 3)
+      {
+/*        String setupText = "S%"+splitter->getItemAtIndex(1)+"%interval:30";
+
+        uint8_t bs[setupText.length()];
+        memcpy(bs, setupText.c_str(), sizeof(bs));
+        esp_now_send(mac, bs, sizeof(bs)); */
+      }      
+    } 
 
     
     Serial.write(data, len);
     delay(100);
     Serial.print('\n');
     delay(100);
+
+    delete splitter;
 //    Serial.println();
     });
 }
@@ -193,4 +203,25 @@ String macToStr(const uint8_t* mac)
       result += ':';
   }
   return result;
+}
+
+String split(String s, char parser, int index) 
+{
+  String rs="";
+  int parserIndex = index;
+  int parserCnt=0;
+  int rFromIndex=0, rToIndex=-1;
+  while (index >= parserCnt) 
+  {
+    rFromIndex = rToIndex+1;
+    rToIndex = s.indexOf(parser,rFromIndex);
+    if (index == parserCnt) 
+    {
+      if (rToIndex == 0 || rToIndex == -1) return "";
+      return s.substring(rFromIndex,rToIndex);
+    }
+    else 
+      parserCnt++;
+  }
+  return rs;
 }
