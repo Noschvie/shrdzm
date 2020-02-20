@@ -100,7 +100,7 @@ void setup()
     {
       if(itemCount == 3)
       {
-/*        String setupText = "S%"+splitter->getItemAtIndex(1)+"%interval:30";
+/*        String setupText = "S%"+splitter->getItemAtIndex(1)+"%sensorpowerpin:14";
 
         uint8_t bs[setupText.length()];
         memcpy(bs, setupText.c_str(), sizeof(bs));

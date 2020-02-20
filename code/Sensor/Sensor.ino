@@ -36,7 +36,8 @@ bool forceReset = false;
 volatile boolean callbackCalled;
 volatile bool sendPairingInfo = false;
 String deviceName;
-DynamicJsonDocument configdoc(512);
+DynamicJsonDocument configdoc(1024);
+JsonObject configuration  = configdoc.createNestedObject("configuration");
 unsigned long clockmillis = SEND_TIMEOUT;
 
 #ifdef DHT22_SUPPORT
@@ -149,6 +150,10 @@ bool readConfig()
           content += (char)configFile.read();
         }
 
+#ifdef DEBUG
+        Serial.println(content);
+#endif
+
         DeserializationError error = deserializeJson(configdoc, content);
         if (error)
         {
@@ -187,10 +192,13 @@ void setup()
 #endif
 
   SPIFFS.begin();
+
+ // SPIFFS.format();
+  
   if(!readConfig())
   {
     int i = SLEEP_SECS;
-    configdoc["interval"] = i;
+    configuration["interval"] = i;
 
     writeConfig();
   }
@@ -335,7 +343,7 @@ void setup()
           String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
           String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
 
-          configdoc[t] = v;          
+          configuration[t] = v;          
           
           writeConfig();
         }
@@ -387,10 +395,31 @@ void sendPairingInfoCall()
   
     sprintf(buffer, "%03d", c);
     r = "*"+String(buffer)+r;
+
   
     uint8_t bs[r.length()];
     memcpy(bs, r.c_str(), sizeof(bs));
     esp_now_send(gatewayMac, bs, sizeof(bs));
+
+    // send confifurations
+    for (JsonPair kv : configuration) 
+    {
+      String r = "[C]$"+deviceName+"$"+kv.key().c_str()+":"+kv.value().as<char*>();
+      int c = r.length();
+    
+      sprintf(buffer, "%03d", c);
+      r = "*"+String(buffer)+r;
+      
+      uint8_t bs[r.length()];
+      memcpy(bs, r.c_str(), sizeof(bs));
+
+      esp_now_send(gatewayMac, bs, sizeof(bs));
+
+
+      
+//      Serial.println(kv.key().c_str());
+//      Serial.println(kv.value().as<char*>());
+    }
 }
 
 void loop() 
@@ -493,7 +522,7 @@ void readBH1750(SensorDataExchange *sde)
 
 void gotoSleep() 
 {  
-  int sleepSecs = configdoc["interval"]; 
+  int sleepSecs = configuration["interval"]; 
 #ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 
 #endif
