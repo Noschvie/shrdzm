@@ -1,3 +1,5 @@
+#include <FS.H>
+#include <ArduinoJson.h>
 #include "config/config.h"
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 #include "Ticker.h"
@@ -22,6 +24,70 @@ Ticker ticker, pairingTickerBlink;
 int pairingCount = 0;
 String deviceName;
 volatile bool pairingOngoing = false;
+DynamicJsonDocument configdoc(1024);
+JsonObject configurationDevices  = configdoc.createNestedObject("devices");
+
+bool readConfig()
+{
+    if (SPIFFS.exists("/shrdzm_config.json")) 
+    {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/shrdzm_config.json", "r");
+      if (configFile) 
+      {
+        Serial.println("opened config file");
+        // Allocate a buffer to store contents of the file.
+
+        String content;
+        
+        for(int i=0;i<configFile.size();i++) //Read upto complete file size
+        {
+          content += (char)configFile.read();
+        }
+
+#ifdef DEBUG
+        Serial.println(content);
+#endif
+
+        DeserializationError error = deserializeJson(configdoc, content);
+        if (error)
+        {
+          Serial.println("Error at deserializeJson");
+      
+          return false;
+        }
+
+        configFile.close();
+      }
+    }
+    else
+    {
+      Serial.println("shrdzm_config.json does not exist");
+      return false;
+    }
+
+    serializeJson(configdoc, Serial);
+    Serial.println();
+}
+
+bool writeConfig()
+{
+    File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+    if (!configFile) 
+    {
+      Serial.println("failed to open config file for writing");
+      return false;
+    }
+
+    serializeJson(configdoc, configFile);
+
+#ifdef DEBUG
+    serializeJson(configdoc, Serial);
+#endif
+    
+    configFile.close();
+}
 
 void pairingTickerLED()
 {
@@ -77,6 +143,13 @@ void initVariant()
 void setup() 
 {
   Serial.begin(9600);
+  SPIFFS.begin();
+
+  if(!readConfig())
+  {
+    writeConfig();
+  }
+
 
   WiFi.macAddress(gatewayMac);
 
@@ -108,6 +181,45 @@ void setup()
       }      
     } 
 
+    if(str.substring(4,7) == "[P]") // new device paired
+    {
+      if(itemCount == 3)
+      {
+        if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+        {
+          // create new entry
+          JsonObject newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
+          
+          writeConfig();
+        }
+      }            
+    } 
+
+    if(str.substring(4,7) == "[C]") // new device paired
+    {
+      if(itemCount == 3)
+      {
+        JsonObject newDevice;
+        
+        if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+        {
+          // create new entry
+          newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
+        }
+        else
+        {
+          newDevice  = configurationDevices[splitter->getItemAtIndex(1)];          
+        }
+
+        String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
+        String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
+
+        newDevice[t] = v;
+
+        writeConfig();
+      }      
+    } 
+    
     
     Serial.write(data, len);
     delay(100);
@@ -115,7 +227,6 @@ void setup()
     delay(100);
 
     delete splitter;
-//    Serial.println();
     });
 }
 

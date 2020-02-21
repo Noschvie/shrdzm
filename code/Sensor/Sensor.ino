@@ -193,12 +193,16 @@ void setup()
 
   SPIFFS.begin();
 
- // SPIFFS.format();
+//  SPIFFS.format();
   
   if(!readConfig())
   {
     int i = SLEEP_SECS;
-    configuration["interval"] = i;
+    configuration["interval"] = String(i);
+
+#ifdef SENSORPOWER_SUPPORT  
+    configuration["sensorpowerpin"] = String(SENSORPOWERPIN);
+#endif
 
     writeConfig();
   }
@@ -414,11 +418,6 @@ void sendPairingInfoCall()
       memcpy(bs, r.c_str(), sizeof(bs));
 
       esp_now_send(gatewayMac, bs, sizeof(bs));
-
-
-      
-//      Serial.println(kv.key().c_str());
-//      Serial.println(kv.value().as<char*>());
     }
 }
 
