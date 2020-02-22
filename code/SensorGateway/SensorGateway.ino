@@ -259,6 +259,26 @@ void loop()
         ticker.attach(5.0, pairingTicker);            
         pairingTickerBlink.attach(1.0, pairingTickerLED);            
       }
+      else
+      {
+        StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+        int itemCount = splitter->getItemCount();
+
+        Serial.println(cmd);
+        if(itemCount == 4)
+        {
+        Serial.println("4");
+          if(splitter->getItemAtIndex(0) == "set")
+          {
+        Serial.println("set");
+            if(configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+            {
+              Serial.println("Set "+splitter->getItemAtIndex(2)+" to "+splitter->getItemAtIndex(3));
+            }
+          }
+        }
+        delete splitter;
+      }
     }
   }
 }
