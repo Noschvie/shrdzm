@@ -8,10 +8,11 @@
 
 #define SENSORPOWER_SUPPORT
 
-#define BH1750_SUPPORT
-#define DS18B20_SUPPORT
+//#define BH1750_SUPPORT
+//#define DS18B20_SUPPORT
 //#define DHT22_SUPPORT
-#define HTU21D_SUPPORT
+//#define HTU21D_SUPPORT
+#define WATERSENSOR_SUPPORT
 
 #ifdef DS18B20_SUPPORT
 #define DS18B20PIN 12     
@@ -21,6 +22,11 @@
 #define DHTPIN 12     
 #define DHTTYPE DHT22   // DHT 22  or DHT11
 #endif
+
+#ifdef WATERSENSOR_SUPPORT
+#define WATERSENSORPIN 12     
+#endif
+
 
 #ifdef SENSORPOWER_SUPPORT
 #define SENSORPOWERPIN 14  // sensor is powerd by this pin

@@ -209,7 +209,6 @@ void setup()
   
   pinMode(PAIRING_PIN, INPUT_PULLUP);
 
-
 #ifdef DEBUG
   Serial.println("Will try to read config...");
 #endif
@@ -293,6 +292,11 @@ void setup()
 #ifdef HTU21D_SUPPORT
   readHTU21D(&sde);
 #endif
+
+#ifdef WATERSENSOR_SUPPORT
+  readWATERSENSOR(&sde);
+#endif
+  
 
     sensorCount = sde.GetCount()+1;
     
@@ -447,6 +451,21 @@ void loop()
     gotoSleep();
   }  
 }
+
+void readWATERSENSOR(SensorDataExchange *sde)
+{
+#ifdef WATERSENSOR_SUPPORT  
+  pinMode(WATERSENSORPIN, INPUT);
+
+  int w = digitalRead(WATERSENSORPIN);
+  delay(200);
+  w = digitalRead(WATERSENSORPIN);
+  Serial.println(w);
+
+  sde->AddSensorData("water", digitalRead(WATERSENSORPIN) == 1 ? "YES" : "NO");
+#endif
+}
+  
 
 void readHTU21D(SensorDataExchange *sde)
 {
