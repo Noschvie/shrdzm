@@ -20,6 +20,77 @@ uint8_t key[16] = {0x51, 0xA0, 0xDE, 0xC5, 0x46, 0xC6, 0x77, 0xCD,
                    0x99, 0xE8, 0x61, 0xF9, 0x08, 0x77, 0x7D, 0x00
                   };
 
+
+// contains one item to send to a specific device
+class SetupObject
+{
+  public:
+  class SetupItem
+  {
+    public:
+    String m_deviceName;
+    String m_parameterName;
+    String m_parameterValue;
+
+    public:
+    SetupItem(String deviceName, String parameterName, String parameterValue)
+    {
+      m_deviceName = deviceName;
+      m_parameterName = parameterName;
+      m_parameterValue = parameterValue;
+    };
+  };
+
+  public:
+  SetupItem *items[20];
+  
+  void AddItem( String deviceName, String parameterName, String parameterValue )
+  {
+    for(int i = 0; i<20; i++)
+    {
+      if(items[i] == NULL)
+      {
+        items[i] = new SetupItem(deviceName, parameterName, parameterValue);
+        break;
+      }
+    }
+  };
+  
+  SetupItem* GetItem( String deviceName )
+  {
+    SetupItem *it = NULL;
+    
+    for(int i = 0;i<20; i++)
+    {
+      if(items[i] != NULL)
+      {
+        if(items[i]->m_deviceName == deviceName)
+        {
+          it = items[i];
+        }
+        break;
+      }
+    }
+
+    return it;
+  };  
+
+  void RemoveItem(SetupItem *it)
+  {
+    for(int i = 0;i<20; i++)
+    {
+      if(items[i] != NULL && items[i] == it)
+      {
+        delete items[i];
+        items[i] = NULL;
+        break;
+      }
+    }
+  };
+};
+
+SetupObject setupObject;
+
 Ticker ticker, pairingTickerBlink;
 int pairingCount = 0;
 String deviceName;
@@ -173,6 +244,24 @@ void setup()
     {
       if(itemCount == 3)
       {
+        SetupObject::SetupItem *si = setupObject.GetItem(splitter->getItemAtIndex(1));
+
+        if(si != NULL)
+        {
+          Serial.println("Have to set the value "+si->m_parameterValue+" for parameter "+
+            si->m_parameterName);
+
+          String setupText = "S%"+splitter->getItemAtIndex(1)+"%"+
+                si->m_parameterName+":"+
+                si->m_parameterValue;
+  
+          uint8_t bs[setupText.length()];
+          memcpy(bs, setupText.c_str(), sizeof(bs));
+          esp_now_send(mac, bs, sizeof(bs));           
+
+          setupObject.RemoveItem(si);              
+        }
+
 /*        String setupText = "S%"+splitter->getItemAtIndex(1)+"%sensorpowerpin:14";
 
         uint8_t bs[setupText.length()];
@@ -264,16 +353,15 @@ void loop()
         StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
         int itemCount = splitter->getItemCount();
 
-        Serial.println(cmd);
         if(itemCount == 4)
         {
-        Serial.println("4");
           if(splitter->getItemAtIndex(0) == "set")
           {
-        Serial.println("set");
             if(configurationDevices.containsKey(splitter->getItemAtIndex(1)))
             {
               Serial.println("Set "+splitter->getItemAtIndex(2)+" to "+splitter->getItemAtIndex(3));
+
+              setupObject.AddItem(splitter->getItemAtIndex(1), splitter->getItemAtIndex(2), splitter->getItemAtIndex(3));
             }
           }
         }

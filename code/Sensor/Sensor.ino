@@ -459,10 +459,10 @@ void readWATERSENSOR(SensorDataExchange *sde)
 
   int w = digitalRead(WATERSENSORPIN);
   delay(200);
-  w = digitalRead(WATERSENSORPIN);
-  Serial.println(w);
 
   sde->AddSensorData("water", digitalRead(WATERSENSORPIN) == 1 ? "YES" : "NO");
+
+  pinMode(WATERSENSORPIN, OUTPUT);  
 #endif
 }
   
