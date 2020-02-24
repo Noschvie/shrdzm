@@ -339,6 +339,11 @@ void loop()
       swSer.write("$pair");
       swSer.write('\n');    
     }
+    else if(cmd.substring(0,5) == "$set ")
+    {
+      swSer.write(cmd.c_str());
+      swSer.write('\n');    
+    }    
     else if(cmd == "$init")
     {
       WiFiManager wifiManager;

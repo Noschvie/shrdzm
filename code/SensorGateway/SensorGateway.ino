@@ -103,11 +103,9 @@ bool readConfig()
     if (SPIFFS.exists("/shrdzm_config.json")) 
     {
       //file exists, reading and loading
-      Serial.println("reading config file");
       File configFile = SPIFFS.open("/shrdzm_config.json", "r");
       if (configFile) 
       {
-        Serial.println("opened config file");
         // Allocate a buffer to store contents of the file.
 
         String content;
@@ -124,8 +122,9 @@ bool readConfig()
         DeserializationError error = deserializeJson(configdoc, content);
         if (error)
         {
+#ifdef DEBUG
           Serial.println("Error at deserializeJson");
-      
+#endif      
           return false;
         }
 
@@ -134,12 +133,16 @@ bool readConfig()
     }
     else
     {
+#ifdef DEBUG
       Serial.println("shrdzm_config.json does not exist");
+#endif
       return false;
     }
 
+#ifdef DEBUG
     serializeJson(configdoc, Serial);
     Serial.println();
+#endif    
 }
 
 bool writeConfig()
@@ -147,7 +150,9 @@ bool writeConfig()
     File configFile = SPIFFS.open("/shrdzm_config.json", "w");
     if (!configFile) 
     {
+#ifdef DEBUG
       Serial.println("failed to open config file for writing");
+#endif
       return false;
     }
 
@@ -248,9 +253,10 @@ void setup()
 
         if(si != NULL)
         {
+#ifdef DEBUG
           Serial.println("Have to set the value "+si->m_parameterValue+" for parameter "+
             si->m_parameterName);
-
+#endif
           String setupText = "S%"+splitter->getItemAtIndex(1)+"%"+
                 si->m_parameterName+":"+
                 si->m_parameterValue;
@@ -261,12 +267,6 @@ void setup()
 
           setupObject.RemoveItem(si);              
         }
-
-/*        String setupText = "S%"+splitter->getItemAtIndex(1)+"%sensorpowerpin:14";
-
-        uint8_t bs[setupText.length()];
-        memcpy(bs, setupText.c_str(), sizeof(bs));
-        esp_now_send(mac, bs, sizeof(bs)); */
       }      
     } 
 
@@ -359,8 +359,9 @@ void loop()
           {
             if(configurationDevices.containsKey(splitter->getItemAtIndex(1)))
             {
+#ifdef DEBUG
               Serial.println("Set "+splitter->getItemAtIndex(2)+" to "+splitter->getItemAtIndex(3));
-
+#endif
               setupObject.AddItem(splitter->getItemAtIndex(1), splitter->getItemAtIndex(2), splitter->getItemAtIndex(3));
             }
           }
