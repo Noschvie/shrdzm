@@ -354,6 +354,17 @@ void setup()
           configuration[t] = v;          
           
           writeConfig();
+
+          String r = "[C]$"+deviceName+"$"+t+":"+v;
+          int c = r.length();
+        
+          char buffer[4];
+          sprintf(buffer, "%03d", c);
+          r = "*"+String(buffer)+r;
+      
+          uint8_t bs[r.length()];
+          memcpy(bs, r.c_str(), sizeof(bs));
+          esp_now_send(gatewayMac, bs, sizeof(bs)); 
         }
         PairingEnabled = false;
       }

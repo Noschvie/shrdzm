@@ -147,6 +147,10 @@ void setup()
   swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
 #endif
 
+#ifdef RESET_PIN
+  pinMode(RESET_PIN, OUTPUT);
+#endif
+
   if(cfg.valid == 1)
   {
     MQTTHost = cfg.MQTTHost;
@@ -226,6 +230,12 @@ void setup()
 
 //  server.begin();    
   client.setServer(MQTTHost, String(MQTTPort).toInt());
+
+#ifdef RESET_PIN
+            digitalWrite(RESET_PIN,LOW);
+            delay(100);
+            digitalWrite(RESET_PIN,HIGH);
+#endif  
 }
 
 void sendSensorData(String data)

@@ -115,10 +115,6 @@ bool readConfig()
           content += (char)configFile.read();
         }
 
-#ifdef DEBUG
-        Serial.println(content);
-#endif
-
         DeserializationError error = deserializeJson(configdoc, content);
         if (error)
         {
@@ -219,10 +215,14 @@ void initVariant()
 void setup() 
 {
   Serial.begin(9600);
+  Serial.println();
   SPIFFS.begin();
 
+#ifdef DEBUG
+    Serial.println("Will read config now...");
+#endif        
   if(!readConfig())
-  {
+  {    
     writeConfig();
   }
 
