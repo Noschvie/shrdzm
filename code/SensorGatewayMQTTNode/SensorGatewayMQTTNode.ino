@@ -101,13 +101,12 @@ void loadConfig()
 
 String macToStr(const uint8_t* mac)
 {
-  String result;
-  for (int i = 0; i < 6; ++i) {
-    result += String(mac[i], 16);
-    if (i < 5)
-      result += ':';
-  }
-  return result;
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
 }
 
 void setup() 
@@ -230,6 +229,7 @@ void setup()
 
 //  server.begin();    
   client.setServer(MQTTHost, String(MQTTPort).toInt());
+  client.setCallback(callback);
 
 #ifdef RESET_PIN
             digitalWrite(RESET_PIN,LOW);
@@ -293,19 +293,26 @@ void loop()
 
   if (!client.connected()) 
   {
-//    Serial.println("trying to connect to mqtt...");
     if (client.connect(nodeName.c_str(),
           MQTTUser, 
           MQTTPassword
           )) 
     {
 //      Serial.println("MQTT server connected");
+      client.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+
+      client.subscribe(subcribeTopic.c_str());
+#ifdef RCSWITCH_SUPPORT            
+      client.subscribe(subcribeTopicRCSEND.c_str());
+#endif
+      
+      delay(1);
     }
     else
     {
       Serial.print("connecting to mqtt broker failed, rc: ");
       Serial.println(client.state());
-      delay(5000);
+      delay(1000);
     }
   }
   
@@ -429,4 +436,61 @@ String readSerialHW()
   delay(100);
   
   return cmd;  
+}
+
+void callback(char* topic, byte* payload, unsigned int length) 
+{
+  char* p = (char*)malloc(length+1);
+  memcpy(p,payload,length);
+  p[length] = '\0';
+  String cmd = String(p);
+  free(p);
+
+#ifdef DEBUG   
+  Serial.println("MQTT topic : "+String(topic));
+  Serial.println("MQTT command : "+cmd);
+#endif
+
+#ifdef RCSENDPIN
+  if(String(topic) == (String(MQTT_TOPIC)+"/RCSend"))
+  {
+    StringSplitter *splitter = new StringSplitter(cmd, ',', 3);
+    int itemCount = splitter->getItemCount();
+    
+    if(itemCount == 3) // on/off housecode switchcode
+    {
+      bool onoff = false;
+      String onoffText = splitter->getItemAtIndex(0);
+      
+      if(onoffText == "1"  || onoffText == "on" || onoffText == "ON" || onoffText == "ein" || onoffText == "EIN")
+      {
+        onoff = true;
+      }
+
+      if(onoff)
+      {
+        mySwitch.switchOn(splitter->getItemAtIndex(1).c_str(), splitter->getItemAtIndex(2).c_str());
+      }
+      else
+      {
+        mySwitch.switchOff(splitter->getItemAtIndex(1).c_str(), splitter->getItemAtIndex(2).c_str());
+      }      
+    }
+    else
+    {
+      mySwitch.send(cmd.toInt(), 24);
+#ifdef DEBUG   
+      Serial.println("RCSend : "+cmd.toInt());
+#endif
+    }
+  }
+#endif
+  
+  if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
+  {
+    client.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+    delay(1);
+
+    ESP.reset();
+  }
 }
