@@ -298,10 +298,11 @@ void loop()
           MQTTPassword
           )) 
     {
-//      Serial.println("MQTT server connected");
       client.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
 
       client.subscribe(subcribeTopic.c_str());
+
+//      Serial.println(subcribeTopicRCSEND);      
 #ifdef RCSWITCH_SUPPORT            
       client.subscribe(subcribeTopicRCSEND.c_str());
 #endif
@@ -372,6 +373,8 @@ void loop()
       ESP.restart();            
     }    
   }
+  
+  client.loop();  
 }
 
 String readSerialSS()
