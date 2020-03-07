@@ -39,6 +39,7 @@ String deviceName;
 DynamicJsonDocument configdoc(1024);
 JsonObject configuration  = configdoc.createNestedObject("configuration");
 unsigned long clockmillis = SEND_TIMEOUT;
+bool newInitialized = false;
 
 #ifdef DHT22_SUPPORT
 DHTesp dht;
@@ -107,13 +108,12 @@ void initVariant()
 
 String macToStr(const uint8_t* mac)
 {
-  String result;
-  for (int i = 0; i < 6; ++i) {
-    result += String(mac[i], 16);
-    if (i < 5)
-      result += ':';
-  }
-  return result;
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
 }
 
 void tick()
@@ -127,6 +127,7 @@ void setDeviceName()
   uint8_t pmac[6];
   WiFi.macAddress(pmac);
   deviceName = macToStr(pmac);
+
   deviceName.replace(":", "");
   deviceName.toUpperCase();
 }
@@ -201,10 +202,13 @@ void setup()
     configuration["interval"] = String(i);
 
 #ifdef SENSORPOWER_SUPPORT  
-    configuration["sensorpowerpin"] = String(SENSORPOWERPIN);
+    int s = SENSORPOWERPIN;
+    configuration["sensorpowerpin"] = String(s);
 #endif
 
     writeConfig();
+
+    newInitialized = true;
   }
   
   pinMode(PAIRING_PIN, INPUT_PULLUP);
@@ -368,7 +372,65 @@ void setup()
         }
         PairingEnabled = false;
       }
+      else if(itemCount == 3 && 
+            splitter->getItemAtIndex(0) == "I" &&
+            splitter->getItemAtIndex(1) == deviceName)  // reset device and delete configuration
+      {
+        SPIFFS.remove("/shrdzm_config.json");
+
+        int i = SLEEP_SECS;
+        configuration["interval"] = String(i);
+    
+    #ifdef SENSORPOWER_SUPPORT  
+        int s = SENSORPOWERPIN;
+        configuration["sensorpowerpin"] = String(s);
+    #endif
+    
+        writeConfig();
+        char buffer[4];
+
+        for (JsonPair kv : configuration) 
+        {
+          String r = "[C]$"+deviceName+"$"+kv.key().c_str()+":"+kv.value().as<char*>();
+          int c = r.length();
+        
+          sprintf(buffer, "%03d", c);
+          r = "*"+String(buffer)+r;
+          
+          uint8_t bs[r.length()];
+          memcpy(bs, r.c_str(), sizeof(bs));
+    
+          esp_now_send(gatewayMac, bs, sizeof(bs));
+        }
+
+/*
+        // TODO : have to do it dynmically!!!
+        char buffer[4];
+        String r;
+        int c;
+        
+        r = "[C]$"+deviceName+"$interval:"+String(i);
+        c = r.length();
       
+        sprintf(buffer, "%03d", c);
+        r = "*"+String(buffer)+r;
+    
+        uint8_t bs1[r.length()];
+        memcpy(bs1, r.c_str(), sizeof(bs1));
+        esp_now_send(gatewayMac, bs1, sizeof(bs1)); 
+
+        //////
+        r = "[C]$"+deviceName+"sensorpowerpin:"+String(s);
+        c = r.length();
+      
+        sprintf(buffer, "%03d", c);
+        r = "*"+String(buffer)+r;
+    
+        uint8_t bs2[r.length()];
+        memcpy(bs2, r.c_str(), sizeof(bs2));
+        esp_now_send(gatewayMac, bs2, sizeof(bs2));      */   
+      }
+            
       delay(100);
     });
 

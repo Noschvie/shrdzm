@@ -56,6 +56,18 @@ class SetupObject
     }
   };
   
+  void AddInitItem( String deviceName )
+  {
+    for(int i = 0; i<20; i++)
+    {
+      if(items[i] == NULL)
+      {
+        items[i] = new SetupItem(deviceName, "init", "");
+        break;
+      }
+    }
+  };
+  
   SetupItem* GetItem( String deviceName )
   {
     SetupItem *it = NULL;
@@ -97,6 +109,14 @@ String deviceName;
 volatile bool pairingOngoing = false;
 DynamicJsonDocument configdoc(1024);
 JsonObject configurationDevices  = configdoc.createNestedObject("devices");
+
+bool deleteConfig()
+{
+  configdoc.clear();
+  configurationDevices = configdoc.createNestedObject("devices");
+
+  return writeConfig();
+}
 
 bool readConfig()
 {
@@ -156,6 +176,7 @@ bool writeConfig()
 
 #ifdef DEBUG
     serializeJson(configdoc, Serial);
+    Serial.println();
 #endif
     
     configFile.close();
@@ -213,10 +234,11 @@ void initVariant()
 }
 
 void setup() 
-{
+{  
   Serial.begin(9600);
   Serial.println();
   SPIFFS.begin();
+
 
 #ifdef DEBUG
     Serial.println("Will read config now...");
@@ -241,80 +263,119 @@ void setup()
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
     String str((char*)data);
+    bool forwardData = true;
 
     StringSplitter *splitter = new StringSplitter(str, '$', 3);
     int itemCount = splitter->getItemCount();
-    
-    if(str.substring(4,7) == "[S]")
+
+    if(configurationDevices.containsKey(splitter->getItemAtIndex(1)))
     {
-      if(itemCount == 3)
+      if(str.substring(4,7) == "[S]")
       {
-        SetupObject::SetupItem *si = setupObject.GetItem(splitter->getItemAtIndex(1));
-
-        if(si != NULL)
-        {
-#ifdef DEBUG
-          Serial.println("Have to set the value "+si->m_parameterValue+" for parameter "+
-            si->m_parameterName);
-#endif
-          String setupText = "S%"+splitter->getItemAtIndex(1)+"%"+
-                si->m_parameterName+":"+
-                si->m_parameterValue;
-  
-          uint8_t bs[setupText.length()];
-          memcpy(bs, setupText.c_str(), sizeof(bs));
-          esp_now_send(mac, bs, sizeof(bs));           
-
-          setupObject.RemoveItem(si);              
-        }
-      }      
-    } 
-
-    if(str.substring(4,7) == "[P]") // new device paired
-    {
-      if(itemCount == 3)
-      {
-        if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
-        {
-          // create new entry
-          JsonObject newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
-          
-          writeConfig();
-        }
-      }            
-    } 
-
-    if(str.substring(4,7) == "[C]") // new device paired
-    {
-      if(itemCount == 3)
-      {
-        JsonObject newDevice;
+        forwardData = false;
         
-        if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+        if(itemCount == 3)
         {
-          // create new entry
-          newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
-        }
-        else
+          SetupObject::SetupItem *si = setupObject.GetItem(splitter->getItemAtIndex(1));
+  
+          if(si != NULL)
+          {
+            if(si->m_parameterName == "init")
+            {
+  #ifdef DEBUG
+              Serial.println("Have to initialize "+splitter->getItemAtIndex(1));
+  #endif
+              String setupText = "I%"+splitter->getItemAtIndex(1)+"%init";
+
+              uint8_t bs[setupText.length()];
+              memcpy(bs, setupText.c_str(), sizeof(bs));
+              esp_now_send(mac, bs, sizeof(bs));           
+            }
+            else
+            {
+  #ifdef DEBUG
+              Serial.println("Have to set the value "+si->m_parameterValue+" for parameter "+
+                si->m_parameterName);
+  #endif
+              String setupText = "S%"+splitter->getItemAtIndex(1)+"%"+
+                    si->m_parameterName+":"+
+                    si->m_parameterValue;
+      
+              uint8_t bs[setupText.length()];
+              memcpy(bs, setupText.c_str(), sizeof(bs));
+              esp_now_send(mac, bs, sizeof(bs));           
+            }
+            
+            setupObject.RemoveItem(si);              
+          }
+        }      
+      } 
+  
+      if(str.substring(4,7) == "[C]") // new device paired
+      {
+        if(itemCount == 3)
         {
-          newDevice  = configurationDevices[splitter->getItemAtIndex(1)];          
-        }
+          JsonObject newDevice;
+          
+          if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+          {
+            // create new entry
+            newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
+          }
+          else
+          {
+            newDevice  = configurationDevices[splitter->getItemAtIndex(1)];          
+          }
+  
+          String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
+          String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
+  
+          newDevice[t] = v;
+  
+          writeConfig();
+        }      
+      } 
+          
+      if(str.substring(4,7) == "[D]") // data arrived
+      {
+      }
 
-        String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
-        String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
+      if(forwardData)
+      {
+        Serial.write(data, len);
+        delay(100);
+        Serial.print('\n');
+      }
+      
+      delay(100);
+    }
+    else
+    {
+      if(str.substring(4,7) == "[P]") // new device paired
+      {
+        if(itemCount == 3)
+        {
+          if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+          {
+            // create new entry
+            JsonObject newDevice  = configurationDevices.createNestedObject(splitter->getItemAtIndex(1));
+            
+            writeConfig();
+            
+            Serial.write(data, len);
+            delay(100);
+            Serial.print('\n');
+            delay(100);            
+          }
+        }            
+      } 
+      else
+      {      
+        Serial.println("*144[E]$"+deviceName+"$error:data from unpaired device "+splitter->getItemAtIndex(1));
+      }        
+    }
 
-        newDevice[t] = v;
-
-        writeConfig();
-      }      
-    } 
     
-    
-    Serial.write(data, len);
-    delay(100);
-    Serial.print('\n');
-    delay(100);
-
     delete splitter;
     });
 }
@@ -327,14 +388,18 @@ void loop()
     {
       String cmd = readSerial();
 
-      if(cmd == "reset")
+      if(cmd == "reset")  // reset me
       {
 #ifdef DEBUG
         Serial.println("Reset..");
 #endif        
         ESP.restart();      
       }
-      else if(cmd == "pair")
+      else if(cmd == "deleteconfig")  // delete my config
+      {
+        deleteConfig();
+      }
+      else if(cmd == "pair")  // pair with device
       {
         Serial.println("*033[I]$"+deviceName+"$pairing:started");
 
@@ -363,6 +428,28 @@ void loop()
               Serial.println("Set "+splitter->getItemAtIndex(2)+" to "+splitter->getItemAtIndex(3));
 #endif
               setupObject.AddItem(splitter->getItemAtIndex(1), splitter->getItemAtIndex(2), splitter->getItemAtIndex(3));
+            }
+            else
+            {
+              Serial.println("*080[E]$"+deviceName+"$error:"+splitter->getItemAtIndex(1)+" not paired");
+            }
+          }
+        }
+        else if(itemCount == 2)
+        {
+          if(splitter->getItemAtIndex(0) == "init")
+          {
+
+            if(configurationDevices.containsKey(splitter->getItemAtIndex(1)))
+            {
+#ifdef DEBUG
+              Serial.println("Init "+splitter->getItemAtIndex(1)+" as soon as available");
+#endif
+              setupObject.AddInitItem(splitter->getItemAtIndex(1));
+            }          
+            else
+            {
+              Serial.println("*080[E]$"+deviceName+"$error:"+splitter->getItemAtIndex(1)+" not paired");              
             }
           }
         }

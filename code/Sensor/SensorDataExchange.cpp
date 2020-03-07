@@ -50,11 +50,10 @@ String SensorDataExchange::GetMessage(int pos)
 
 String SensorDataExchange::macToStr(const uint8_t* mac)
 {
-  String result;
-  for (int i = 0; i < 6; ++i) {
-    result += String(mac[i], 16);
-    if (i < 5)
-      result += ':';
-  }
-  return result;
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
 }
