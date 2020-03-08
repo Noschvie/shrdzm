@@ -7,6 +7,6 @@ To build cheap integrations of many kind of sensors into your own automation sol
 
 
 ## Installation FHEM
-* update add https://raw.githubusercontent.com/saghonfly/shrdzm/master/code/fhem_shrdzm.txt
+* update add https://raw.githubusercontent.com/saghonfly/shrdzm/master/code/controls_shrdzm.txt
 * update check SHRDZM
 * update all SHRDZM
