@@ -257,6 +257,10 @@ void sendSensorData(String data)
         client.publish(subject.c_str(), v.c_str());
       }
     }
+    else if(splitter->getItemAtIndex(0) == "[I]")  // reprot status
+    {
+//      client.publish((String(MQTT_TOPIC)+"/state").c_str(), t+" "+v);      
+    }
   }
 
   delete splitter;         
@@ -495,5 +499,12 @@ void callback(char* topic, byte* payload, unsigned int length)
     delay(1);
 
     ESP.reset();
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  {
+      swSer.write("$pair");
+      swSer.write('\n');    
+
+//    if(cmd.substring(0,5)
   }
 }
