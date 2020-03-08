@@ -13,6 +13,7 @@
 String MQTT_TOPIC;
 String subcribeTopic;
 String nodeName;
+String deviceName;
 
 #ifdef RCSWITCH_SUPPORT
 #include <RCSwitch.h>
@@ -176,10 +177,13 @@ void setup()
   uint8_t xmac[6];
   WiFi.macAddress(xmac);
 
-  String APName = "SHRDZM-"+macToStr(xmac);
-  APName.replace(":", "");
-  APName.toUpperCase();
+  deviceName = macToStr(xmac);
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+
+  String APName = "SHRDZM-"+deviceName;
   WiFi.hostname(APName.c_str());
+
   
   WiFiManagerParameter custom_text0("<p><strong> MQTT Settings</p> </strong>");
   wifiManager.addParameter(&custom_text0);
@@ -246,20 +250,26 @@ void sendSensorData(String data)
 
   if(itemCount == 3)
   {
-    if(splitter->getItemAtIndex(0) == "[D]")
+    if(splitter->getItemAtIndex(2).indexOf(':') > 0)
     {
-      if(splitter->getItemAtIndex(2).indexOf(':') > 0)
+      String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
+      String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));
+
+      if(splitter->getItemAtIndex(0) == "[D]")
       {
-        String v = splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1);
-        String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));
         subject += splitter->getItemAtIndex(1)+"/sensor/"+t;
 
         client.publish(subject.c_str(), v.c_str());
       }
-    }
-    else if(splitter->getItemAtIndex(0) == "[I]")  // reprot status
-    {
-//      client.publish((String(MQTT_TOPIC)+"/state").c_str(), t+" "+v);      
+      else if(splitter->getItemAtIndex(0) == "[I]")  // report status
+      {
+        client.publish((String(MQTT_TOPIC)+"/state").c_str(), String(t+" "+v).c_str());
+      }
+      else if(splitter->getItemAtIndex(0) == "[P]") // [P]$500291D60619$paired:OK
+      {        
+        client.publish((String(MQTT_TOPIC)+"/paired").c_str(), 
+          String(deviceName+"/"+splitter->getItemAtIndex(1)).c_str());
+      }      
     }
   }
 

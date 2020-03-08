@@ -20,7 +20,7 @@ my %SHRDZM_sets = (
 
 my @topics = qw(
     state
-    tele/RESULT
+    paired
 );
 
 sub SHRDZM_Initialize($) {
