@@ -5,6 +5,7 @@
 # written 2020 by Erich O. Pintar
 #
 ##############################################
+package main;
 
 use strict;
 use warnings;
@@ -18,10 +19,21 @@ my %SHRDZM_sets = (
     "pair" => ":60,120,180"
 );
 
-my @topics = qw(
-    state
-    paired
+#my @topics = qw(
+#    state
+#    paired
+#	"#"
+#	"+"
+#	"+/+"
+#	"#/#"
+#);
+
+my @topics = (
+    "state",
+    "paired",
+	"+/config",
 );
+
 
 sub SHRDZM_Initialize($) {
 	my $hash = shift @_;
@@ -29,11 +41,13 @@ sub SHRDZM_Initialize($) {
 	require "$main::attr{global}{modpath}/FHEM/00_MQTT.pm";	
 
     $hash->{DefFn}      = "SHRDZM::DEVICE::Define";
+    $hash->{DefFn}      = "SHRDZM::DEVICE::Define";
 	$hash->{UndefFn} 	= "SHRDZM::DEVICE::Undefine";
     $hash->{SetFn}      = "SHRDZM::DEVICE::Set";
 	$hash->{AttrFn} 	= "SHRDZM::DEVICE::Attr";
     $hash->{AttrList} 	= "IODev qos retain publishSet publishSet_.* subscribeReading_.* autoSubscribeReadings " . $main::readingFnAttributes;
     $hash->{OnMessageFn} = "SHRDZM::DEVICE::onmessage";
+
 
     main::LoadModule("MQTT");
     main::LoadModule("MQTT_DEVICE");
@@ -47,6 +61,11 @@ use POSIX;
 use SetExtensions;
 use GPUtils qw(:all);
 use JSON;
+use lib ('./FHEM/lib', './lib');
+use Time::Local;
+use Encode;
+use Encode qw/from_to/;
+use URI::Escape;
 
 use Net::MQTT::Constants;
 
@@ -54,6 +73,7 @@ BEGIN {
     MQTT->import(qw(:all));
 
     GP_Import(qw(
+		CommandDefine
         CommandDeleteReading
         CommandAttr
         readingsSingleUpdate
@@ -74,10 +94,14 @@ sub Define()
 {
     my ($hash, $def) = @_;
     my @args = split("[ \t]+", $def);
-
+#	my @a = split("[ \t][ \t]*", $def);
+#	my $name = $a[0];
+#	my $address = $a[1];	
+			
     return "Invalid number of arguments: define <name> SHRDZM <gatewayID>" if (int(@args) < 1);
 
-    my ($name, $type, $topic) = @args;
+		
+	my ($name, $type, $topic) = @args;
 
     if (defined($topic)) 
 	{
@@ -101,6 +125,7 @@ sub Define()
 
             Log3($hash->{NAME}, 5, "automatically subscribed to topic: " . $newTopic);
         }
+
 
         $hash->{READY} = 1;		
 		
@@ -162,15 +187,60 @@ sub onmessage($$$)
 {
     my ($hash, $topic, $message) = @_;
 
-    Log3($hash->{NAME}, 5, "received message '" . $message . "' for topic: " . $topic);
+	my @abc = split('/', $topic);
+	my $len = @abc;
+
+    Log3($hash->{NAME}, 5, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
 
 	if(substr($topic, 0, length($hash->{FULL_TOPIC})) =~ $hash->{FULL_TOPIC})
 	{
 		my $item = substr($topic, length($hash->{FULL_TOPIC}));
-		
 		Log3($hash->{NAME}, 5, $item.", it is for me!");
 		
-		readingsSingleUpdate($hash, $item, $message, 1);
+
+		if($len =~ 3)
+		{
+			if($item =~ "state")
+			{		
+				readingsSingleUpdate($hash, $item, $message, 1);
+			}
+			elsif($item =~ "paired")
+			{
+				my $devname = "SHRDZM_" . substr($message, index($message, "/")+1);
+				my $define= "$devname DUMMY";
+
+				Log3 $hash->{NAME}, 3, "create new device '$define'";
+				my $cmdret= CommandDefine(undef,$define);	
+				$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+			}
+		}
+		elsif($len =~ 4)
+		{
+			if(@abc[3] =~ "config")
+			{
+				# list SHRDZM_500291D60619 setList
+				my $devname = "SHRDZM_" . @abc[2];
+				my @parameter = split(':', $message);
+								
+				my $cmdret = fhem( "list " . $devname ." setList"  );
+			
+				if(defined $cmdret && $cmdret ne '')
+				{
+					my @existing = split(' ', $cmdret);
+					undef $existing[0];
+
+					push(@existing, $parameter[0]);
+					
+					Log3 $hash->{NAME}, 3, "existing array = '@existing'";
+					
+					print (fhem( "attr " . $devname ." setList ".join(" ", @existing)  ));			
+				}
+				else
+				{
+					print (fhem( "attr " . $devname ." setList ".$parameter[0]  ));			
+				}
+			}
+		}
     } 
 	else 
 	{

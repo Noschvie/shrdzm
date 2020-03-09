@@ -270,6 +270,11 @@ void sendSensorData(String data)
         client.publish((String(MQTT_TOPIC)+"/paired").c_str(), 
           String(deviceName+"/"+splitter->getItemAtIndex(1)).c_str());
       }      
+      else if(splitter->getItemAtIndex(0) == "[C]") // [C]$F4CFA2D4009B$interval:30
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
     }
   }
 
