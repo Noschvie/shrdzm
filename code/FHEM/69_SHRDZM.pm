@@ -94,10 +94,7 @@ sub Define()
 {
     my ($hash, $def) = @_;
     my @args = split("[ \t]+", $def);
-#	my @a = split("[ \t][ \t]*", $def);
-#	my $name = $a[0];
-#	my $address = $a[1];	
-			
+
     return "Invalid number of arguments: define <name> SHRDZM <gatewayID>" if (int(@args) < 1);
 
 		
@@ -207,22 +204,22 @@ sub onmessage($$$)
 			elsif($item =~ "paired")
 			{
 				my $devname = "SHRDZM_" . substr($message, index($message, "/")+1);
-				my $define= "$devname DUMMY";
+				my $define= "$devname SHRDZMDevice";
 
 				Log3 $hash->{NAME}, 3, "create new device '$define'";
 				my $cmdret= CommandDefine(undef,$define);	
 				$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+				$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
 			}
 		}
 		elsif($len =~ 4)
 		{
 			if(@abc[3] =~ "config")
 			{
-				# list SHRDZM_500291D60619 setList
 				my $devname = "SHRDZM_" . @abc[2];
 				my @parameter = split(':', $message);
 								
-				my $cmdret = fhem( "list " . $devname ." setList"  );
+				my $cmdret = fhem( "list " . $devname ." setList");
 			
 				if(defined $cmdret && $cmdret ne '')
 				{
@@ -233,12 +230,14 @@ sub onmessage($$$)
 					
 					Log3 $hash->{NAME}, 3, "existing array = '@existing'";
 					
-					print (fhem( "attr " . $devname ." setList ".join(" ", @existing)  ));			
+					print (fhem( "attr " . $devname ." setList ".join(" ", @existing)));			
 				}
 				else
 				{
-					print (fhem( "attr " . $devname ." setList ".$parameter[0]  ));			
+					print (fhem( "attr " . $devname ." setList ".$parameter[0]));			
 				}
+				
+				my $cmdret = fhem( "setreading " . $devname ." " .$parameter[0]. " ".$parameter[1]);
 			}
 		}
     } 
