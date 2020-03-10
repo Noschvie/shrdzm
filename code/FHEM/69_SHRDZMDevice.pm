@@ -5,6 +5,27 @@ package main;
 use strict;
 use warnings;
 use SetExtensions;
+use GPUtils qw(:all);
+
+BEGIN {
+    GP_Import(qw(
+		CommandDefine
+        CommandDeleteReading
+        CommandAttr
+        readingsSingleUpdate
+        readingsBulkUpdate
+        readingsBeginUpdate
+        readingsEndUpdate
+        Log3
+        SetExtensions
+        SetExtensionsCancel
+        fhem
+        defs
+		Dispatch
+        AttrVal
+        ReadingsVal
+    ))
+};
 
 sub
 SHRDZMDevice_Initialize($)
@@ -14,6 +35,7 @@ SHRDZMDevice_Initialize($)
   $hash->{SetFn}     = "SHRDZMDevice_Set";
   $hash->{DefFn}     = "SHRDZMDevice_Define";
   $hash->{ParseFn}   = "SHRDZMDevice_Parse";
+    
   no warnings 'qw';
   my @attrList = qw(
     disable
@@ -36,13 +58,15 @@ SHRDZMDevice_Set($@)
 {
 	my ( $hash, $name, $cmd, @args ) = @_;
 	my $setList = AttrVal($name, "setList", " ");
-	$setList =~ s/\n/ /g;
-	
-	return "\"set $name\" needs at least one argument" unless(defined($cmd));
+	$setList =~ s/\n/ /g;	
+		
+#	return "\"set $name\" needs at least one argument" unless(defined($cmd));
 
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{
-		return "Unknown argument $cmd, choose one of $setList";
+		return "Unknown argument $cmd, choose one of ".join(" ", $hash->{helper}{SETS});
+	
+	#	return "Unknown argument $cmd, choose one of $setList";
 	}
 	
 	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
@@ -68,16 +92,24 @@ sub SHRDZMDevice_Parse ($$)
 		
 			return $hash->{NAME};
 		}
-#		elsif($items[1] =~ "config")
-#		{
-#			my $sl = AttrVal($hash->{NAME}, "setList", undef);		
-			
-#			if($sl == undef)
-#			{
-#				fhem( "attr " . $devname ." setList ".join(" ", @existing));
+		elsif($items[1] =~ "config")
+		{
+			my $sl = $hash->{helper}{SETS};
+			my @existing = split(' ', $sl);
+						
+			if ( !($parameter[0] ~~ @existing ))
+			{
+				push(@existing, $parameter[0]);
+				
+				$hash->{helper}{SETS} = join(" ", @existing);
+			}
 
-#			}
-#		}		
+			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
+			$hash->{STATE} = "OK";
+
+
+			return $hash->{NAME};
+		}		
 	}
 	else
 	{
@@ -94,6 +126,8 @@ SHRDZMDevice_Define($$)
 	my ( $hash, $def) = @_;
 	my @a = split("[ \t][ \t]*", $def);
 	my $name = $a[0];
+
+	$hash->{helper}{SETS} = "";
 
 	# erstes Argument ist die eindeutige Geräteadresse
 	my $address = $a[2];

@@ -234,39 +234,13 @@ sub onmessage($$$)
 			{
 				Log3 $hash->{NAME}, 5, "sensor config $message";
 
-#				my @parameter = split(':', $message);
-#				my $parameterSize = @parameter;
-
-#				if($parameterSize =~ 2)
-#				{
-#					Dispatch($hash, $abc[2] . " config " . $message );
-#				}
-
-				# MUST BE CHANGED TO Dispatch() !!!!!!!!!!!!!!!!!!
-
-				my $devname = "SHRDZM_" . $abc[2];
 				my @parameter = split(':', $message);
-								
-				my $cmdret = fhem( "list " . $devname ." setList");
-			
-				if(defined $cmdret && $cmdret ne '')
-				{
-					my @existing = split(' ', $cmdret);
-					undef $existing[0];
+				my $parameterSize = @parameter;
 
-					if ( !($parameter[0] ~~ @existing )) 
-					{
-						push(@existing, $parameter[0]);						
-						
-						fhem( "attr " . $devname ." setList ".join(" ", @existing));			
-					}
-				}
-				else
+				if($parameterSize =~ 2)
 				{
-					fhem( "attr " . $devname ." setList ".$parameter[0]);			
+					Dispatch($hash, $abc[2] . " config " . $message );
 				}
-				
-				$cmdret = fhem( "setreading " . $devname ." " .$parameter[0]. " ".$parameter[1]);
 			}
 			elsif($abc[3] =~ "sensor")
 			{
