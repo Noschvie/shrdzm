@@ -9,6 +9,8 @@ package main;
 
 use strict;
 use warnings;
+use DevIo;
+
 
 my %SHRDZM_gets = (
 	"version"	=> ""
@@ -32,12 +34,15 @@ sub SHRDZM_Initialize($) {
 	my $hash = shift @_;
 	
 	require "$main::attr{global}{modpath}/FHEM/00_MQTT.pm";	
+	require "$main::attr{global}{modpath}/FHEM/DevIo.pm";	
 
     $hash->{DefFn}      = "SHRDZM::DEVICE::Define";
+	$hash->{ReadFn}  	= "SHRDZM::DEVICE::Read";	
     $hash->{WriteFn}    = "SHRDZM::DEVICE::Write";
 	$hash->{UndefFn} 	= "SHRDZM::DEVICE::Undefine";
     $hash->{SetFn}      = "SHRDZM::DEVICE::Set";
 	$hash->{AttrFn} 	= "SHRDZM::DEVICE::Attr";
+	$hash->{ReadyFn} 	= "SHRDZM::DEVICE::Ready";
     $hash->{AttrList} 	= "IODev qos retain publishSet publishSet_.* subscribeReading_.* autoSubscribeReadings " . $main::readingFnAttributes;
     $hash->{OnMessageFn} = "SHRDZM::DEVICE::onmessage";
 
@@ -45,10 +50,9 @@ sub SHRDZM_Initialize($) {
   
 	$hash->{MatchList} = { "1:SHRDZMDevice" => "\\S{12}\\s\\S+\\s{1}\\S+\:{1}\\S+" };  
   
-		# \\S{12}\\s{1}\\S+\:{1}\\S+
-  
     main::LoadModule("MQTT");
     main::LoadModule("MQTT_DEVICE");
+    main::LoadModule("DevIo");
 }
 
 package SHRDZM::DEVICE;
@@ -64,13 +68,18 @@ use Time::Local;
 use Encode;
 use Encode qw/from_to/;
 use URI::Escape;
-
+use DevIo;
 use Net::MQTT::Constants;
 
 BEGIN {
     MQTT->import(qw(:all));
 
     GP_Import(qw(
+		DevIo_CloseDev
+		DevIo_IsOpen
+		DevIo_OpenDev
+		DevIo_SimpleRead
+		DevIo_SimpleWrite
 		CommandDefine
         CommandDeleteReading
         CommandAttr
@@ -94,43 +103,60 @@ sub Define()
     my ($hash, $def) = @_;
     my @args = split("[ \t]+", $def);
 
-    return "Invalid number of arguments: define <name> SHRDZM <gatewayID>" if (int(@args) < 1);
-
+    return "Invalid number of arguments: define <name> SHRDZM <gatewayID> [<devicename[\@baudrate]>]]" if (int(@args) < 1);
 		
 	my ($name, $type, $topic) = @args;
 
-    if (defined($topic)) 
+	my $len = @args;
+	
+	if($len =~ 4) # serial connection
 	{
-
-        $hash->{TOPIC} = $topic;
-        $hash->{MODULE_VERSION} = "0.5";
-        $hash->{READY} = 0;
-
-		$hash->{FULL_TOPIC} = "SHRDZM/".$topic."/";
-
-        $hash->{TYPE} = 'MQTT_DEVICE';
-        my $ret = MQTT::Client_Define($hash, $def);
-        $hash->{TYPE} = $type;
-        
-        # Subscribe Readings
-        foreach (@topics) 
-		{
-            my $newTopic = SHRDZM::DEVICE::GetTopicFor($hash, $_);
-            my ($mqos, $mretain, $mtopic, $mvalue, $mcmd) = MQTT::parsePublishCmdStr($newTopic);
-            MQTT::client_subscribe_topic($hash, $mtopic, $mqos, $mretain);
-
-            Log3($hash->{NAME}, 5, "automatically subscribed to topic: " . $newTopic);
-        }
-
-
-        $hash->{READY} = 1;		
+		Log3($hash->{NAME}, 0, "NEW serial device : " . $args[3]);
+		$hash->{Protocol}= "serial";
+		$hash->{DeviceName}= $args[3];
+		my $ret = undef;
 		
-        return $ret;
-    }
-    else 
+		DevIo_CloseDev($hash) if(DevIo_IsOpen($hash)); 
+		
+		$ret = DevIo_OpenDev($hash, 0, undef);
+		return $ret;
+	}
+	else
 	{
-        return "Topic missing";
-    }
+		if (defined($topic)) 
+		{
+
+			$hash->{TOPIC} = $topic;
+			$hash->{MODULE_VERSION} = "0.5";
+			$hash->{READY} = 0;
+			$hash->{Protocol}= "MQTT";
+
+			$hash->{FULL_TOPIC} = "SHRDZM/".$topic."/";
+
+			$hash->{TYPE} = 'MQTT_DEVICE';
+			my $ret = MQTT::Client_Define($hash, $def);
+			$hash->{TYPE} = $type;
+			
+			# Subscribe Readings
+			foreach (@topics) 
+			{
+				my $newTopic = SHRDZM::DEVICE::GetTopicFor($hash, $_);
+				my ($mqos, $mretain, $mtopic, $mvalue, $mcmd) = MQTT::parsePublishCmdStr($newTopic);
+				MQTT::client_subscribe_topic($hash, $mtopic, $mqos, $mretain);
+
+				Log3($hash->{NAME}, 5, "automatically subscribed to topic: " . $newTopic);
+			}
+
+
+			$hash->{READY} = 1;		
+			
+			return $ret;
+		}
+		else 
+		{
+			return "Topic missing";
+		}
+	}
 };
 
 sub Write ($$)
@@ -138,29 +164,138 @@ sub Write ($$)
 	my ( $hash, @arguments) = @_;
 
     Log3($hash->{NAME}, 5, "Bin im Write vom SHRDZM. Parameter = ".join(" ", @arguments));
-	
-	my $return = " funktioniert";
-	
-	my $topic = $hash->{FULL_TOPIC} . "config/set";	
-	my $retain = $hash->{".retain"}->{'*'};
-	my $qos = $hash->{".qos"}->{'*'};	
 
-	my $msgid = send_publish($hash->{IODev}, topic => $topic, message => join(" ", @arguments), qos => $qos, retain => $retain);
-	
-#	return $return;
+	if($hash->{Protocol} =~ "serial")
+	{
+		DevIo_SimpleWrite($hash, "\$set ".join(" ", @arguments)."\n", 2);
+	}
+	else
+	{
+		my $topic = $hash->{FULL_TOPIC} . "config/set";	
+		my $retain = $hash->{".retain"}->{'*'};
+		my $qos = $hash->{".qos"}->{'*'};	
+
+		my $msgid = send_publish($hash->{IODev}, topic => $topic, message => join(" ", @arguments), qos => $qos, retain => $retain);
+	}
 }
 
-sub Undefine($$) {
+sub Ready($)
+{
+  my ($hash) = @_;
+  
+  # try to reopen the connection in case the connection is lost
+  return DevIo_OpenDev($hash, 1, undef); 
+}
+sub ParseMessage($$)
+{
+	my ($hash, $msg) = @_;
+	my $name = $hash->{NAME};
+	
+	my @params = split('\$', $msg);
+	my $len = @params;
+	Log3 $name, 5, "params = ".join(" ", @params);
+	
+	if($len =~ 3)
+	{
+		if(length($params[0]) =~ 7)
+		{
+			if((substr($params[0], 4, 1) =~ '\[') && substr($params[0], 6, 1) =~ '\]')
+			{
+				if(substr($params[0], 5, 1) =~ "P")
+				{
+					Log3 $name, 5, "--- Pairing called ----";
+					
+					my $devname = "SHRDZM_" . $params[1];
+					my $define= "$devname SHRDZMDevice $params[1]";
+
+					Log3 $hash->{NAME}, 5, "create new device '$define'";
+					my $cmdret= CommandDefine(undef,$define);	
+					$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+					$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");								
+				}
+				elsif(substr($params[0], 5, 1) =~ "C")
+				{
+					Log3 $name, 5, "--- Config called ----";
+				
+					my @parameter = split(':', $params[2]);
+					my $parameterSize = @parameter;
+
+					if($parameterSize =~ 2)
+					{
+						Dispatch($hash, $params[1] . " config " . $params[2] );
+					}
+				}
+				elsif(substr($params[0], 5, 1) =~ "D")
+				{
+					Log3 $name, 5, "--- Data called ----";
+				
+					my @parameter = split(':', $params[2]);
+					my $parameterSize = @parameter;
+
+					if($parameterSize =~ 2)
+					{
+						Dispatch($hash, $params[1] . " value " . $params[2] );
+					}
+				}
+			}
+		}
+	}	
+}
+
+sub Read($)
+{
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+  
+  my $data = DevIo_SimpleRead($hash);
+  return if(!defined($data)); # connection lost
+  
+  my $buffer = $hash->{PARTIAL};
+  
+  
+  # concat received data to $buffer
+  $buffer .= $data;
+
+  # as long as the buffer contains newlines (complete datagramm)
+  while($buffer =~ m/\n/)
+  {
+    my $msg;
+    
+    # extract the complete message ($msg), everything else is assigned to $buffer
+    ($msg, $buffer) = split("\n", $buffer, 2);
+    
+    # remove trailing whitespaces
+    chomp $msg;
+    	
+    # parse the extracted message
+    ParseMessage($hash, $msg);
+  }
+
+  # update $hash->{PARTIAL} with the current buffer content
+  $hash->{PARTIAL} = $buffer; 
+}
+
+sub Undefine($$) 
+{
     my ($hash, $name) = @_;
 
-    foreach (@topics) {
-        my $oldTopic = SHRDZM::DEVICE::GetTopicFor($hash, $_);
-        client_unsubscribe_topic($hash, $oldTopic);
+	if($hash->{Protocol} =~ "serial")
+	{
+	  DevIo_CloseDev($hash);
+	  
+	  return undef;	
+	}
+	else
+	{
+		foreach (@topics) {
+			my $oldTopic = SHRDZM::DEVICE::GetTopicFor($hash, $_);
+			client_unsubscribe_topic($hash, $oldTopic);
 
-        Log3($hash->{NAME}, 5, "automatically unsubscribed from topic: " . $oldTopic);
-    }
+			Log3($hash->{NAME}, 5, "automatically unsubscribed from topic: " . $oldTopic);
+		}
 
-    return MQTT::Client_Undefine($hash);
+		return MQTT::Client_Undefine($hash);
+	}
 }
 
 sub Set($$$@) 
@@ -175,24 +310,34 @@ sub Set($$$@)
 
 	Log3($hash->{NAME}, 5, "cmnd = " . $command);
 
-	my @cList = %SHRDZM_sets;
-	
-	my $msgid;
-	my $topic = $hash->{FULL_TOPIC} . "set";	
-	my $retain = $hash->{".retain"}->{'*'};
-	my $qos = $hash->{".qos"}->{'*'};	
-	my $value = join (" ", @values);
-	my $sendcommand = $command;
-	
-	if(length($value) > 0)
+	if($hash->{Protocol} =~ "serial")
 	{
-		$sendcommand .= " " . $value;
-	}	
-	
-	$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
-
-	Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+		if($command =~ "pair")
+		{
+			DevIo_SimpleWrite($hash, "\$pair\n", 2);
+		}
+	}
+	else
+	{
+		my @cList = %SHRDZM_sets;
 		
+		my $msgid;
+		my $topic = $hash->{FULL_TOPIC} . "set";	
+		my $retain = $hash->{".retain"}->{'*'};
+		my $qos = $hash->{".qos"}->{'*'};	
+		my $value = join (" ", @values);
+		my $sendcommand = $command;
+		
+		if(length($value) > 0)
+		{
+			$sendcommand .= " " . $value;
+		}	
+		
+		$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+
+		Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+	}
+	
 	return;
 }
 
@@ -300,83 +445,142 @@ sub Attr($$$$)
 1;
 
 =pod
-=item [device]
-=item summary TASMOTA_DEVICE acts as a fhem-device that is mapped to mqtt-topics of the custom tasmota firmware
+=item helper
+=item summary    dummy device
+=item summary_DE dummy Ger&auml;t
 =begin html
-<a name="TASMOTA_DEVICE"></a>
-<h3>TASMOTA_DEVICE</h3>
+
+<a name="dummy"></a>
+<h3>dummy</h3>
 <ul>
-  <p>acts as a fhem-device that is mapped to <a href="http://mqtt.org/">mqtt</a>-topics.</p>
-  <p>requires a <a href="#MQTT">MQTT</a>-device as IODev<br/>
-     Note: this module is based on <a href="https://metacpan.org/pod/distribution/Net-MQTT/lib/Net/MQTT.pod">Net::MQTT</a> which needs to be installed from CPAN first.</p>
-  <a name="TASMOTA_DEVICEdefine"></a>
-  <p><b>Define</b></p>
+
+  Define a dummy. A dummy can take via <a href="#set">set</a> any values.
+  Used for programming.
+  <br><br>
+
+  <a name="dummydefine"></a>
+  <b>Define</b>
   <ul>
-    <p><code>define &lt;name&gt; TASMOTA_DEVICE &lt;topic&gt; [&lt;fullTopic&gt;]</code><br/>
-       Specifies the MQTT Tasmota device.</p>
+    <code>define &lt;name&gt; dummy</code>
+    <br><br>
+
+    Example:
+    <ul>
+      <code>define myvar dummy</code><br>
+      <code>set myvar 7</code><br>
+    </ul>
   </ul>
-  <a name="TASMOTA_DEVICEset"></a>
-  <p><b>Set</b></p>
+  <br>
+
+  <a name="dummyset"></a>
+  <b>Set</b>
   <ul>
-    <li>
-      <p><code>set &lt;name&gt; &lt;command&gt;</code><br/>
-         sets reading 'state' and publishes the command to topic configured via attr publishSet</p>
-    </li>
-    <li>
-      <p><code>set &lt;name&gt; &lt;reading&gt; &lt;value&gt;</code><br/>
-         sets reading &lt;reading&gt; and publishes the command to topic configured via attr publishSet_&lt;reading&gt;</p>
-    </li>
+    <code>set &lt;name&gt; &lt;value&gt</code><br>
+    Set any value.
   </ul>
-  <a name="TASMOTA_DEVICEattr"></a>
-  <p><b>Attributes</b></p>
+  <br>
+
+  <a name="dummyget"></a>
+  <b>Get</b> <ul>N/A</ul><br>
+
+  <a name="dummyattr"></a>
+  <b>Attributes</b>
   <ul>
-    <li>
-      <p><code>attr &lt;name&gt; publishSet [[&lt;reading&gt;:]&lt;commands_or_options&gt;] &lt;topic&gt;</code><br/>
-         configures set commands and UI-options e.g. 'slider' that may be used to both set given reading ('state' if not defined) and publish to configured topic</p>
-      <p>example:<br/>
-      <code>attr mqttest publishSet on off switch:on,off level:slider,0,1,100 /topic/123</code>
-      </p>
-    </li>
-    <li>
-      <p><code>attr &lt;name&gt; publishSet_&lt;reading&gt; [&lt;values&gt;]* &lt;topic&gt;</code><br/>
-         configures reading that may be used to both set 'reading' (to optionally configured values) and publish to configured topic</p>
-    </li>
-    <li>
-      <p><code>attr &lt;name&gt; autoSubscribeReadings &lt;topic&gt;</code><br/>
-         specify a mqtt-topic pattern with wildcard (e.c. 'myhouse/kitchen/+') and TASMOTA_DEVICE automagically creates readings based on the wildcard-match<br/>
-         e.g a message received with topic 'myhouse/kitchen/temperature' would create and update a reading 'temperature'</p>
-    </li>
-    <li>
-      <p><code>attr &lt;name&gt; subscribeReading_&lt;reading&gt; [{Perl-expression}] [qos:?] [retain:?] &lt;topic&gt;</code><br/>
-         mapps a reading to a specific topic. The reading is updated whenever a message to the configured topic arrives.<br/>
-         QOS and ratain can be optionally defined for this topic. <br/>
-         Furthermore, a Perl statement can be provided which is executed when the message is received. The following variables are available for the expression: $hash, $name, $topic, $message. Return value decides whether reading is set (true (e.g., 1) or undef) or discarded (false (e.g., 0)).
-         </p>
-      <p>Example:<br/>
-         <code>attr mqttest subscribeReading_cmd {fhem("set something off")} /topic/cmd</code>
-       </p>
-    </li>
-    <li>
-      <p><code>attr &lt;name&gt; retain &lt;flags&gt; ...</code><br/>
-         Specifies the retain flag for all or specific readings. Possible values are 0, 1</p>
-      <p>Examples:<br/>
-         <code>attr mqttest retain 0</code><br/>
-         defines retain 0 for all readings/topics (due to downward compatibility)<br>
-         <code> retain *:0 1 test:1</code><br/>
-         defines retain 0 for all readings/topics except the reading 'test'. Retain for 'test' is 1<br>
-       </p>
-    </li>
-    <li>
-      <p><code>attr &lt;name&gt; qos &lt;flags&gt; ...</code><br/>
-         Specifies the QOS flag for all or specific readings. Possible values are 0, 1 or 2. Constants may be also used: at-most-once = 0, at-least-once = 1, exactly-once = 2</p>
-      <p>Examples:<br/>
-         <code>attr mqttest qos 0</code><br/>
-         defines QOS 0 for all readings/topics (due to downward compatibility)<br>
-         <code> retain *:0 1 test:1</code><br/>
-         defines QOS 0 for all readings/topics except the reading 'test'. Retain for 'test' is 1<br>
-       </p>
-    </li>
+    <li><a href="#disable">disable</a></li>
+    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
+    <li><a name="readingList">readingList</a><br>
+      Space separated list of readings, which will be set, if the first
+      argument of the set command matches one of them.</li>
+
+    <li><a name="setList">setList</a><br>
+      Space separated list of commands, which will be returned upon "set name
+      ?", so the FHEMWEB frontend can construct a dropdown and offer on/off
+      switches. Example: attr dummyName setList on off </li>
+
+    <li><a name="useSetExtensions">useSetExtensions</a><br>
+      If set, and setList contains on and off, then the
+      <a href="#setExtensions">set extensions</a> are available.<br>
+      Side-effect: if set, only the specified parameters are accepted, even if
+      setList contains no on and off.</li>
+
+    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
+      If set, the event will contain the command implemented by SetExtensions
+      (e.g. on-for-timer 10), else the executed command (e.g. on).</li>
+
+    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
   </ul>
+  <br>
+
 </ul>
+
 =end html
+
+=begin html_DE
+
+<a name="dummy"></a>
+<h3>dummy</h3>
+<ul>
+
+  Definiert eine Pseudovariable, der mit <a href="#set">set</a> jeder beliebige
+  Wert zugewiesen werden kann.  Sinnvoll zum Programmieren.
+  <br><br>
+
+  <a name="dummydefine"></a>
+  <b>Define</b>
+  <ul>
+    <code>define &lt;name&gt; dummy</code>
+    <br><br>
+
+    Beispiel:
+    <ul>
+      <code>define myvar dummy</code><br>
+      <code>set myvar 7</code><br>
+    </ul>
+  </ul>
+  <br>
+
+  <a name="dummyset"></a>
+  <b>Set</b>
+  <ul>
+    <code>set &lt;name&gt; &lt;value&gt</code><br>
+    Weist einen Wert zu.
+  </ul>
+  <br>
+
+  <a name="dummyget"></a>
+  <b>Get</b> <ul>N/A</ul><br>
+
+  <a name="dummyattr"></a>
+  <b>Attributes</b>
+  <ul>
+    <li><a href="#disable">disable</a></li>
+    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
+    <li><a name="readingList">readingList</a><br>
+      Leerzeichen getrennte Liste mit Readings, die mit "set" gesetzt werden
+      k&ouml;nnen.</li>
+
+    <li><a name="setList">setList</a><br>
+      Liste mit Werten durch Leerzeichen getrennt. Diese Liste wird mit "set
+      name ?" ausgegeben.  Damit kann das FHEMWEB-Frontend Auswahl-Men&uuml;s
+      oder Schalter erzeugen.<br> Beispiel: attr dummyName setList on off </li>
+
+    <li><a name="useSetExtensions">useSetExtensions</a><br>
+      Falls gesetzt, und setList enth&auml;lt on und off, dann sind die <a
+      href="#setExtensions">set extensions</a> verf&uuml;gbar.<br>
+      Seiteneffekt: falls gesetzt, werden nur die spezifizierten Parameter
+      akzeptiert, auch dann, wenn setList kein on und off enth&auml;lt.</li>
+
+    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
+      Falls gesetzt, enth&auml;lt das Event den im SetExtensions
+      implementierten Befehl (z.Bsp. on-for-timer 10), sonst den
+      Ausgef&uuml;rten (z.Bsp. on).</li>
+
+    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
+  </ul>
+  <br>
+
+</ul>
+
+=end html_DE
+
 =cut
