@@ -13,6 +13,7 @@ SHRDZMDevice_Initialize($)
 
   $hash->{SetFn}     = "SHRDZMDevice_Set";
   $hash->{DefFn}     = "SHRDZMDevice_Define";
+  $hash->{ParseFn}   = "SHRDZMDevice_Parse";
   no warnings 'qw';
   my @attrList = qw(
     disable
@@ -25,6 +26,8 @@ SHRDZMDevice_Initialize($)
   );
   use warnings 'qw';
   $hash->{AttrList} = join(" ", @attrList)." $readingFnAttributes";
+  
+  $hash->{Match} = "\\S{12}\\s\\S+\\s{1}\\S+\:{1}\\S+";  
 }
 
 ###################################
@@ -41,32 +44,68 @@ SHRDZMDevice_Set($@)
 	{
 		return "Unknown argument $cmd, choose one of $setList";
 	}
+	
+	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+		
+	return undef;
+}
 
-#	$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+sub SHRDZMDevice_Parse ($$)
+{
+	my ( $io_hash, $message) = @_;
+		
+	# Die Stellen 1-12 enthalten die eindeutige Identifikation des Geräts
+	my $address = substr($message, 0, 12); 
+	my @items = split(" ", $message);
 
+	if(my $hash = $modules{SHRDZMDevice}{defptr}{$address})
+	{
+		my @parameter = split(":", $items[2]);
+		
+		if($items[1] =~ "value")
+		{	
+			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
+		
+			return $hash->{NAME};
+		}
+#		elsif($items[1] =~ "config")
+#		{
+#			my $sl = AttrVal($hash->{NAME}, "setList", undef);		
+			
+#			if($sl == undef)
+#			{
+#				fhem( "attr " . $devname ." setList ".join(" ", @existing));
 
-#  my ($hash, @a) = @_;
-#  my $name = shift @a;
-
-#  return "no set value specified" if(int(@a) < 1);
-#  my $setList = AttrVal($name, "setList", " ");
-#  $setList =~ s/\n/ /g;
-
-#  return "Unknown argument ?, choose one of $setList" if($a[0] eq "?");
-
-#  Log3($hash->{NAME}, 0, "sent (cmnd) '" . $name);
-
-  return undef;
+#			}
+#		}		
+	}
+	else
+	{
+		# Keine Gerätedefinition verfügbar
+		# Daher Vorschlag define-Befehl: <NAME> <MODULNAME> <ADDRESSE>
+#		return "UNDEFINED SHRDZM_".$address." SHRDZMDevice $address";
+		return undef;
+	}
 }
 
 sub
 SHRDZMDevice_Define($$)
 {
-  my ($hash, $def) = @_;
-  my @a = split("[ \t][ \t]*", $def);
+	my ( $hash, $def) = @_;
+	my @a = split("[ \t][ \t]*", $def);
+	my $name = $a[0];
 
-  return "Wrong syntax: use define <name> dummy" if(int(@a) != 2);
-  return undef;
+	# erstes Argument ist die eindeutige Geräteadresse
+	my $address = $a[2];
+
+	# Adresse rückwärts dem Hash zuordnen (für ParseFn)
+	$modules{SHRDZMDevice}{defptr}{$address} = $hash;  
+
+	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
+
+	AssignIoPort($hash);
+
+	return undef;
 }
 
 1;

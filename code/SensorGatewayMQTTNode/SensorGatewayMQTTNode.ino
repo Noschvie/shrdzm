@@ -11,7 +11,8 @@
 #include <EEPROM.h>
 
 String MQTT_TOPIC;
-String subcribeTopic;
+String subcribeTopicSet;
+String subcribeTopicConfig;
 String nodeName;
 String deviceName;
 
@@ -216,7 +217,8 @@ void setup()
 
   nodeName = MQTT_TOPIC;
 
-  subcribeTopic = String(MQTT_TOPIC)+"/set";
+  subcribeTopicSet = String(MQTT_TOPIC)+"/set";
+  subcribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
 
 #ifdef RCSENDPIN  
   subcribeTopicRCSEND = String(MQTT_TOPIC)+"/RCSend";
@@ -224,7 +226,8 @@ void setup()
 
 #ifdef DEBUG
   Serial.println("MQTT_TOPIC : "+String(MQTT_TOPIC));
-  Serial.println("MQTT_TOPIC_SUBSCRIBE : "+String(subcribeTopic));
+  Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
+  Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subcribeTopicConfig));
 
 #ifdef RCSENDPIN  
   Serial.println("MQTT_TOPIC_SUBSCRIBE RCSend : "+String(subcribeTopicRCSEND));
@@ -257,7 +260,9 @@ void sendSensorData(String data)
 
       if(splitter->getItemAtIndex(0) == "[D]")
       {
-        subject += splitter->getItemAtIndex(1)+"/sensor/"+t;
+//        subject += splitter->getItemAtIndex(1)+"/sensor/"+t;
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
 
         client.publish(subject.c_str(), v.c_str());
       }
@@ -319,7 +324,9 @@ void loop()
     {
       client.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
 
-      client.subscribe(subcribeTopic.c_str());
+      client.subscribe(subcribeTopicSet.c_str());
+      client.subscribe(subcribeTopicConfig.c_str());
+      
 
 //      Serial.println(subcribeTopicRCSEND);      
 #ifdef RCSWITCH_SUPPORT            
@@ -515,11 +522,17 @@ void callback(char* topic, byte* payload, unsigned int length)
 
     ESP.reset();
   }
+  else if(String(topic) == subcribeTopicConfig)
+  {
+#ifdef DEBUG   
+      Serial.println("Config with parameter : "+cmd);
+#endif
+      swSer.write(String("$set "+cmd).c_str());
+      swSer.write('\n'); 
+  }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
   {
       swSer.write("$pair");
       swSer.write('\n');    
-
-//    if(cmd.substring(0,5)
   }
 }

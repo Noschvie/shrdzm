@@ -15,23 +15,16 @@ my %SHRDZM_gets = (
 );
 
 my %SHRDZM_sets = (
+    "send" => "",
     "reset" => ":noArg",
     "pair" => ":60,120,180"
 );
-
-#my @topics = qw(
-#    state
-#    paired
-#	"#"
-#	"+"
-#	"+/+"
-#	"#/#"
-#);
 
 my @topics = (
     "state",
     "paired",
 	"+/config",
+	"+/sensor",
 );
 
 
@@ -41,14 +34,19 @@ sub SHRDZM_Initialize($) {
 	require "$main::attr{global}{modpath}/FHEM/00_MQTT.pm";	
 
     $hash->{DefFn}      = "SHRDZM::DEVICE::Define";
-    $hash->{DefFn}      = "SHRDZM::DEVICE::Define";
+    $hash->{WriteFn}    = "SHRDZM::DEVICE::Write";
 	$hash->{UndefFn} 	= "SHRDZM::DEVICE::Undefine";
     $hash->{SetFn}      = "SHRDZM::DEVICE::Set";
 	$hash->{AttrFn} 	= "SHRDZM::DEVICE::Attr";
     $hash->{AttrList} 	= "IODev qos retain publishSet publishSet_.* subscribeReading_.* autoSubscribeReadings " . $main::readingFnAttributes;
     $hash->{OnMessageFn} = "SHRDZM::DEVICE::onmessage";
 
-
+	$hash->{Clients} = "SHRDZMDevice";
+  
+	$hash->{MatchList} = { "1:SHRDZMDevice" => "\\S{12}\\s\\S+\\s{1}\\S+\:{1}\\S+" };  
+  
+		# \\S{12}\\s{1}\\S+\:{1}\\S+
+  
     main::LoadModule("MQTT");
     main::LoadModule("MQTT_DEVICE");
 }
@@ -85,6 +83,7 @@ BEGIN {
         SetExtensionsCancel
         fhem
         defs
+		Dispatch
         AttrVal
         ReadingsVal
     ))
@@ -133,6 +132,23 @@ sub Define()
         return "Topic missing";
     }
 };
+
+sub Write ($$)
+{
+	my ( $hash, @arguments) = @_;
+
+    Log3($hash->{NAME}, 5, "Bin im Write vom SHRDZM. Parameter = ".join(" ", @arguments));
+	
+	my $return = " funktioniert";
+	
+	my $topic = $hash->{FULL_TOPIC} . "config/set";	
+	my $retain = $hash->{".retain"}->{'*'};
+	my $qos = $hash->{".qos"}->{'*'};	
+
+	my $msgid = send_publish($hash->{IODev}, topic => $topic, message => join(" ", @arguments), qos => $qos, retain => $retain);
+	
+#	return $return;
+}
 
 sub Undefine($$) {
     my ($hash, $name) = @_;
@@ -191,9 +207,7 @@ sub onmessage($$$)
 
 	if(substr($topic, 0, length($hash->{FULL_TOPIC})) =~ $hash->{FULL_TOPIC})
 	{
-		my $item = substr($topic, length($hash->{FULL_TOPIC}));
-		Log3($hash->{NAME}, 5, $item.", it is for me!");
-		
+		my $item = substr($topic, length($hash->{FULL_TOPIC}));		
 
 		if($len =~ 3)
 		{
@@ -203,10 +217,12 @@ sub onmessage($$$)
 			}
 			elsif($item =~ "paired")
 			{
+				my @parameter = split('/', $message);
+			
 				my $devname = "SHRDZM_" . substr($message, index($message, "/")+1);
-				my $define= "$devname SHRDZMDevice";
+				my $define= "$devname SHRDZMDevice $parameter[1]";
 
-				Log3 $hash->{NAME}, 3, "create new device '$define'";
+				Log3 $hash->{NAME}, 5, "create new device '$define'";
 				my $cmdret= CommandDefine(undef,$define);	
 				$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
 				$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
@@ -214,9 +230,21 @@ sub onmessage($$$)
 		}
 		elsif($len =~ 4)
 		{
-			if(@abc[3] =~ "config")
+			if($abc[3] =~ "config")
 			{
-				my $devname = "SHRDZM_" . @abc[2];
+				Log3 $hash->{NAME}, 5, "sensor config $message";
+
+#				my @parameter = split(':', $message);
+#				my $parameterSize = @parameter;
+
+#				if($parameterSize =~ 2)
+#				{
+#					Dispatch($hash, $abc[2] . " config " . $message );
+#				}
+
+				# MUST BE CHANGED TO Dispatch() !!!!!!!!!!!!!!!!!!
+
+				my $devname = "SHRDZM_" . $abc[2];
 				my @parameter = split(':', $message);
 								
 				my $cmdret = fhem( "list " . $devname ." setList");
@@ -226,18 +254,31 @@ sub onmessage($$$)
 					my @existing = split(' ', $cmdret);
 					undef $existing[0];
 
-					push(@existing, $parameter[0]);
-					
-					Log3 $hash->{NAME}, 3, "existing array = '@existing'";
-					
-					print (fhem( "attr " . $devname ." setList ".join(" ", @existing)));			
+					if ( !($parameter[0] ~~ @existing )) 
+					{
+						push(@existing, $parameter[0]);						
+						
+						fhem( "attr " . $devname ." setList ".join(" ", @existing));			
+					}
 				}
 				else
 				{
-					print (fhem( "attr " . $devname ." setList ".$parameter[0]));			
+					fhem( "attr " . $devname ." setList ".$parameter[0]);			
 				}
 				
-				my $cmdret = fhem( "setreading " . $devname ." " .$parameter[0]. " ".$parameter[1]);
+				$cmdret = fhem( "setreading " . $devname ." " .$parameter[0]. " ".$parameter[1]);
+			}
+			elsif($abc[3] =~ "sensor")
+			{
+				Log3 $hash->{NAME}, 5, "sensor value $message";
+
+				my @parameter = split(':', $message);
+				my $parameterSize = @parameter;
+
+				if($parameterSize =~ 2)
+				{
+					Dispatch($hash, $abc[2] . " value " . $message );
+				}
 			}
 		}
     } 
