@@ -6,7 +6,10 @@ use strict;
 use warnings;
 use SetExtensions;
 use GPUtils qw(:all);
-
+#use Time::HiRes qw( usleep ualarm gettimeofday tv_interval nanosleep
+#					clock_gettime clock_getres clock_nanosleep clock
+ #                   stat lstat utime);
+					  
 BEGIN {
     GP_Import(qw(
 		CommandDefine
@@ -35,6 +38,9 @@ SHRDZMDevice_Initialize($)
   $hash->{SetFn}     = "SHRDZMDevice_Set";
   $hash->{DefFn}     = "SHRDZMDevice_Define";
   $hash->{ParseFn}   = "SHRDZMDevice_Parse";
+  $hash->{UndefFn}   = "SHRDZMDevice_Undef";
+  $hash->{FingerprintFn}   = "SHRDZMDevice_Fingerprint";
+  
     
   no warnings 'qw';
   my @attrList = qw(
@@ -69,12 +75,51 @@ SHRDZMDevice_Set($@)
 		
 	return undef;
 }
+sub SHRDZMDevice_Undef($$)
+{
+	my ( $hash, $name) = @_;   
+
+	delete($modules{SHRDZMDevice}{defptr}{$hash->{DEF}});
+	
+	RemoveInternalTimer($hash);    
+	return undef;  
+}
+
+sub SHRDZMDevice_GetUpdate ($$)
+{
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
+
+	my $timestamp = time_str2num(ReadingsTimestamp($hash->{NAME}, "online", "2000-01-01 00:00:00"));
+
+	Log3($hash->{NAME}, 5, "last Online ".localtime($timestamp));
+	
+	my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+	if($timestamp < gettimeofday() - $sl)
+	{
+		readingsSingleUpdate($hash, "online", "0", 1);	
+	}
+
+	my $t = gettimeofday();
+	my $t1 = gettimeofday()+($sl*2);
+
+	InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+}
+
+sub SHRDZMDevice_Fingerprint($$)
+{
+  my ( $io_name, $msg ) = @_;
+
+  substr( $msg, 0, 12, "------------" ); # entferne Empfangsadresse
+
+  return ( $io_name, $msg );
+}
 
 sub SHRDZMDevice_Parse ($$)
 {
 	my ( $io_hash, $message) = @_;
 		
-	# Die Stellen 1-12 enthalten die eindeutige Identifikation des Geräts
+	# Die Stellen 0-12 enthalten die eindeutige Identifikation des Geräts
 	my $address = substr($message, 0, 12); 
 	my @items = split(" ", $message);
 
@@ -84,14 +129,25 @@ sub SHRDZMDevice_Parse ($$)
 		
 		if($items[1] =~ "value")
 		{	
-			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
+			readingsBeginUpdate($hash);
+			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);
+			readingsBulkUpdate($hash, "online", "1", 1);
+			readingsEndUpdate($hash, 1);
 		
 			return $hash->{NAME};
+		}
+		elsif($items[1] =~ "paired")
+		{
+			Log3 $hash->{NAME}, 0, "RePairing of known device with  = ".$message;
+
+			$hash->{IODev} = $io_hash->{NAME};
+			CommandAttr(undef,"$hash->{NAME} IODev $io_hash->{NAME}");
+			
+			return $hash->{NAME};		
 		}
 		elsif($items[1] =~ "config")
 		{
 			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
-		#	my $sl = $hash->{helper}{SETS};
 			my @existing = split(' ', $sl);
 						
 			if ( !($parameter[0] ~~ @existing ))
@@ -104,6 +160,17 @@ sub SHRDZMDevice_Parse ($$)
 			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
 			$hash->{STATE} = "OK";
 
+			if($parameter[0] =~ "interval")
+			{
+				RemoveInternalTimer($hash);
+				
+				my $t = gettimeofday();
+				my $t1 = gettimeofday()+($parameter[1]*2);
+			
+				Log3($hash->{NAME}, 5, "jetzt = ".localtime($t).", timer auf ".localtime($t1));
+				
+				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+			}
 
 			return $hash->{NAME};
 		}		

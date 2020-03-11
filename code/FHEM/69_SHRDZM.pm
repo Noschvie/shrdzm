@@ -186,7 +186,7 @@ sub Ready($)
   # try to reopen the connection in case the connection is lost
   return DevIo_OpenDev($hash, 1, undef);   
 }
-sub ParseMessage($$)
+sub ParseMessage($$) # from serial
 {
 	my ($hash, $msg) = @_;
 	my $name = $hash->{NAME};
@@ -204,14 +204,19 @@ sub ParseMessage($$)
 				if(substr($params[0], 5, 1) =~ "P")
 				{
 					Log3 $name, 5, "--- Pairing called ----";
-					
-					my $devname = "SHRDZM_" . $params[1];
-					my $define= "$devname SHRDZMDevice $params[1]";
 
-					Log3 $hash->{NAME}, 5, "create new device '$define'";
-					my $cmdret= CommandDefine(undef,$define);	
-					$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
-					$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");								
+					my $rep = Dispatch($hash, $params[1] . " paired " . $params[1] . ":OK" );
+					
+					if(!(defined $rep))
+					{					
+						my $devname = "SHRDZM_" . $params[1];
+						my $define= "$devname SHRDZMDevice $params[1]";
+
+						Log3 $hash->{NAME}, 5, "create new device '$define'";
+						my $cmdret= CommandDefine(undef,$define);	
+						$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+						$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");							
+					}
 				}
 				elsif(substr($params[0], 5, 1) =~ "C")
 				{
@@ -341,7 +346,7 @@ sub Set($$$@)
 	return;
 }
 
-sub onmessage($$$) 
+sub onmessage($$$) # from mqtt
 {
     my ($hash, $topic, $message) = @_;
 
@@ -362,15 +367,21 @@ sub onmessage($$$)
 			}
 			elsif($item =~ "paired")
 			{
-				my @parameter = split('/', $message);
+				Log3 $hash->{NAME}, 5, "--- Pairing called ----";
 			
-				my $devname = "SHRDZM_" . substr($message, index($message, "/")+1);
-				my $define= "$devname SHRDZMDevice $parameter[1]";
+				my @parameter = split('/', $message);
+				my $rep = Dispatch($hash, $parameter[1] . " paired " . $message . ":OK" );
 
-				Log3 $hash->{NAME}, 5, "create new device '$define'";
-				my $cmdret= CommandDefine(undef,$define);	
-				$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
-				$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
+				if(!(defined $rep))
+				{			
+					my $devname = "SHRDZM_" . substr($message, index($message, "/")+1);
+					my $define= "$devname SHRDZMDevice $parameter[1]";
+
+					Log3 $hash->{NAME}, 5, "create new device '$define'";
+					my $cmdret= CommandDefine(undef,$define);	
+					$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+					$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
+				}
 			}
 		}
 		elsif($len =~ 4)
