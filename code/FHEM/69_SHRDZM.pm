@@ -184,7 +184,7 @@ sub Ready($)
   my ($hash) = @_;
   
   # try to reopen the connection in case the connection is lost
-  return DevIo_OpenDev($hash, 1, undef); 
+  return DevIo_OpenDev($hash, 1, undef);   
 }
 sub ParseMessage($$)
 {

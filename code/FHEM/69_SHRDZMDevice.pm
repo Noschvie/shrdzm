@@ -60,13 +60,9 @@ SHRDZMDevice_Set($@)
 	my $setList = AttrVal($name, "setList", " ");
 	$setList =~ s/\n/ /g;	
 		
-#	return "\"set $name\" needs at least one argument" unless(defined($cmd));
-
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{
-		return "Unknown argument $cmd, choose one of ".join(" ", $hash->{helper}{SETS});
-	
-	#	return "Unknown argument $cmd, choose one of $setList";
+		return "Unknown argument $cmd, choose one of ".ReadingsVal($name, ".SETS", "");
 	}
 	
 	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
@@ -94,14 +90,15 @@ sub SHRDZMDevice_Parse ($$)
 		}
 		elsif($items[1] =~ "config")
 		{
-			my $sl = $hash->{helper}{SETS};
+			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
+		#	my $sl = $hash->{helper}{SETS};
 			my @existing = split(' ', $sl);
 						
 			if ( !($parameter[0] ~~ @existing ))
 			{
 				push(@existing, $parameter[0]);
 				
-				$hash->{helper}{SETS} = join(" ", @existing);
+				readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
 			}
 
 			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
