@@ -203,7 +203,7 @@ sub ParseMessage($$) # from serial
 			{
 				if(substr($params[0], 5, 1) =~ "P")
 				{
-					Log3 $name, 5, "--- Pairing called ----";
+					Log3 $name, 5, "--- Pairing called from $name ----";
 
 					my $rep = Dispatch($hash, $params[1] . " paired " . $params[1] . ":OK" );
 					
@@ -352,6 +352,7 @@ sub onmessage($$$) # from mqtt
 
 	my @abc = split('/', $topic);
 	my $len = @abc;
+	my $name = $hash->{NAME};
 
     Log3($hash->{NAME}, 5, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
 
@@ -367,7 +368,7 @@ sub onmessage($$$) # from mqtt
 			}
 			elsif($item =~ "paired")
 			{
-				Log3 $hash->{NAME}, 5, "--- Pairing called ----";
+				Log3 $hash->{NAME}, 5, "--- Pairing called from $name ----";
 			
 				my @parameter = split('/', $message);
 				my $rep = Dispatch($hash, $parameter[1] . " paired " . $message . ":OK" );

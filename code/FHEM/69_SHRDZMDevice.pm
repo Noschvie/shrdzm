@@ -138,7 +138,7 @@ sub SHRDZMDevice_Parse ($$)
 		}
 		elsif($items[1] =~ "paired")
 		{
-			Log3 $hash->{NAME}, 0, "RePairing of known device with  = ".$message;
+			Log3 $hash->{NAME}, 5, "RePairing of ".$hash->{NAME}." to ".$io_hash->{NAME}." with  = ".$message;
 
 			$hash->{IODev} = $io_hash->{NAME};
 			CommandAttr(undef,"$hash->{NAME} IODev $io_hash->{NAME}");
