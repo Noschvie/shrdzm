@@ -81,7 +81,7 @@ sub SHRDZMDevice_Undef($$)
 
 	delete($modules{SHRDZMDevice}{defptr}{$hash->{DEF}});
 	
-	RemoveInternalTimer($hash);    
+	RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");    
 	return undef;  
 }
 
@@ -90,20 +90,23 @@ sub SHRDZMDevice_GetUpdate ($$)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
-	my $timestamp = time_str2num(ReadingsTimestamp($hash->{NAME}, "online", "2000-01-01 00:00:00"));
+#	my $timestamp = time_str2num(ReadingsTimestamp($hash->{NAME}, "online", "2000-01-01 00:00:00"));
 
-	Log3($hash->{NAME}, 5, "last Online ".localtime($timestamp));
+#	Log3($hash->{NAME}, 5, "last Online ".localtime($timestamp));
 	
-	my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
-	if($timestamp < gettimeofday() - $sl)
-	{
-		readingsSingleUpdate($hash, "online", "0", 1);	
-	}
+#	my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+#	if($timestamp < gettimeofday() - $sl)
+#	{
+	readingsSingleUpdate($hash, "online", "0", 1);	
+#	}
 
-	my $t = gettimeofday();
-	my $t1 = gettimeofday()+($sl*2);
+#	my $t1 = gettimeofday()+($sl*2);
 
-	InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+	Log3($hash->{NAME}, 1, $hash->{NAME} . " went OFFLINE");
+	
+#	Log3($hash->{NAME}, 5, "next check will be at ".localtime($t1));
+
+#	InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 }
 
 sub SHRDZMDevice_Fingerprint($$)
@@ -129,10 +132,22 @@ sub SHRDZMDevice_Parse ($$)
 		
 		if($items[1] =~ "value")
 		{	
+			RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
+
 			readingsBeginUpdate($hash);
-			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);
-			readingsBulkUpdate($hash, "online", "1", 1);
+			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);			
+			my $oldOnlineState = ReadingsVal($hash->{NAME}, "online", 0);
+			if($oldOnlineState =~ 0)
+			{
+				readingsBulkUpdate($hash, "online", "1", 1);
+			}
 			readingsEndUpdate($hash, 1);
+
+			
+			my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+			my $t1 = gettimeofday()+($sl*2);
+			
+			InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 		
 			return $hash->{NAME};
 		}
@@ -162,12 +177,11 @@ sub SHRDZMDevice_Parse ($$)
 
 			if($parameter[0] =~ "interval")
 			{
-				RemoveInternalTimer($hash);
+				RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
 				
-				my $t = gettimeofday();
 				my $t1 = gettimeofday()+($parameter[1]*2);
 			
-				Log3($hash->{NAME}, 5, "jetzt = ".localtime($t).", timer auf ".localtime($t1));
+				Log3($hash->{NAME}, 5, "jetzt = ".localtime(gettimeofday()).", timer auf ".localtime($t1));
 				
 				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 			}
