@@ -17,7 +17,7 @@ my %SHRDZM_gets = (
 );
 
 my %SHRDZM_sets = (
-    "send" => "",
+    "RCSend" => "",
     "reset" => ":noArg",
     "pair" => ":60,120,180"
 );
@@ -25,6 +25,7 @@ my %SHRDZM_sets = (
 my @topics = (
     "state",
     "paired",
+    "RCData",
 	"+/config",
 	"+/sensor",
 );
@@ -324,23 +325,36 @@ sub Set($$$@)
 	}
 	else
 	{
-		my @cList = %SHRDZM_sets;
-		
 		my $msgid;
-		my $topic = $hash->{FULL_TOPIC} . "set";	
 		my $retain = $hash->{".retain"}->{'*'};
 		my $qos = $hash->{".qos"}->{'*'};	
 		my $value = join (" ", @values);
-		my $sendcommand = $command;
 		
-		if(length($value) > 0)
+		if($command =~ "RCSend")
 		{
-			$sendcommand .= " " . $value;
-		}	
+			my $sendcommand = $value;
+			my $topic = $hash->{FULL_TOPIC} . "RCSend";	
 		
-		$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
 
-		Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+			Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+		}
+		else
+		{	
+			my @cList = %SHRDZM_sets;
+			
+			my $sendcommand = $command;
+			my $topic = $hash->{FULL_TOPIC} . "set";	
+			
+			if(length($value) > 0)
+			{
+				$sendcommand .= " " . $value;
+			}	
+			
+			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+
+			Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+		}
 	}
 	
 	return;
@@ -383,6 +397,10 @@ sub onmessage($$$) # from mqtt
 					$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
 					$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
 				}
+			}
+			elsif($item =~ "RCData")
+			{
+				readingsSingleUpdate($hash, $item, $message, 1);
 			}
 		}
 		elsif($len =~ 4)
