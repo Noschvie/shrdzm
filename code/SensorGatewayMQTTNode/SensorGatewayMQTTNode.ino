@@ -260,11 +260,8 @@ void sendSensorData(String data)
 
       if(splitter->getItemAtIndex(0) == "[D]")
       {
-//        subject += splitter->getItemAtIndex(1)+"/sensor/"+t;
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
           splitter->getItemAtIndex(2).c_str());
-
-        client.publish(subject.c_str(), v.c_str());
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // report status
       {
