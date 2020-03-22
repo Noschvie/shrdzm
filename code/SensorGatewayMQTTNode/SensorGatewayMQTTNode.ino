@@ -20,12 +20,12 @@ String deviceName;
 #include <RCSwitch.h>
 RCSwitch mySwitch = RCSwitch();
 unsigned long lastRCMillis = 0;
-
 #ifdef RCSENDPIN  
   String subcribeTopicRCSEND;
 #endif
-
 #endif
+
+
 
 
 typedef struct 
@@ -47,6 +47,7 @@ PubSubClient client(espClient);
 configData_t cfg;
 int cfgStart= 0;
 bool shouldSaveConfig = false;
+bool rcSwitchAvailableBuffer = false;
 
 const char* MQTTHost = "127.0.0.1";
 const char* MQTTPort = "1883";
@@ -55,7 +56,9 @@ const char* MQTTPassword = "";
 
 void saveConfigCallback () 
 {
+#ifdef DEBUG
   Serial.println("Should save config");
+#endif  
   shouldSaveConfig = true;
 }
 
@@ -239,9 +242,9 @@ void setup()
   client.setCallback(callback);
 
 #ifdef RESET_PIN
-            digitalWrite(RESET_PIN,LOW);
-            delay(100);
-            digitalWrite(RESET_PIN,HIGH);
+  digitalWrite(RESET_PIN,LOW);
+  delay(100);
+  digitalWrite(RESET_PIN,HIGH);
 #endif  
 }
 
@@ -297,7 +300,7 @@ void loop()
 #ifdef RCSWITCH_SUPPORT
   if (mySwitch.available()) 
   {
-    if(millis() - lastRCMillis >= 1000)
+    if(millis() - lastRCMillis > 1000)
     {
       unsigned long RCData = mySwitch.getReceivedValue();
       sendRCData(String(RCData));
@@ -334,8 +337,10 @@ void loop()
     }
     else
     {
+#ifdef DEBUG
       Serial.print("connecting to mqtt broker failed, rc: ");
       Serial.println(client.state());
+#endif      
       delay(1000);
     }
   }
