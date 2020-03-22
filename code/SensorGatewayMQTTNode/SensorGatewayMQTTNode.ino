@@ -1,5 +1,7 @@
+#include <FS.H>
 #include "config/config.h"
 
+#include <ArduinoJson.h>
 #include <SoftwareSerial.h>
 #include "StringSplitter.h"
 #include <MQTT.h>
@@ -15,6 +17,9 @@ String subcribeTopicSet;
 String subcribeTopicConfig;
 String nodeName;
 String deviceName;
+DynamicJsonDocument configdoc(1024);
+JsonObject configuration  = configdoc.createNestedObject("configuration");
+JsonObject web_configuration  = configuration.createNestedObject("web");
 
 #ifdef RCSWITCH_SUPPORT
 #include <RCSwitch.h>
@@ -24,8 +29,6 @@ unsigned long lastRCMillis = 0;
   String subcribeTopicRCSEND;
 #endif
 #endif
-
-
 
 
 typedef struct 
@@ -40,7 +43,8 @@ typedef struct
 } configData_t;
 
 SoftwareSerial swSer(14,12);
-WiFiServer server(80);
+//WiFiServer server(80);
+ESP8266WebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -51,8 +55,8 @@ bool rcSwitchAvailableBuffer = false;
 
 const char* MQTTHost = "127.0.0.1";
 const char* MQTTPort = "1883";
-const char* MQTTUser = "";
-const char* MQTTPassword = "";
+const char* MQTTUser = NULL;
+const char* MQTTPassword = NULL;
 
 void saveConfigCallback () 
 {
@@ -60,6 +64,68 @@ void saveConfigCallback ()
   Serial.println("Should save config");
 #endif  
   shouldSaveConfig = true;
+}
+
+bool readConfig()
+{
+    if (SPIFFS.exists("/shrdzmMQTT_config.json")) 
+    {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/shrdzmMQTT_config.json", "r");
+      if (configFile) 
+      {
+#ifdef DEBUG
+        Serial.println("opened config file");
+#endif
+        // Allocate a buffer to store contents of the file.
+
+        String content;
+        
+        for(int i=0;i<configFile.size();i++) //Read upto complete file size
+        {
+          content += (char)configFile.read();
+        }
+
+#ifdef DEBUG
+        Serial.println(content);
+#endif
+
+        DeserializationError error = deserializeJson(configdoc, content);
+        if (error)
+        {
+#ifdef DEBUG
+          Serial.println("Error at deserializeJson");
+#endif
+      
+          return false;
+        }
+
+        configFile.close();
+      }
+    }
+    else
+    {
+#ifdef DEBUG
+      Serial.println("shrdzmMQTT_config.json does not exist");
+#endif
+      return false;
+    }
+}
+
+bool writeConfig()
+{
+    File configFile = SPIFFS.open("/shrdzmMQTT_config.json", "w");
+    if (!configFile) 
+    {
+#ifdef DEBUG
+      Serial.println("failed to open config file for writing");
+#endif
+      return false;
+    }
+
+    serializeJson(configdoc, configFile);
+    configFile.close();
 }
 
 void eraseConfig() 
@@ -114,9 +180,73 @@ String macToStr(const uint8_t* mac)
   return String(mac_addr);
 }
 
+void setDeviceName()
+{
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+}
+
+void handleRoot() 
+{
+  char temp[400];
+  int sec = millis() / 1000;
+  int min = sec / 60;
+  int hr = min / 60;
+
+  snprintf(temp, 400,
+
+           "<html>\
+  <head>\
+    <meta http-equiv='refresh' content='5'/>\
+    <title>SHRDZM</title>\
+    <style>\
+      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+    </style>\
+  </head>\
+  <body>\
+    <h1>Hello from SHRDZM!</h1>\
+    <p>Uptime: %02d:%02d:%02d</p>\
+  </body>\
+</html>",
+
+           hr, min % 60, sec % 60
+          );
+  server.send(200, "text/html", temp);
+}
+
+void handleNotFound() 
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+
+  server.send(404, "text/plain", message);
+}
+
 void setup() 
 {  
+#ifdef DEBUG  
+  Serial.begin(9600);
+//  Serial.print("SSID:"+String(cfg.SSID));
+#endif  
+
+  setDeviceName();
+  
   WiFiManager wifiManager;
+  SPIFFS.begin();
 
 //  eraseConfig();
 //  wifiManager.resetSettings();
@@ -136,17 +266,28 @@ void setup()
 #endif
 #endif
 
-  
-  loadConfig();  
-#ifdef DEBUG  
-  Serial.begin(9600);
 
-  Serial.print("SSID:"+String(cfg.SSID));
-#endif  
+  if(!readConfig())
+  {
+    SPIFFS.format();
+
+    web_configuration["SSID"] = "";
+    web_configuration["password"] = "";
+    web_configuration["MQTTHost"] = "test.mosquitto.org";
+    web_configuration["MQTTPort"] = "1883";
+    web_configuration["MQTTUser"] = "";
+    web_configuration["MQTTPassword"] = "";
+
+    writeConfig();
+  }
+
+// !!  
+  loadConfig();  
+  
 
 #ifdef SERIALBAUD
-//  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-  swSer.begin(SERIALBAUD);  
+  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+//  swSer.begin(SERIALBAUD);  
 #else
   swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
 #endif
@@ -155,35 +296,61 @@ void setup()
   pinMode(RESET_PIN, OUTPUT);
 #endif
 
-  if(cfg.valid == 1)
+//  if(cfg.valid == 1)
   {
-    MQTTHost = cfg.MQTTHost;
+    MQTTHost = web_configuration["MQTTHost"];
+    MQTTPort = web_configuration["MQTTPort"];
+
+    if(web_configuration["MQTTUser"] == "")
+    {
+      MQTTUser = NULL;
+    }
+    else
+    {
+      MQTTUser = web_configuration["MQTTUser"];
+    }
+
+    if(web_configuration["MQTTPassword"] == "")
+    {
+      MQTTPassword = NULL;
+    }
+    else
+    {
+      MQTTPassword = web_configuration["MQTTPassword"];    
+    }
+/*    MQTTHost = cfg.MQTTHost;
     MQTTPort = cfg.MQTTPort;
     MQTTUser = cfg.MQTTUser;
-    MQTTPassword = cfg.MQTTPassword;    
+    MQTTPassword = cfg.MQTTPassword;    */
   }
-  else
+/*  else
   {
 #ifdef DEBUG  
     Serial.println();
     Serial.println("no valid configuration found. Will use default and start AP");
 #endif  
-  }
-  
+  } */
+
+  WiFiManagerParameter custom_mqtt_server("server", "mqtt server", web_configuration["MQTTHost"], 60);
+  WiFiManagerParameter custom_mqtt_port("port", "mqtt port", web_configuration["MQTTPort"], 10);
+  WiFiManagerParameter custom_mqtt_user("user", "mqtt user", web_configuration["MQTTUser"], 30);
+  WiFiManagerParameter custom_mqtt_pass("pass", "mqtt pass", web_configuration["MQTTPassword"], 40);
+
+ /*
   WiFiManagerParameter custom_mqtt_server("server", "mqtt server", MQTTHost, 60);
   WiFiManagerParameter custom_mqtt_port("port", "mqtt port", MQTTPort, 10);
   WiFiManagerParameter custom_mqtt_user("user", "mqtt user", MQTTUser, 30);
   WiFiManagerParameter custom_mqtt_pass("pass", "mqtt pass", MQTTPassword, 40);
-  
+  */
   
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-  uint8_t xmac[6];
+/*  uint8_t xmac[6];
   WiFi.macAddress(xmac);
 
   deviceName = macToStr(xmac);
   deviceName.replace(":", "");
-  deviceName.toUpperCase();
+  deviceName.toUpperCase(); */
 
   String APName = "SHRDZM-"+deviceName;
   WiFi.hostname(APName.c_str());
@@ -199,6 +366,13 @@ void setup()
   
   wifiManager.autoConnect(APName.c_str());
 
+  web_configuration["MQTTHost"] = custom_mqtt_server.getValue();
+  web_configuration["MQTTPort"] = custom_mqtt_port.getValue();
+  web_configuration["MQTTUser"] = custom_mqtt_user.getValue();
+  web_configuration["MQTTPassword"] = custom_mqtt_pass.getValue();
+
+
+  // !!!!!!!!!!
   strcpy(cfg.MQTTHost, custom_mqtt_server.getValue());
   strcpy(cfg.MQTTPort, custom_mqtt_port.getValue());
   strcpy(cfg.MQTTUser, custom_mqtt_user.getValue());
@@ -207,15 +381,23 @@ void setup()
   if (shouldSaveConfig)
   {
     cfg.valid = 1;
+
+    writeConfig();
+
+    // !!!!!
     saveConfig();
+
+    delay(100);
+    ESP.restart();      
   }
 
 #ifdef MQTT_SUBSCRIBE_TOPIC
   MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
 #else
-  MQTT_TOPIC = "SHRDZM/"+macToStr(xmac);
-  MQTT_TOPIC.replace(":", "");
-  MQTT_TOPIC.toUpperCase();
+  MQTT_TOPIC = "SHRDZM/"+deviceName;
+//  MQTT_TOPIC = "SHRDZM/"+macToStr(xmac);
+//  MQTT_TOPIC.replace(":", "");
+//  MQTT_TOPIC.toUpperCase();
 #endif
 
   nodeName = MQTT_TOPIC;
@@ -228,6 +410,10 @@ void setup()
 #endif
 
 #ifdef DEBUG
+  Serial.println("MQTTHost : "+String(MQTTHost));
+  Serial.println("MQTTPort : "+String(MQTTPort));
+  Serial.println("MQTTUser : "+String(MQTTUser));
+  Serial.println("MQTTPassword : "+String(MQTTPassword));
   Serial.println("MQTT_TOPIC : "+String(MQTT_TOPIC));
   Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
   Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subcribeTopicConfig));
@@ -237,7 +423,10 @@ void setup()
 #endif
 #endif
 
-//  server.begin();    
+  server.on("/", handleRoot);
+  server.onNotFound(handleNotFound);
+  server.begin();
+
   client.setServer(MQTTHost, String(MQTTPort).toInt());
   client.setCallback(callback);
 
@@ -297,6 +486,8 @@ void sendRCData(String data)
 
 void loop() 
 {
+  server.handleClient();
+  
 #ifdef RCSWITCH_SUPPORT
   if (mySwitch.available()) 
   {
@@ -344,13 +535,6 @@ void loop()
       delay(1000);
     }
   }
-  
-/*  WiFiClient client = server.available();  
-
-  if (client) 
-  {   
-    Serial.println("New Client.");
-  } */
 
   while (swSer.available()) 
   {
