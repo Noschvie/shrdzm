@@ -289,12 +289,12 @@ void setup()
   readBH1750(&sde);
 #endif
 
-#ifdef DS18B20_SUPPORT
-  readDS18B20(&sde);
-#endif
-
 #ifdef HTU21D_SUPPORT
   readHTU21D(&sde);
+#endif
+
+#ifdef DS18B20_SUPPORT
+  readDS18B20(&sde);
 #endif
 
 #ifdef WATERSENSOR_SUPPORT
@@ -365,10 +365,14 @@ void setup()
           char buffer[4];
           sprintf(buffer, "%03d", c);
           r = "*"+String(buffer)+r;
+
+          Serial.println("Config : '"+r+"'");
       
           uint8_t bs[r.length()];
           memcpy(bs, r.c_str(), sizeof(bs));
           esp_now_send(gatewayMac, bs, sizeof(bs)); 
+
+          delay(100);          
         }
         PairingEnabled = false;
       }
@@ -399,8 +403,11 @@ void setup()
           
           uint8_t bs[r.length()];
           memcpy(bs, r.c_str(), sizeof(bs));
-    
+
+          Serial.println("Config : '"+r+"'");
+
           esp_now_send(gatewayMac, bs, sizeof(bs));
+          delay(100);        
         }
 
 /*
@@ -494,7 +501,11 @@ void sendPairingInfoCall()
       uint8_t bs[r.length()];
       memcpy(bs, r.c_str(), sizeof(bs));
 
+      Serial.println("Config : '"+r+"'");
+
       esp_now_send(gatewayMac, bs, sizeof(bs));
+
+      delay(100);
     }
 }
 

@@ -263,6 +263,7 @@ void setup()
   esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
   {
     String str((char*)data);
+    str = str.substring(0, len);
     bool forwardData = true;
 
     StringSplitter *splitter = new StringSplitter(str, '$', 3);
@@ -331,7 +332,11 @@ void setup()
           String t = splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'));          
   
           newDevice[t] = v;
-  
+
+#ifdef DEBUG
+        Serial.println("'"+t+":"+v+"'");
+#endif        
+
           writeConfig();
         }      
       } 
@@ -371,7 +376,16 @@ void setup()
       } 
       else
       {      
-        Serial.println("*144[E]$"+deviceName+"$error:data from unpaired device "+splitter->getItemAtIndex(1));
+        Serial.println("*062[E]$"+deviceName+"$error:data from unpaired device "+splitter->getItemAtIndex(1));
+
+#ifdef DEBUG
+    Serial.println("Have to initialize "+splitter->getItemAtIndex(1));
+#endif
+        String setupText = "I%"+splitter->getItemAtIndex(1)+"%init";
+
+        uint8_t bs[setupText.length()];
+        memcpy(bs, setupText.c_str(), sizeof(bs));
+        esp_now_send(mac, bs, sizeof(bs));                   
       }        
     }
 

@@ -192,12 +192,72 @@ void setDeviceName()
 
 void handleRoot() 
 {
-  char temp[400];
+  char temp[1800];
   int sec = millis() / 1000;
   int min = sec / 60;
   int hr = min / 60;
 
-  snprintf(temp, 400,
+#ifdef DEBUG
+  Serial.println("Handle Root");
+#endif
+
+  snprintf(temp, 1800,
+  
+"<!DOCTYPE html>\
+<html>\
+<head>\
+<style>\
+\
+ul \
+{\
+list-style-type: none;\
+  margin: 0;\
+  padding: 0;\
+  width: 150px;\
+  background-color: #f1f1f1;\
+  position: fixed;\
+  height: 100%;\
+  overflow: auto;\
+}\
+\
+li a {\
+  display: block;\
+  color: #000;\
+  padding: 8px 16px;\
+  text-decoration: none;\
+}\
+\
+li a.active {\
+  background-color: #4CAF50;\
+  color: white;\
+}\
+\
+li a:hover:not(.active) {\
+  background-color: #555;\
+  color: white;\
+}\
+</style>\
+<title>SHRDZM - %s</title>\
+</head>\
+<body>\
+\
+<ul>\
+  <li>\
+    <a class='active' href='#home'>SHRDZM<br/>\
+      <font size='2'>%s</font>\
+    </a></li>\
+  <li><a href='./general'>General</a></li>\
+  <li><a href='./devices'>Devices</a></li>\
+  <li><a href='./about'>Settings</a></li>\
+  <li><a href='./about'>About</a></li>\
+  <li><a href='./reboot'>Reboot</a></li>\
+</ul>\
+\
+</body>\
+</html>\
+  ", deviceName.c_str(), deviceName.c_str());
+
+/*  snprintf(temp, 400,
 
            "<html>\
   <head>\
@@ -215,6 +275,7 @@ void handleRoot()
 
            hr, min % 60, sec % 60
           );
+          */
   server.send(200, "text/html", temp);
 }
 
@@ -287,7 +348,6 @@ void setup()
 
 #ifdef SERIALBAUD
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-//  swSer.begin(SERIALBAUD);  
 #else
   swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
 #endif
@@ -296,61 +356,33 @@ void setup()
   pinMode(RESET_PIN, OUTPUT);
 #endif
 
-//  if(cfg.valid == 1)
+  MQTTHost = web_configuration["MQTTHost"];
+  MQTTPort = web_configuration["MQTTPort"];
+
+  if(web_configuration["MQTTUser"] == "")
   {
-    MQTTHost = web_configuration["MQTTHost"];
-    MQTTPort = web_configuration["MQTTPort"];
-
-    if(web_configuration["MQTTUser"] == "")
-    {
-      MQTTUser = NULL;
-    }
-    else
-    {
-      MQTTUser = web_configuration["MQTTUser"];
-    }
-
-    if(web_configuration["MQTTPassword"] == "")
-    {
-      MQTTPassword = NULL;
-    }
-    else
-    {
-      MQTTPassword = web_configuration["MQTTPassword"];    
-    }
-/*    MQTTHost = cfg.MQTTHost;
-    MQTTPort = cfg.MQTTPort;
-    MQTTUser = cfg.MQTTUser;
-    MQTTPassword = cfg.MQTTPassword;    */
+    MQTTUser = NULL;
   }
-/*  else
+  else
   {
-#ifdef DEBUG  
-    Serial.println();
-    Serial.println("no valid configuration found. Will use default and start AP");
-#endif  
-  } */
+    MQTTUser = web_configuration["MQTTUser"];
+  }
+
+  if(web_configuration["MQTTPassword"] == "")
+  {
+    MQTTPassword = NULL;
+  }
+  else
+  {
+    MQTTPassword = web_configuration["MQTTPassword"];    
+  }
 
   WiFiManagerParameter custom_mqtt_server("server", "mqtt server", web_configuration["MQTTHost"], 60);
   WiFiManagerParameter custom_mqtt_port("port", "mqtt port", web_configuration["MQTTPort"], 10);
   WiFiManagerParameter custom_mqtt_user("user", "mqtt user", web_configuration["MQTTUser"], 30);
   WiFiManagerParameter custom_mqtt_pass("pass", "mqtt pass", web_configuration["MQTTPassword"], 40);
-
- /*
-  WiFiManagerParameter custom_mqtt_server("server", "mqtt server", MQTTHost, 60);
-  WiFiManagerParameter custom_mqtt_port("port", "mqtt port", MQTTPort, 10);
-  WiFiManagerParameter custom_mqtt_user("user", "mqtt user", MQTTUser, 30);
-  WiFiManagerParameter custom_mqtt_pass("pass", "mqtt pass", MQTTPassword, 40);
-  */
   
   wifiManager.setSaveConfigCallback(saveConfigCallback);
-
-/*  uint8_t xmac[6];
-  WiFi.macAddress(xmac);
-
-  deviceName = macToStr(xmac);
-  deviceName.replace(":", "");
-  deviceName.toUpperCase(); */
 
   String APName = "SHRDZM-"+deviceName;
   WiFi.hostname(APName.c_str());
@@ -395,9 +427,6 @@ void setup()
   MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
 #else
   MQTT_TOPIC = "SHRDZM/"+deviceName;
-//  MQTT_TOPIC = "SHRDZM/"+macToStr(xmac);
-//  MQTT_TOPIC.replace(":", "");
-//  MQTT_TOPIC.toUpperCase();
 #endif
 
   nodeName = MQTT_TOPIC;
