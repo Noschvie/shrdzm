@@ -339,6 +339,11 @@ void setup()
     esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) 
     {
       String str((char*)data);
+      str = str.substring(0, len);
+      
+#ifdef DEBUG
+      Serial.println("Command : '"+str+"'");
+#endif
 
       StringSplitter *splitter = new StringSplitter(str, '%', 3);
       int itemCount = splitter->getItemCount();
@@ -409,33 +414,50 @@ void setup()
           esp_now_send(gatewayMac, bs, sizeof(bs));
           delay(100);        
         }
-
-/*
-        // TODO : have to do it dynmically!!!
+      }
+      else if(itemCount == 3 && 
+            splitter->getItemAtIndex(0) == "C" &&
+            splitter->getItemAtIndex(1) == deviceName)  // gateway asks for all configuration parameter
+      {
+#ifdef DEBUG
+        Serial.println("Gateway asks for all configuration parameter");
+#endif
+        String r = "[P]$"+deviceName+"$paired:OK";
+        int c = r.length();
         char buffer[4];
-        String r;
-        int c;
+      
+        sprintf(buffer, "%03d", c);
+        r = "*"+String(buffer)+r;
+    
+      
+        uint8_t bs[r.length()];
+        memcpy(bs, r.c_str(), sizeof(bs));
+        esp_now_send(gatewayMac, bs, sizeof(bs));
+    
+        // send confifurations
+        for (JsonPair kv : configuration) 
+        {
+          String r = "[C]$"+deviceName+"$"+kv.key().c_str()+":"+kv.value().as<char*>();
+          int c = r.length();
         
-        r = "[C]$"+deviceName+"$interval:"+String(i);
-        c = r.length();
-      
-        sprintf(buffer, "%03d", c);
-        r = "*"+String(buffer)+r;
+          sprintf(buffer, "%03d", c);
+          r = "*"+String(buffer)+r;
+          
+          uint8_t bs[r.length()];
+          memcpy(bs, r.c_str(), sizeof(bs));
     
-        uint8_t bs1[r.length()];
-        memcpy(bs1, r.c_str(), sizeof(bs1));
-        esp_now_send(gatewayMac, bs1, sizeof(bs1)); 
-
-        //////
-        r = "[C]$"+deviceName+"sensorpowerpin:"+String(s);
-        c = r.length();
-      
-        sprintf(buffer, "%03d", c);
-        r = "*"+String(buffer)+r;
+          Serial.println("Config : '"+r+"'");
     
-        uint8_t bs2[r.length()];
-        memcpy(bs2, r.c_str(), sizeof(bs2));
-        esp_now_send(gatewayMac, bs2, sizeof(bs2));      */   
+          esp_now_send(gatewayMac, bs, sizeof(bs));
+    
+          delay(100);
+        }
+      }
+      else
+      {
+#ifdef DEBUG
+      Serial.println("Unknown command : '"+str+"'");
+#endif
       }
             
       delay(100);

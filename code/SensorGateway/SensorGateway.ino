@@ -354,6 +354,21 @@ void setup()
       
       delay(100);
     }
+    else if(!configurationDevices.containsKey(splitter->getItemAtIndex(1)) &&
+            str.substring(4,7) == "[S]")
+    {
+      String setupText = "C%"+splitter->getItemAtIndex(1)+"%reconfig";
+
+#ifdef DEBUG
+      Serial.println("Reconfig of '"+splitter->getItemAtIndex(1)+"' requested");
+#endif        
+
+      uint8_t bs[setupText.length()];
+      memcpy(bs, setupText.c_str(), sizeof(bs));
+      esp_now_send(mac, bs, sizeof(bs));                   
+      
+      delay(100);                    
+    }    
     else
     {
       if(str.substring(4,7) == "[P]") // new device paired
@@ -377,15 +392,6 @@ void setup()
       else
       {      
         Serial.println("*062[E]$"+deviceName+"$error:data from unpaired device "+splitter->getItemAtIndex(1));
-
-#ifdef DEBUG
-    Serial.println("Have to initialize "+splitter->getItemAtIndex(1));
-#endif
-        String setupText = "I%"+splitter->getItemAtIndex(1)+"%init";
-
-        uint8_t bs[setupText.length()];
-        memcpy(bs, setupText.c_str(), sizeof(bs));
-        esp_now_send(mac, bs, sizeof(bs));                   
       }        
     }
 
