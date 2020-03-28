@@ -603,6 +603,11 @@ void loop()
       swSer.write(cmd.c_str());
       swSer.write('\n');    
     }    
+    else if(cmd.substring(0,5) == "$deleteconfig")
+    {
+      swSer.write(cmd.c_str());
+      swSer.write('\n');    
+    }    
     else if(cmd == "$init")
     {
       WiFiManager wifiManager;
