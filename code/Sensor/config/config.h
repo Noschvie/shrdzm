@@ -10,8 +10,8 @@
 
 //#define BH1750_SUPPORT
 //#define DS18B20_SUPPORT
-#define DHT22_SUPPORT
-//#define HTU21D_SUPPORT
+//#define DHT22_SUPPORT
+#define HTU21D_SUPPORT
 //#define WATERSENSOR_SUPPORT
 
 #ifdef DS18B20_SUPPORT
@@ -29,7 +29,7 @@
 
 
 #ifdef SENSORPOWER_SUPPORT
-//#define SENSORPOWERPIN 14  // sensor is powerd by this pin
-#define SENSORPOWERPIN 4  // sensor is powerd by this pin // ALOIS Pre-Sensor !!!
+#define SENSORPOWERPIN 14  // sensor is powerd by this pin
+//#define SENSORPOWERPIN 4  // sensor is powerd by this pin // ALOIS Pre-Sensor !!!
 #endif
 

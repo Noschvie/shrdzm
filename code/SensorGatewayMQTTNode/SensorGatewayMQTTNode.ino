@@ -603,7 +603,7 @@ void loop()
       swSer.write(cmd.c_str());
       swSer.write('\n');    
     }    
-    else if(cmd.substring(0,5) == "$deleteconfig")
+    else if(cmd.substring(0,13) == "$deleteconfig")
     {
       swSer.write(cmd.c_str());
       swSer.write('\n');    
