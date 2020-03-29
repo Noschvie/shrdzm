@@ -586,7 +586,10 @@ void readHTU21D(SensorDataExchange *sde)
 void readDS18B20(SensorDataExchange *sde)
 {
 #ifdef DS18B20_SUPPORT
+
   dallas.begin();
+//  delay(500);
+
   DeviceAddress thermometerAddress;
 
 
