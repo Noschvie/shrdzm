@@ -24,6 +24,7 @@ my %SHRDZM_sets = (
 
 my @topics = (
     "state",
+	"update",
     "paired",
     "RCData",
 	"+/config",
@@ -375,8 +376,44 @@ sub onmessage($$$) # from mqtt
 		my $item = substr($topic, length($hash->{FULL_TOPIC}));		
 
 		if($len =~ 3)
-		{
-			if($item =~ "state")
+		{			
+			if($item =~ "update")
+			{
+				if (eval {JSON::decode_json($message)}) 
+				{
+					my $json = JSON::decode_json($message);
+					
+					my $devices = $json->{devices};
+					
+					foreach my $key (keys %$devices) 
+					{
+						Log3($hash->{NAME}, 0, "device : ".$key);	
+
+						my $rep = Dispatch($hash, $key . " paired " . $abc[1]."/". $key . ":OK" );
+
+						if(!(defined $rep))
+						{			
+							my $devname = "SHRDZM_" . $key;
+							my $define= "$devname SHRDZMDevice $key";
+
+							Log3 $hash->{NAME}, 5, "create new device '$define'";
+							my $cmdret= CommandDefine(undef,$define);	
+							$cmdret= CommandAttr(undef,"$devname room SHRDZM");			
+							$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
+						}
+						
+						my $e = $devices->{$key};
+						
+						foreach my $entry (keys %$e) 
+						{
+							Log3($hash->{NAME}, 0, "entry : ".$entry." value : ".$e->{$entry} );	
+							
+							Dispatch($hash, $key . " config " . $entry.":".$e->{$entry} );
+						}						
+					}
+				}
+			}
+			elsif($item =~ "state")
 			{		
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}

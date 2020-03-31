@@ -397,7 +397,10 @@ void setup()
 
     
     delete splitter;
-    });
+    }
+  );
+
+  getConfig();    
 }
 
 // write config to serial

@@ -445,10 +445,10 @@ void setup()
   digitalWrite(RESET_PIN,HIGH);
 #endif  
   
-  delay(1000);
+/*  delay(1000);
 
   swSer.write("$getconfig");
-  swSer.write('\n');    
+  swSer.write('\n');    */
 }
 
 void sendSensorData(String data)
