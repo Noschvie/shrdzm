@@ -257,25 +257,6 @@ li a:hover:not(.active) {\
 </html>\
   ", deviceName.c_str(), deviceName.c_str());
 
-/*  snprintf(temp, 400,
-
-           "<html>\
-  <head>\
-    <meta http-equiv='refresh' content='5'/>\
-    <title>SHRDZM</title>\
-    <style>\
-      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
-    </style>\
-  </head>\
-  <body>\
-    <h1>Hello from SHRDZM!</h1>\
-    <p>Uptime: %02d:%02d:%02d</p>\
-  </body>\
-</html>",
-
-           hr, min % 60, sec % 60
-          );
-          */
   server.send(200, "text/html", temp);
 }
 
@@ -301,7 +282,6 @@ void setup()
 {  
 #ifdef DEBUG  
   Serial.begin(9600);
-//  Serial.print("SSID:"+String(cfg.SSID));
 #endif  
 
   setDeviceName();
@@ -464,6 +444,11 @@ void setup()
   delay(100);
   digitalWrite(RESET_PIN,HIGH);
 #endif  
+  
+  delay(1000);
+
+  swSer.write("$getconfig");
+  swSer.write('\n');    
 }
 
 void sendSensorData(String data)
@@ -513,6 +498,15 @@ void sendRCData(String data)
   client.publish((String(MQTT_TOPIC)+"/RCData").c_str(), data.c_str());
 }
 
+void sendGatewayUpdate(String data)
+{
+#ifdef DEBUG
+      Serial.println("GatewayUpdate sent : "+data);
+#endif        
+
+  client.publish((String(MQTT_TOPIC)+"/update").c_str(), data.c_str());  
+}
+
 void loop() 
 {
   server.handleClient();
@@ -535,6 +529,8 @@ void loop()
   }
 #endif
 
+  yield();
+  
   if (!client.connected()) 
   {
     if (client.connect(nodeName.c_str(),
@@ -565,9 +561,13 @@ void loop()
     }
   }
 
+  yield();
+
   while (swSer.available()) 
   {
-    if ( swSer.read() == '*' ) 
+    char r = swSer.read();
+    
+    if ( r == '*' ) 
     {
       while ( ! swSer.available() ) 
       { 
@@ -580,7 +580,13 @@ void loop()
 #endif        
       sendSensorData(cmd);      
     }
+    else if(r == '#' ) 
+    {
+      sendGatewayUpdate(readGatewayReply());
+    }
   }
+
+  yield();
 
   if (Serial.available() > 0)
   {
@@ -605,6 +611,14 @@ void loop()
     }    
     else if(cmd.substring(0,13) == "$deleteconfig")
     {
+      swSer.write(cmd.c_str());
+      swSer.write('\n');    
+    }    
+    else if(cmd.substring(0,10) == "$getconfig")
+    {
+#ifdef DEBUG
+      Serial.println("getconfig called");
+#endif        
       swSer.write(cmd.c_str());
       swSer.write('\n');    
     }    
@@ -644,6 +658,47 @@ String readSerialSS()
   swSer.readBytes(buffer, len);  
   
   return String(buffer);
+}
+
+String readGatewayReply()
+{
+  String cmd = "";
+  byte inByte = 0;
+  int counter = 0;
+  bool finished = false;
+  
+  while (!finished)
+  {
+    while (swSer.available() == 0 && counter < 50) 
+    { 
+      delay(1); 
+      counter++;
+    }
+    if(counter == 50)
+    {
+      finished = true;
+    }
+    else
+    {
+      counter = 0;
+      inByte = swSer.read();
+
+      yield();
+      
+      if (inByte == '\n')
+      {
+        finished = true;
+      }
+      else
+      {
+        cmd += (char)inByte;
+      }
+    }    
+  }  
+
+  delay(100);
+  
+  return cmd;  
 }
 
 String readSerialHW()

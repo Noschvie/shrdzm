@@ -400,6 +400,16 @@ void setup()
     });
 }
 
+// write config to serial
+void getConfig()
+{
+  String c; 
+
+  serializeJson(configdoc, c);
+
+  Serial.println("#"+c);    
+}
+
 void loop() 
 {
   if (Serial.available() > 0)
@@ -414,6 +424,10 @@ void loop()
         Serial.println("Reset..");
 #endif        
         ESP.restart();      
+      }
+      else if(cmd == "getconfig")  // delete my config
+      {
+        getConfig();
       }
       else if(cmd == "deleteconfig")  // delete my config
       {
