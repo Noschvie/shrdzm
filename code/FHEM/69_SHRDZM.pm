@@ -387,7 +387,7 @@ sub onmessage($$$) # from mqtt
 					
 					foreach my $key (keys %$devices) 
 					{
-						Log3($hash->{NAME}, 0, "device : ".$key);	
+						Log3($hash->{NAME}, 5, "device : ".$key);	
 
 						my $rep = Dispatch($hash, $key . " paired " . $abc[1]."/". $key . ":OK" );
 
@@ -406,7 +406,7 @@ sub onmessage($$$) # from mqtt
 						
 						foreach my $entry (keys %$e) 
 						{
-							Log3($hash->{NAME}, 0, "entry : ".$entry." value : ".$e->{$entry} );	
+							Log3($hash->{NAME}, 5, "entry : ".$entry." value : ".$e->{$entry} );	
 							
 							Dispatch($hash, $key . " config " . $entry.":".$e->{$entry} );
 						}						

@@ -20,6 +20,7 @@ String deviceName;
 DynamicJsonDocument configdoc(1024);
 JsonObject configuration  = configdoc.createNestedObject("configuration");
 JsonObject web_configuration  = configuration.createNestedObject("web");
+DynamicJsonDocument devicedoc(1024);
 
 #ifdef RCSWITCH_SUPPORT
 #include <RCSwitch.h>
@@ -190,16 +191,77 @@ void setDeviceName()
   deviceName.toUpperCase();
 }
 
+String getUptime()
+{
+  char uptime[50];
+  long millisecs = millis();
+
+  snprintf(uptime, 50, "%d Days, %02d Hours, %02d Minutes",
+    int(millisecs / ((1000*60*60*24)) % 365),
+    int(millisecs / ((1000*60*60)) % 24),
+    int(millisecs / ((1000*60)) % 60));
+
+  return uptime;  
+}
+
+void handleReboot() 
+{
+  char temp[300];
+  
+  snprintf(temp, 300,
+  "<!DOCTYPE html>\
+  <html>\
+  <head>\
+  <meta http-equiv='refresh' content='20; url=/'>\
+  </head>\
+  <body>\
+  <h1>Please wait. Will reboot in 20 seconds. Site will be reloaded automatically ...</h1>\
+  </body>\
+  </html>\
+  ");
+
+  server.send(200, "text/html", temp);
+  client.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+
+  delay(2000);
+  
+  ESP.reset();  
+}
+
+String getSettings4Web()
+{
+  String reply;
+
+  return reply;
+}
+
+String getDevices4Web()
+{
+  String reply;
+
+  return reply;
+}
+
+String getRoot4Web()
+{
+  String reply;
+
+  return reply;
+}
+
 void handleRoot() 
 {
   char temp[1800];
   int sec = millis() / 1000;
   int min = sec / 60;
   int hr = min / 60;
+  String c; 
 
 #ifdef DEBUG
   Serial.println("Handle Root");
 #endif
+
+  serializeJson(devicedoc, c);  
 
   snprintf(temp, 1800,
   
@@ -207,6 +269,9 @@ void handleRoot()
 <html>\
 <head>\
 <style>\
+body {\
+  font-family: Arial, Helvetica, sans-serif;\
+}\
 \
 ul \
 {\
@@ -236,6 +301,10 @@ li a:hover:not(.active) {\
   background-color: #555;\
   color: white;\
 }\
+.main {\
+  margin-left: 200px;\
+  margin-bottom: 30px;\
+}\
 </style>\
 <title>SHRDZM - %s</title>\
 </head>\
@@ -251,11 +320,19 @@ li a:hover:not(.active) {\
   <li><a href='./about'>Settings</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
+  <br/><br/><br/>\
+  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
+  <br/><br/>\
 </ul>\
 \
+<div class='main'>\
+  <h1>General</h1>\
+  <p>Known Devices:</p>\
+  %s\
+</div>\
 </body>\
 </html>\
-  ", deviceName.c_str(), deviceName.c_str());
+  ", deviceName.c_str(), deviceName.c_str(), c.c_str());
 
   server.send(200, "text/html", temp);
 }
@@ -433,6 +510,8 @@ void setup()
 #endif
 
   server.on("/", handleRoot);
+  server.on("/general", handleRoot);
+  server.on("/reboot", handleReboot);  
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -503,6 +582,8 @@ void sendGatewayUpdate(String data)
 #ifdef DEBUG
       Serial.println("GatewayUpdate sent : "+data);
 #endif        
+
+  DeserializationError error = deserializeJson(devicedoc, data);  
 
   client.publish((String(MQTT_TOPIC)+"/update").c_str(), data.c_str());  
 }
@@ -804,6 +885,11 @@ void callback(char* topic, byte* payload, unsigned int length)
 #endif
       swSer.write(String("$set "+cmd).c_str());
       swSer.write('\n'); 
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
+  {
+      swSer.write("$getconfig");
+      swSer.write('\n');    
   }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
   {
