@@ -27,6 +27,8 @@ my @topics = (
 	"update",
     "paired",
     "RCData",
+    "IP",
+    "version",
 	"+/config",
 	"+/sensor",
 );
@@ -436,6 +438,14 @@ sub onmessage($$$) # from mqtt
 				}
 			}
 			elsif($item =~ "RCData")
+			{
+				readingsSingleUpdate($hash, $item, $message, 1);
+			}
+			elsif($item =~ "IP")
+			{
+				readingsSingleUpdate($hash, $item, $message, 1);
+			}
+			elsif($item =~ "version")
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}

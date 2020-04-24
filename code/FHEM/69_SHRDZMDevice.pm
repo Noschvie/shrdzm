@@ -67,8 +67,8 @@ SHRDZMDevice_Set($@)
 	$setList =~ s/\n/ /g;	
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
-	{
-		return "Unknown argument $cmd, choose one of ".ReadingsVal($name, ".SETS", "");
+	{	
+		return "Unknown argument $cmd, choose one of "."update ".ReadingsVal($name, ".SETS", "");
 	}
 	
 	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
@@ -90,23 +90,9 @@ sub SHRDZMDevice_GetUpdate ($$)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
-#	my $timestamp = time_str2num(ReadingsTimestamp($hash->{NAME}, "online", "2000-01-01 00:00:00"));
-
-#	Log3($hash->{NAME}, 5, "last Online ".localtime($timestamp));
-	
-#	my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
-#	if($timestamp < gettimeofday() - $sl)
-#	{
 	readingsSingleUpdate($hash, "online", "0", 1);	
-#	}
-
-#	my $t1 = gettimeofday()+($sl*2);
 
 	Log3($hash->{NAME}, 1, $hash->{NAME} . " went OFFLINE");
-	
-#	Log3($hash->{NAME}, 5, "next check will be at ".localtime($t1));
-
-#	InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 }
 
 sub SHRDZMDevice_Fingerprint($$)
@@ -163,12 +149,13 @@ sub SHRDZMDevice_Parse ($$)
 		elsif($items[1] =~ "config")
 		{
 			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
+			
 			my @existing = split(' ', $sl);
 						
 			if ( !($parameter[0] ~~ @existing ))
 			{
 				push(@existing, $parameter[0]);
-				
+
 				readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
 			}
 
@@ -205,8 +192,6 @@ SHRDZMDevice_Define($$)
 	my @a = split("[ \t][ \t]*", $def);
 	my $name = $a[0];
 
-	$hash->{helper}{SETS} = "";
-
 	# erstes Argument ist die eindeutige Geräteadresse
 	my $address = $a[2];
 
@@ -214,6 +199,8 @@ SHRDZMDevice_Define($$)
 	$modules{SHRDZMDevice}{defptr}{$address} = $hash;  
 
 	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
+
+	readingsSingleUpdate($hash, "update", "http\://shrdzm.pintarweb.net/newversion.bin", 1);
 
 	AssignIoPort($hash);
 

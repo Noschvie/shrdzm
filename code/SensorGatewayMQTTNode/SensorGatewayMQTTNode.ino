@@ -228,6 +228,32 @@ void handleReboot()
   ESP.reset();  
 }
 
+void handleDeleteConfig()
+{
+  char temp[300];
+  
+  snprintf(temp, 300,
+  "<!DOCTYPE html>\
+  <html>\
+  <head>\
+  <meta http-equiv='refresh' content='20; url=/'>\
+  </head>\
+  <body>\
+  <h1>Please wait. Will reboot in 20 seconds. Site will be reloaded automatically ...</h1>\
+  </body>\
+  </html>\
+  ");
+
+  server.send(200, "text/html", temp);
+
+  swSer.write("$deleteconfig");
+  swSer.write('\n');  
+
+  delay(2000);
+  
+  ESP.reset();    
+}
+
 String getSettings4Web()
 {
   String reply;
@@ -320,6 +346,8 @@ li a:hover:not(.active) {\
   <li><a href='./about'>Settings</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
+  <br/>\
+  <li><a href='./deleteconfig'>Delete Config</a></li>\  
   <br/><br/><br/>\
   <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
   <br/><br/>\
@@ -512,6 +540,7 @@ void setup()
   server.on("/", handleRoot);
   server.on("/general", handleRoot);
   server.on("/reboot", handleReboot);  
+  server.on("/deleteconfig", handleDeleteConfig);  
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -620,10 +649,18 @@ void loop()
           )) 
     {
       client.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+      client.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str());
+
+#ifdef VERSION
+      client.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
+#else      
+      client.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
+#endif
+
 
       client.subscribe(subcribeTopicSet.c_str());
       client.subscribe(subcribeTopicConfig.c_str());
-      
+            
 
 //      Serial.println(subcribeTopicRCSEND);      
 #ifdef RCSWITCH_SUPPORT            

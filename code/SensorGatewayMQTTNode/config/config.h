@@ -1,3 +1,5 @@
+#define VERSION	0.11
+
 #define DEBUG
 #define LEDPIN 2
 #define RESET_PIN 16
