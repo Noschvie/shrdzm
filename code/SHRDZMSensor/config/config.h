@@ -4,3 +4,4 @@
 #define SEND_TIMEOUT 1000  // 245 millis seconds timeout 
 #define LEDPIN 		2
 #define PAIRING_PIN	13
+#define SENSORPOWERPIN 14  // sensor is powerd by this pin
