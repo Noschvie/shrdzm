@@ -194,10 +194,10 @@ void setup()
 
   SPIFFS.begin();
 
-//  SPIFFS.format();
-  
   if(!readConfig())
   {
+    SPIFFS.format();
+
     int i = SLEEP_SECS;
     configuration["interval"] = String(i);
 
