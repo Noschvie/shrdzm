@@ -46,6 +46,11 @@ void setup()
 
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
   simpleEspConnection.onMessage(&OnMessage);  
+
+  if(digitalRead(PAIRING_PIN) == false)
+  {
+    simpleEspConnection.startPairing(300);
+  }
 }
 
 void loop() 
