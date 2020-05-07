@@ -23,7 +23,8 @@ DHTesp dht;
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DynamicJsonDocument configdoc(1024);
-JsonObject configuration  = configdoc.createNestedObject("configuration");
+JsonObject configuration = configdoc.createNestedObject("configuration");
+JsonObject device_configuration = configuration.createNestedObject("device");
 
 String inputString;
 String serverAddress;
@@ -139,8 +140,7 @@ void setup()
   else
   {
     pinMode(SENSORPOWERPIN,OUTPUT);
-    digitalWrite(SENSORPOWERPIN,HIGH);
-    
+    digitalWrite(SENSORPOWERPIN,HIGH);    
   }
 }
 
@@ -150,9 +150,30 @@ void setDeviceType(String deviceType)
   Serial.println("Will set device type : "+deviceType);
 #endif
 
-  configuration["devicetype"] = deviceType;
+  if(deviceType == "DHT22" ||
+     deviceType == "BH1750" ||
+     deviceType == "DS18B20" ||
+     deviceType == "HTU21D" ||
+     deviceType == "WATERSENSOR")
+  {
+    configuration["devicetype"] = deviceType;
 
-  writeConfig();    
+    if(configuration.containsKey("device"))
+    {
+      configuration.remove("device");
+    }
+
+    device_configuration = configuration.createNestedObject("device");
+
+    device_configuration["type"] = deviceType;
+
+    if(deviceType == "DHT22")
+    {
+      device_configuration["pin"] = String(DHT22_PIN);
+    }
+      
+    writeConfig();    
+  }
 }
 
 void loop() 
