@@ -93,6 +93,9 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
   Serial.println("New GatewayAddress '"+ad+"'");
 
   simpleEspConnection.setServerMac(ga);
+  configuration["gateway"] = ad;  
+
+  writeConfig();    
 }
 
 void setup() 
@@ -114,12 +117,17 @@ void setup()
     configuration["sensorpowerpin"] = String(s);
 
     writeConfig();    
-  }
+  }  
 
   pinMode(PAIRING_PIN, INPUT_PULLUP);
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
+  if(configuration.containsKey("gateway"))
+  {
+    String g = configuration["gateway"];
+    simpleEspConnection.setServerMac(g);  
+  }
 
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
   simpleEspConnection.onMessage(&OnMessage);  
