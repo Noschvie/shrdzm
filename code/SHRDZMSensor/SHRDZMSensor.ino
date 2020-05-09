@@ -18,10 +18,8 @@
 
 #include "SimpleEspNowConnection.h"
 
-// Sensors
-#include "DHTesp.h"
+#include "SIMPLEESPNOWCONNECTION_DHT22.h"
 
-DHTesp dht;
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DynamicJsonDocument configdoc(1024);
@@ -137,8 +135,7 @@ void setup()
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   if(configuration.containsKey("gateway"))
   {
-    String g = configuration["gateway"];
-    simpleEspConnection.setServerMac(g);  
+    simpleEspConnection.setServerMac(configuration["gateway"].as<String>());  
   }
 
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
@@ -154,7 +151,12 @@ void setup()
     pinMode(SENSORPOWERPIN,OUTPUT);
     digitalWrite(SENSORPOWERPIN,HIGH);    
 
+    if(configuration["devicetype"] == "DHT22")
+    {
+      SIMPLEESPNOWCONNECTION_DHT22 dev(configuration["devicetype"].as<String>());
 
+      dev.setDeviceParameter(configuration["device"]);
+    }
   }
 
   clockmillis = millis();
