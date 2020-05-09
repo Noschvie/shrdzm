@@ -10,6 +10,8 @@
 
 */
 
+// #define DISABLEGOTOSLEEP
+
 #include <FS.H>
 #include <ArduinoJson.h>
 #include "config/config.h"
@@ -28,7 +30,8 @@ JsonObject device_configuration = configuration.createNestedObject("device");
 
 String inputString;
 String serverAddress;
-
+unsigned long clockmillis = 0;
+volatile bool pairingOngoing = false;
 
 bool readConfig()
 {
@@ -89,6 +92,13 @@ void OnMessage(uint8_t* ad, const char* message)
   Serial.println("MESSAGE:"+String(message));
 }
 
+void OnPairingFinished()
+{
+  Serial.println("Pairing finished");
+  pairingOngoing = false;  
+  clockmillis = millis();  
+}
+
 void OnNewGatewayAddress(uint8_t *ga, String ad)
 {  
   Serial.println("New GatewayAddress '"+ad+"'");
@@ -123,6 +133,7 @@ void setup()
   pinMode(PAIRING_PIN, INPUT_PULLUP);
 
   simpleEspConnection.begin();
+  simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   if(configuration.containsKey("gateway"))
   {
@@ -135,13 +146,18 @@ void setup()
 
   if(digitalRead(PAIRING_PIN) == false)
   {
+    pairingOngoing = true;
     simpleEspConnection.startPairing(300);
   }
   else
   {
     pinMode(SENSORPOWERPIN,OUTPUT);
     digitalWrite(SENSORPOWERPIN,HIGH);    
+
+
   }
+
+  clockmillis = millis();
 }
 
 void setDeviceType(String deviceType)
@@ -173,7 +189,7 @@ void setDeviceType(String deviceType)
     }
       
     writeConfig();    
-  }
+  }  
 }
 
 void loop() 
@@ -209,4 +225,23 @@ void loop()
       inputString += inChar;
     }
   }
+
+#ifndef DISABLEGOTOSLEEP    
+  if (millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) 
+  {
+    // everything donw and I can go to sleep
+    gotoSleep();
+  }
+#endif    
+}
+
+void gotoSleep() 
+{  
+  int sleepSecs = configuration["interval"]; 
+#ifdef DEBUG
+  Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 
+#endif
+
+  ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
+  delay(100);
 }

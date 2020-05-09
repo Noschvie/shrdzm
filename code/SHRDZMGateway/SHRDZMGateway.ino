@@ -33,6 +33,12 @@ void OnPaired(uint8_t *ga, String ad)
 void OnConnected(uint8_t *ga, String ad)
 {
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+  simpleEspConnection.sendMessage("I will control you now...", ad);  
+}
+
+void OnPairingFinished()
+{
+  Serial.println("Pairing finished");
 }
 
 void setup() 
@@ -45,6 +51,7 @@ void setup()
   simpleEspConnection.setPairingBlinkPort(2);
   simpleEspConnection.onMessage(&OnMessage);  
   simpleEspConnection.onPaired(&OnPaired);  
+  simpleEspConnection.onPairingFinished(&OnPairingFinished);    
   simpleEspConnection.onConnected(&OnConnected);  
 
   Serial.println(WiFi.macAddress());    
