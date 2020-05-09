@@ -29,18 +29,17 @@ void DeviceBase::PrintText(String text)
 
 bool DeviceBase::setDeviceParameter(JsonObject obj)
 {  
-
-
-
-  String output;
-  serializeJson(obj, output);
-
-  PrintText(output);
+  deviceParameter = obj;
   
   return true;
 }
 
 SensorData* DeviceBase::readParameterTypes()
+{
+    return NULL;
+}
+
+SensorData* DeviceBase::readParameter()
 {
     return NULL;
 }

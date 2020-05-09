@@ -29,11 +29,14 @@ class DeviceBase
     DeviceBase(){};
     DeviceBase(String deviceType);
 
-    bool setDeviceParameter(JsonObject obj);
+    virtual bool setDeviceParameter(JsonObject obj);
     virtual SensorData* readParameterTypes();
+    virtual SensorData* readParameter();
 
   protected:
     void PrintText(String text);
+
+    JsonObject deviceParameter;
 };
 
 #endif

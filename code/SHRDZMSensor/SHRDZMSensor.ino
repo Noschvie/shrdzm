@@ -204,10 +204,26 @@ void setup()
   }
   else
   {
-    pinMode(SENSORPOWERPIN,OUTPUT);
-    digitalWrite(SENSORPOWERPIN,HIGH);    
+    pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
+    digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
 
+    SensorData* sd = dev->readParameter();
 
+    if(sd != NULL)
+    {
+      String reply;
+      
+      for(int i = 0; i<sd->size; i++)
+      {
+        reply = "$D$";
+
+        reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+        
+        simpleEspConnection.sendMessage((char *)reply.c_str());
+      }
+    }
+
+    delete sd;      
   }
 
   clockmillis = millis();

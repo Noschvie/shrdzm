@@ -7,7 +7,7 @@
 // Sensors
 #include "DHTesp.h"
 
-//DHTesp dht;
+
 
 class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
 {   
@@ -15,9 +15,12 @@ class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
     SIMPLEESPNOWCONNECTION_DHT22();
     SIMPLEESPNOWCONNECTION_DHT22(String deviceType);
     
+    bool setDeviceParameter(JsonObject obj);
     SensorData* readParameterTypes();
+    SensorData* readParameter();
+    
   protected:
-
+    DHTesp dht;
 
   private:
   
