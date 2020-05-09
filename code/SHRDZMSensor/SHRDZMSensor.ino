@@ -10,7 +10,7 @@
 
 */
 
-// #define DISABLEGOTOSLEEP
+ #define DISABLEGOTOSLEEP
 
 #include <FS.H>
 #include <ArduinoJson.h>
@@ -30,6 +30,7 @@ String inputString;
 String serverAddress;
 unsigned long clockmillis = 0;
 volatile bool pairingOngoing = false;
+DeviceBase* dev;
 
 bool readConfig()
 {
@@ -85,9 +86,54 @@ bool writeConfig()
     configFile.close();
 }
 
+void sendSetup()
+{
+    String reply;
+    
+    // send device setup
+    reply = "$SC$";
+    
+    for (JsonPair kv : configuration) 
+    {
+      if(String(kv.key().c_str()) != "gateway" && String(kv.key().c_str()) != "device")
+        reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+    }
+
+    reply.remove(reply.length()-1);
+    simpleEspConnection.sendMessage((char *)reply.c_str());
+
+    // send sensor setup
+    SensorData* sd = dev->readParameterTypes();
+
+    if(sd != NULL)
+    {
+      reply = "$SD$";
+
+      for(int i = 0; i<sd->size; i++)
+      {
+        reply += sd->di[i].nameI;
+        if(i < sd->size-1)
+          reply += "|";
+      }
+
+      simpleEspConnection.sendMessage((char *)reply.c_str());
+    }
+
+    delete sd;  
+}
+
 void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:"+String(message));
+
+  if(String(message) == "$S$")
+  {
+    pairingOngoing = true;
+
+    sendSetup();
+
+    pairingOngoing = false;    
+  }
 }
 
 void OnPairingFinished()
@@ -141,6 +187,16 @@ void setup()
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
   simpleEspConnection.onMessage(&OnMessage);  
 
+  // setup the device
+  if(configuration["devicetype"] == "DHT22")
+  {
+    dev = new SIMPLEESPNOWCONNECTION_DHT22(configuration["devicetype"].as<String>());
+  }
+
+  dev->setDeviceParameter(configuration["device"]);
+  ///////////////////
+  
+
   if(digitalRead(PAIRING_PIN) == false)
   {
     pairingOngoing = true;
@@ -151,27 +207,7 @@ void setup()
     pinMode(SENSORPOWERPIN,OUTPUT);
     digitalWrite(SENSORPOWERPIN,HIGH);    
 
-    DeviceBase* dev;
 
-    if(configuration["devicetype"] == "DHT22")
-    {
-      dev = new SIMPLEESPNOWCONNECTION_DHT22(configuration["devicetype"].as<String>());
-    }
-
-    dev->setDeviceParameter(configuration["device"]);
-
-    SensorData* sd = dev->readParameterTypes();
-
-    if(sd != NULL)
-    {
-      Serial.println(sd->size);
-
-      for(int i = 0; i<sd->size; i++)
-        Serial.println(sd->di[i].nameI);
-    }
-
-    delete sd;
-    delete dev;
   }
 
   clockmillis = millis();
@@ -254,6 +290,8 @@ void loop()
 
 void gotoSleep() 
 {  
+  delete dev;
+  
   int sleepSecs = configuration["interval"]; 
 #ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 

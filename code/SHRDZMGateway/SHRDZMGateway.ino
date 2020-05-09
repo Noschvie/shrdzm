@@ -28,6 +28,10 @@ void OnPaired(uint8_t *ga, String ad)
   Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 
   clientAddress = ad;
+
+  // get all possible parameter
+  simpleEspConnection.sendMessage("$setup$", ad);  
+  
 }
 
 void OnConnected(uint8_t *ga, String ad)
@@ -80,10 +84,10 @@ void loop()
         
         simpleEspConnection.setPairingMac(np);
       }      
-      else if(inputString == "sendtest")
+      else if(inputString.substring(0,9) == "sendtest ")
       {
-         simpleEspConnection.sendMessage("This comes from the server", clientAddress);
-      }
+        simpleEspConnection.sendMessage((char *)inputString.substring(9).c_str(), "ECFABC0CE7A2");
+      }          
       
       inputString = "";
     }
