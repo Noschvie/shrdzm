@@ -151,12 +151,27 @@ void setup()
     pinMode(SENSORPOWERPIN,OUTPUT);
     digitalWrite(SENSORPOWERPIN,HIGH);    
 
+    DeviceBase* dev;
+
     if(configuration["devicetype"] == "DHT22")
     {
-      SIMPLEESPNOWCONNECTION_DHT22 dev(configuration["devicetype"].as<String>());
-
-      dev.setDeviceParameter(configuration["device"]);
+      dev = new SIMPLEESPNOWCONNECTION_DHT22(configuration["devicetype"].as<String>());
     }
+
+    dev->setDeviceParameter(configuration["device"]);
+
+    SensorData* sd = dev->readParameterTypes();
+
+    if(sd != NULL)
+    {
+      Serial.println(sd->size);
+
+      for(int i = 0; i<sd->size; i++)
+        Serial.println(sd->di[i].nameI);
+    }
+
+    delete sd;
+    delete dev;
   }
 
   clockmillis = millis();

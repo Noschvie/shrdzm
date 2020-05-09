@@ -14,7 +14,8 @@ class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
   public:
     SIMPLEESPNOWCONNECTION_DHT22();
     SIMPLEESPNOWCONNECTION_DHT22(String deviceType);
-
+    
+    SensorData* readParameterTypes();
   protected:
 
 
