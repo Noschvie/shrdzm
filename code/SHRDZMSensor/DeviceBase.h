@@ -27,16 +27,20 @@ class DeviceBase
 {
   public:
     DeviceBase(){};
-    DeviceBase(String deviceType);
 
     virtual bool setDeviceParameter(JsonObject obj);
+    virtual bool initialize();
+    JsonObject getDeviceParameter();
     virtual SensorData* readParameterTypes();
     virtual SensorData* readParameter();
+    virtual SensorData* readInitialSetupParameter(){return NULL;};
 
   protected:
     void PrintText(String text);
 
     JsonObject deviceParameter;
+    StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+
 };
 
 #endif

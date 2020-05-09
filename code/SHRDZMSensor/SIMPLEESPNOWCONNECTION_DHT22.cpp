@@ -2,29 +2,32 @@
 
 SIMPLEESPNOWCONNECTION_DHT22::SIMPLEESPNOWCONNECTION_DHT22()
 {  
+  
 }
 
-SIMPLEESPNOWCONNECTION_DHT22::SIMPLEESPNOWCONNECTION_DHT22(String deviceType) 
+SIMPLEESPNOWCONNECTION_DHT22::~SIMPLEESPNOWCONNECTION_DHT22()
 {
-  PrintText(deviceType);
+  Serial.println("DHT22 Instance deleted");
 }
 
 bool SIMPLEESPNOWCONNECTION_DHT22::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
-/*  Serial.println("setDeviceParameter vom SIMPLEESPNOWCONNECTION_DHT22");
-
-  String output;
-  serializeJson(deviceParameter, output);
-
-  PrintText(output);  
-  */
-
   if(deviceParameter.containsKey("pin"))
   {
     dht.setup(deviceParameter["pin"].as<uint8_t>(), DHTesp::DHT22);
   }
+}
+
+bool SIMPLEESPNOWCONNECTION_DHT22::initialize()
+{
+  // create an object
+  deviceParameter = doc.to<JsonObject>();
+  
+  deviceParameter["pin"] = "12";
+  
+  return true;
 }
 
 SensorData* SIMPLEESPNOWCONNECTION_DHT22::readParameterTypes()
@@ -33,6 +36,16 @@ SensorData* SIMPLEESPNOWCONNECTION_DHT22::readParameterTypes()
 
   al->di[0].nameI = "temperature";
   al->di[1].nameI = "humidity";
+
+  return al;
+}
+
+SensorData* SIMPLEESPNOWCONNECTION_DHT22::readInitialSetupParameter()
+{
+  SensorData *al = new SensorData(1);
+
+  al->di[1].nameI = "pin";
+  al->di[1].valueI = "12";
 
   return al;
 }

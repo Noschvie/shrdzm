@@ -17,11 +17,6 @@ SensorData::~SensorData()
   delete [] di;
 }
 
-DeviceBase::DeviceBase(String text)
-{
-  Serial.println("not implemented!");
-}
-
 void DeviceBase::PrintText(String text)
 {
   Serial.println(text);
@@ -32,6 +27,11 @@ bool DeviceBase::setDeviceParameter(JsonObject obj)
   deviceParameter = obj;
   
   return true;
+}
+
+JsonObject DeviceBase::getDeviceParameter()
+{
+  return deviceParameter;
 }
 
 SensorData* DeviceBase::readParameterTypes()

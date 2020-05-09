@@ -102,7 +102,19 @@ void sendSetup()
     reply.remove(reply.length()-1);
     simpleEspConnection.sendMessage((char *)reply.c_str());
 
-    // send sensor setup
+    // send device parameter
+    reply = "$SP$";
+
+    JsonObject sp = configuration["device"];
+    for (JsonPair kv : sp) 
+    {
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+    }
+
+    reply.remove(reply.length()-1);
+    simpleEspConnection.sendMessage((char *)reply.c_str());
+
+    // send sensor parameter types
     SensorData* sd = dev->readParameterTypes();
 
     if(sd != NULL)
@@ -187,13 +199,6 @@ void setup()
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
   simpleEspConnection.onMessage(&OnMessage);  
 
-  // setup the device
-  if(configuration["devicetype"] == "DHT22")
-  {
-    dev = new SIMPLEESPNOWCONNECTION_DHT22(configuration["devicetype"].as<String>());
-  }
-
-  dev->setDeviceParameter(configuration["device"]);
   ///////////////////
   
 
@@ -206,6 +211,13 @@ void setup()
   {
     pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
     digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
+
+    // setup the device
+    if(configuration["devicetype"] == "DHT22")
+    {
+      dev = new SIMPLEESPNOWCONNECTION_DHT22();
+      dev->setDeviceParameter(configuration["device"]);
+    }
 
     SensorData* sd = dev->readParameter();
 
@@ -234,6 +246,7 @@ void setDeviceType(String deviceType)
 #ifdef DEBUG
   Serial.println("Will set device type : "+deviceType);
 #endif
+  
 
   if(deviceType == "DHT22" ||
      deviceType == "BH1750" ||
@@ -248,13 +261,15 @@ void setDeviceType(String deviceType)
       configuration.remove("device");
     }
 
-    device_configuration = configuration.createNestedObject("device");
-
-    device_configuration["type"] = deviceType;
-
     if(deviceType == "DHT22")
     {
-      device_configuration["pin"] = String(DHT22_PIN);
+      delete dev;
+
+      dev = new SIMPLEESPNOWCONNECTION_DHT22();
+      dev->initialize();
+      
+      JsonObject dc = dev->getDeviceParameter();
+      configuration["device"] = dc;
     }
       
     writeConfig();    
