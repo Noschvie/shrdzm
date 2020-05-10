@@ -1,16 +1,16 @@
-#include "SIMPLEESPNOWCONNECTION_DHT22.h"
+#include "Device_DHT22.h"
 
-SIMPLEESPNOWCONNECTION_DHT22::SIMPLEESPNOWCONNECTION_DHT22()
+Device_DHT22::Device_DHT22()
 {  
   
 }
 
-SIMPLEESPNOWCONNECTION_DHT22::~SIMPLEESPNOWCONNECTION_DHT22()
+Device_DHT22::~Device_DHT22()
 {
   Serial.println("DHT22 Instance deleted");
 }
 
-bool SIMPLEESPNOWCONNECTION_DHT22::setDeviceParameter(JsonObject obj)
+bool Device_DHT22::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
@@ -20,7 +20,7 @@ bool SIMPLEESPNOWCONNECTION_DHT22::setDeviceParameter(JsonObject obj)
   }
 }
 
-bool SIMPLEESPNOWCONNECTION_DHT22::initialize()
+bool Device_DHT22::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
@@ -30,7 +30,7 @@ bool SIMPLEESPNOWCONNECTION_DHT22::initialize()
   return true;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DHT22::readParameterTypes()
+SensorData* Device_DHT22::readParameterTypes()
 {
   SensorData *al = new SensorData(2);
 
@@ -40,7 +40,7 @@ SensorData* SIMPLEESPNOWCONNECTION_DHT22::readParameterTypes()
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DHT22::readInitialSetupParameter()
+SensorData* Device_DHT22::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
@@ -50,7 +50,7 @@ SensorData* SIMPLEESPNOWCONNECTION_DHT22::readInitialSetupParameter()
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DHT22::readParameter()
+SensorData* Device_DHT22::readParameter()
 {
   SensorData *al = new SensorData(2);
   delay(dht.getMinimumSamplingPeriod());

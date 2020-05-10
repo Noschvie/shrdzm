@@ -1,16 +1,16 @@
-#include "SIMPLEESPNOWCONNECTION_BH1750.h"
+#include "Device_BH1750.h"
 
-SIMPLEESPNOWCONNECTION_BH1750::SIMPLEESPNOWCONNECTION_BH1750()
+Device_BH1750::Device_BH1750()
 {  
   
 }
 
-SIMPLEESPNOWCONNECTION_BH1750::~SIMPLEESPNOWCONNECTION_BH1750()
+Device_BH1750::~Device_BH1750()
 {
   Serial.println("BH1750 Instance deleted");
 }
 
-bool SIMPLEESPNOWCONNECTION_BH1750::setDeviceParameter(JsonObject obj)
+bool Device_BH1750::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
@@ -22,7 +22,7 @@ bool SIMPLEESPNOWCONNECTION_BH1750::setDeviceParameter(JsonObject obj)
   BH1750.start();  
 }
 
-bool SIMPLEESPNOWCONNECTION_BH1750::initialize()
+bool Device_BH1750::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
@@ -30,7 +30,7 @@ bool SIMPLEESPNOWCONNECTION_BH1750::initialize()
   return true;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_BH1750::readParameterTypes()
+SensorData* Device_BH1750::readParameterTypes()
 {
   SensorData *al = new SensorData(1);
 
@@ -39,14 +39,14 @@ SensorData* SIMPLEESPNOWCONNECTION_BH1750::readParameterTypes()
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_BH1750::readInitialSetupParameter()
+SensorData* Device_BH1750::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_BH1750::readParameter()
+SensorData* Device_BH1750::readParameter()
 {
   SensorData *al = new SensorData(1);
   

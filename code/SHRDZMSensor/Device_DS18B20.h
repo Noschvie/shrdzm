@@ -1,5 +1,5 @@
-#ifndef SIMPLEESPNOWCONNECTION_DS18B20_H
-#define SIMPLEESPNOWCONNECTION_DS18B20_H
+#ifndef Device_DS18B20_H
+#define Device_DS18B20_H
 
 #include "DeviceBase.h"
 
@@ -7,11 +7,11 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-class SIMPLEESPNOWCONNECTION_DS18B20 : public DeviceBase
+class Device_DS18B20 : public DeviceBase
 {   
   public:
-    SIMPLEESPNOWCONNECTION_DS18B20();
-    ~SIMPLEESPNOWCONNECTION_DS18B20();
+    Device_DS18B20();
+    ~Device_DS18B20();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    

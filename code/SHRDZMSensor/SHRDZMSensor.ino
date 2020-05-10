@@ -18,9 +18,9 @@
 
 #include "SimpleEspNowConnection.h"
 
-#include "SIMPLEESPNOWCONNECTION_DHT22.h"
-#include "SIMPLEESPNOWCONNECTION_BH1750.h"
-#include "SIMPLEESPNOWCONNECTION_DS18B20.h"
+#include "Device_DHT22.h"
+#include "Device_BH1750.h"
+#include "Device_DS18B20.h"
 
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
@@ -236,15 +236,15 @@ void setup()
     // setup the device
     if(configuration["devicetype"] == "DHT22")
     {
-      dev = new SIMPLEESPNOWCONNECTION_DHT22();
+      dev = new Device_DHT22();
     }
     else if(configuration["devicetype"] == "BH1750")
     {
-      dev = new SIMPLEESPNOWCONNECTION_BH1750();
+      dev = new Device_BH1750();
     }
     else if(configuration["devicetype"] == "DS18B20")
     {
-      dev = new SIMPLEESPNOWCONNECTION_DS18B20();
+      dev = new Device_DS18B20();
     }
 
     dev->setDeviceParameter(configuration["device"]);
@@ -332,15 +332,15 @@ void setDeviceType(String deviceType)
 
     if(deviceType == "DHT22")
     {
-      dev = new SIMPLEESPNOWCONNECTION_DHT22();
+      dev = new Device_DHT22();
     }
     else if(deviceType == "BH1750")
     {
-      dev = new SIMPLEESPNOWCONNECTION_BH1750();
+      dev = new Device_BH1750();
     }
     else if(deviceType == "DS18B20")
     {
-      dev = new SIMPLEESPNOWCONNECTION_DS18B20();
+      dev = new Device_DS18B20();
     }
     
 

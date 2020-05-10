@@ -1,16 +1,16 @@
-#ifndef SIMPLEESPNOWCONNECTION_DHT22_H
-#define SIMPLEESPNOWCONNECTION_DHT22_H
+#ifndef Device_DHT22_H
+#define Device_DHT22_H
 
 #include "DeviceBase.h"
 
 // Sensors
 #include "DHTesp.h"
 
-class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
+class Device_DHT22 : public DeviceBase
 {   
   public:
-    SIMPLEESPNOWCONNECTION_DHT22();
-    ~SIMPLEESPNOWCONNECTION_DHT22();
+    Device_DHT22();
+    ~Device_DHT22();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    

@@ -1,16 +1,16 @@
-#include "SIMPLEESPNOWCONNECTION_DS18B20.h"
+#include "Device_DS18B20.h"
 
-SIMPLEESPNOWCONNECTION_DS18B20::SIMPLEESPNOWCONNECTION_DS18B20()
+Device_DS18B20::Device_DS18B20()
 {  
   
 }
 
-SIMPLEESPNOWCONNECTION_DS18B20::~SIMPLEESPNOWCONNECTION_DS18B20()
+Device_DS18B20::~Device_DS18B20()
 {
   Serial.println("BH1750 Instance deleted");
 }
 
-bool SIMPLEESPNOWCONNECTION_DS18B20::setDeviceParameter(JsonObject obj)
+bool Device_DS18B20::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
@@ -22,7 +22,7 @@ bool SIMPLEESPNOWCONNECTION_DS18B20::setDeviceParameter(JsonObject obj)
   }
 }
 
-bool SIMPLEESPNOWCONNECTION_DS18B20::initialize()
+bool Device_DS18B20::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
@@ -32,7 +32,7 @@ bool SIMPLEESPNOWCONNECTION_DS18B20::initialize()
   return true;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readParameterTypes()
+SensorData* Device_DS18B20::readParameterTypes()
 {
   SensorData *al = new SensorData(dallas.getDeviceCount());
 
@@ -49,7 +49,7 @@ SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readParameterTypes()
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readInitialSetupParameter()
+SensorData* Device_DS18B20::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
@@ -59,7 +59,7 @@ SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readInitialSetupParameter()
   return al;
 }
 
-SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readParameter()
+SensorData* Device_DS18B20::readParameter()
 {
   SensorData *al = new SensorData(dallas.getDeviceCount());
 
@@ -87,7 +87,7 @@ SensorData* SIMPLEESPNOWCONNECTION_DS18B20::readParameter()
   return al;
 }
 
-String SIMPLEESPNOWCONNECTION_DS18B20::getAddressString(DeviceAddress thermometerAddress)
+String Device_DS18B20::getAddressString(DeviceAddress thermometerAddress)
 {
   String a;
 

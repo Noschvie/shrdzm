@@ -1,5 +1,5 @@
-#ifndef SIMPLEESPNOWCONNECTION_BH1750_H
-#define SIMPLEESPNOWCONNECTION_BH1750_H
+#ifndef Device_BH1750_H
+#define Device_BH1750_H
 
 #include <Wire.h>
 #include "DeviceBase.h"
@@ -7,11 +7,11 @@
 // Sensors
 #include <hp_BH1750.h>
 
-class SIMPLEESPNOWCONNECTION_BH1750 : public DeviceBase
+class Device_BH1750 : public DeviceBase
 {   
   public:
-    SIMPLEESPNOWCONNECTION_BH1750();
-    ~SIMPLEESPNOWCONNECTION_BH1750();
+    Device_BH1750();
+    ~Device_BH1750();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
