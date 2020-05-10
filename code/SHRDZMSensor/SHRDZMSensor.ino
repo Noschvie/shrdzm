@@ -95,7 +95,7 @@ void sendSetup()
     
     for (JsonPair kv : configuration) 
     {
-      if(String(kv.key().c_str()) != "gateway" && String(kv.key().c_str()) != "device")
+      if(String(kv.key().c_str()) != "device")
         reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
     }
 
@@ -138,11 +138,27 @@ void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:"+String(message));
 
-  if(String(message) == "$S$")
+  if(String(message) == "$S$") // ask for settings
   {
     pairingOngoing = true;
 
     sendSetup();
+
+    pairingOngoing = false;    
+  }
+  else if(String(message).substring(0,5) == "$SDT$") // set device type
+  {
+    pairingOngoing = true;
+
+    setDeviceType(String(message).substring(5));
+
+    pairingOngoing = false;    
+  }
+  else if(String(message).substring(0,4) == "$SC$") // set configuration
+  {
+    pairingOngoing = true;
+
+    setConfig(String(message).substring(4));
 
     pairingOngoing = false;    
   }
@@ -241,13 +257,31 @@ void setup()
   clockmillis = millis();
 }
 
+void setConfig(String cmd)
+{
+  if(cmd.indexOf(':') == -1)
+    return;
+
+  String pname = getValue(cmd, ':', 0);
+  String pvalue = getValue(cmd, ':', 1);
+
+   Serial.println("setConfig "+pvalue);
+
+  if( pname == "interval" || 
+      pname == "sensorpowerpin" || 
+      pname == "devicetype" || 
+      pname == "gateway")
+  {
+    if( pname == "devicetype")
+    {
+      setDeviceType(pvalue);
+    }
+
+  }
+}
+
 void setDeviceType(String deviceType)
 {
-#ifdef DEBUG
-  Serial.println("Will set device type : "+deviceType);
-#endif
-  
-
   if(deviceType == "DHT22" ||
      deviceType == "BH1750" ||
      deviceType == "DS18B20" ||
@@ -255,6 +289,9 @@ void setDeviceType(String deviceType)
      deviceType == "WATERSENSOR")
   {
     configuration["devicetype"] = deviceType;
+
+   Serial.println("setDeviceType "+deviceType);
+
 
     if(configuration.containsKey("device"))
     {
@@ -273,7 +310,28 @@ void setDeviceType(String deviceType)
     }
       
     writeConfig();    
+    
+    sendSetup();
   }  
+}
+
+String getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++)
+  {
+    if(data.charAt(i)==separator || i==maxIndex)
+    {
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 void loop() 
