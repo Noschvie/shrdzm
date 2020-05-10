@@ -19,6 +19,8 @@
 #include "SimpleEspNowConnection.h"
 
 #include "SIMPLEESPNOWCONNECTION_DHT22.h"
+#include "SIMPLEESPNOWCONNECTION_BH1750.h"
+#include "SIMPLEESPNOWCONNECTION_DS18B20.h"
 
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
@@ -103,17 +105,20 @@ void sendSetup()
     simpleEspConnection.sendMessage((char *)reply.c_str());
 
     // send device parameter
-    reply = "$SP$";
-
-    JsonObject sp = configuration["device"];
-    for (JsonPair kv : sp) 
+    if(configuration["device"].size() > 0)
     {
-      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+      reply = "$SP$";
+  
+      JsonObject sp = configuration["device"];
+      for (JsonPair kv : sp) 
+      {
+        reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+      }
+  
+      reply.remove(reply.length()-1);
+      simpleEspConnection.sendMessage((char *)reply.c_str());
     }
-
-    reply.remove(reply.length()-1);
-    simpleEspConnection.sendMessage((char *)reply.c_str());
-
+    
     // send sensor parameter types
     SensorData* sd = dev->readParameterTypes();
 
@@ -232,8 +237,17 @@ void setup()
     if(configuration["devicetype"] == "DHT22")
     {
       dev = new SIMPLEESPNOWCONNECTION_DHT22();
-      dev->setDeviceParameter(configuration["device"]);
     }
+    else if(configuration["devicetype"] == "BH1750")
+    {
+      dev = new SIMPLEESPNOWCONNECTION_BH1750();
+    }
+    else if(configuration["devicetype"] == "DS18B20")
+    {
+      dev = new SIMPLEESPNOWCONNECTION_DS18B20();
+    }
+
+    dev->setDeviceParameter(configuration["device"]);
 
     SensorData* sd = dev->readParameter();
 
@@ -272,11 +286,27 @@ void setConfig(String cmd)
       pname == "devicetype" || 
       pname == "gateway")
   {
-    if( pname == "devicetype")
+    if(pname == "devicetype")
     {
       setDeviceType(pvalue);
     }
-
+    else
+    {
+      configuration[pname] = pvalue;
+       
+      writeConfig();    
+      sendSetup();     
+    }
+  }
+  else
+  {
+    if(configuration["device"].containsKey(pname))
+    {
+      configuration["device"][pname] = pvalue;
+       
+      writeConfig();    
+      sendSetup();     
+    }
   }
 }
 
@@ -298,16 +328,26 @@ void setDeviceType(String deviceType)
       configuration.remove("device");
     }
 
+    delete dev;
+
     if(deviceType == "DHT22")
     {
-      delete dev;
-
       dev = new SIMPLEESPNOWCONNECTION_DHT22();
-      dev->initialize();
-      
-      JsonObject dc = dev->getDeviceParameter();
-      configuration["device"] = dc;
     }
+    else if(deviceType == "BH1750")
+    {
+      dev = new SIMPLEESPNOWCONNECTION_BH1750();
+    }
+    else if(deviceType == "DS18B20")
+    {
+      dev = new SIMPLEESPNOWCONNECTION_DS18B20();
+    }
+    
+
+    dev->initialize();
+    
+    JsonObject dc = dev->getDeviceParameter();
+    configuration["device"] = dc;
       
     writeConfig();    
     

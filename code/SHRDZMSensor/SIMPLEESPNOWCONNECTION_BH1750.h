@@ -1,16 +1,17 @@
-#ifndef SIMPLEESPNOWCONNECTION_DHT22_H
-#define SIMPLEESPNOWCONNECTION_DHT22_H
+#ifndef SIMPLEESPNOWCONNECTION_BH1750_H
+#define SIMPLEESPNOWCONNECTION_BH1750_H
 
+#include <Wire.h>
 #include "DeviceBase.h"
 
 // Sensors
-#include "DHTesp.h"
+#include <hp_BH1750.h>
 
-class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
+class SIMPLEESPNOWCONNECTION_BH1750 : public DeviceBase
 {   
   public:
-    SIMPLEESPNOWCONNECTION_DHT22();
-    ~SIMPLEESPNOWCONNECTION_DHT22();
+    SIMPLEESPNOWCONNECTION_BH1750();
+    ~SIMPLEESPNOWCONNECTION_BH1750();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
@@ -19,7 +20,7 @@ class SIMPLEESPNOWCONNECTION_DHT22 : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
-    DHTesp dht;
+    hp_BH1750 BH1750;
 
   private:
   
