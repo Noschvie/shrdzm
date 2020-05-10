@@ -11,11 +11,14 @@
 */
 
 #include "SimpleEspNowConnection.h"
+#include "SetupObject.h"
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 
 String inputString;
 String clientAddress;
+
+SetupObject setupObject;
 
 
 void OnMessage(uint8_t* ad, const char* message)
@@ -30,14 +33,24 @@ void OnPaired(uint8_t *ga, String ad)
   clientAddress = ad;
 
   // get all possible parameter
-  simpleEspConnection.sendMessage("$setup$", ad);  
+  simpleEspConnection.sendMessage("$S$", ad);  
   
 }
 
 void OnConnected(uint8_t *ga, String ad)
 {
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
-  simpleEspConnection.sendMessage("I will control you now...", ad);  
+
+  clientAddress = ad;
+  SetupObject::SetupItem *si = setupObject.GetItem(ad);
+
+  if(si != NULL)
+  {
+    simpleEspConnection.sendMessage((char *)si->m_parameterName.c_str(), clientAddress);  
+
+    setupObject.RemoveItem(si);              
+  }  
+
 }
 
 void OnPairingFinished()
@@ -86,7 +99,13 @@ void loop()
       }      
       else if(inputString.substring(0,9) == "sendtest ")
       {
-        simpleEspConnection.sendMessage((char *)inputString.substring(9).c_str(), "ECFABC0CE7A2");
+        simpleEspConnection.sendMessage((char *)inputString.substring(9).c_str(), clientAddress);
+      }          
+      else if(inputString.substring(0,9) == "posttest ")
+      {
+        setupObject.AddItem(clientAddress, inputString.substring(9));
+        
+//        simpleEspConnection.sendMessage((char *)inputString.substring(9).c_str(), clientAddress);
       }          
       
       inputString = "";

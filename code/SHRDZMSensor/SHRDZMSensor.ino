@@ -10,17 +10,13 @@
 
 */
 
- #define DISABLEGOTOSLEEP
+// #define DISABLEGOTOSLEEP
 
 #include <FS.H>
 #include <ArduinoJson.h>
 #include "config/config.h"
 
 #include "SimpleEspNowConnection.h"
-
-#include "Device_DHT22.h"
-#include "Device_BH1750.h"
-#include "Device_DS18B20.h"
 
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
@@ -204,10 +200,13 @@ void setup()
     int s = SENSORPOWERPIN;
     configuration["sensorpowerpin"] = String(s);
 
+    s = PAIRING_PIN;
+    configuration["pairingpin"] = String(s);
+
     writeConfig();    
   }  
 
-  pinMode(PAIRING_PIN, INPUT_PULLUP);
+  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), INPUT_PULLUP);
 
   simpleEspConnection.begin();
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
@@ -223,7 +222,7 @@ void setup()
   ///////////////////
   
 
-  if(digitalRead(PAIRING_PIN) == false)
+  if(digitalRead(configuration["pairingpin"].as<uint8_t>()) == false)
   {
     pairingOngoing = true;
     simpleEspConnection.startPairing(300);
@@ -246,26 +245,41 @@ void setup()
     {
       dev = new Device_DS18B20();
     }
-
-    dev->setDeviceParameter(configuration["device"]);
-
-    SensorData* sd = dev->readParameter();
-
-    if(sd != NULL)
+    else if(configuration["devicetype"] == "HTU21D")
     {
-      String reply;
-      
-      for(int i = 0; i<sd->size; i++)
-      {
-        reply = "$D$";
-
-        reply += sd->di[i].nameI+":"+sd->di[i].valueI;
-        
-        simpleEspConnection.sendMessage((char *)reply.c_str());
-      }
+      dev = new Device_HTU21D();
+    }
+    else if(configuration["devicetype"] == "WATERSENSOR")
+    {
+      dev = new Device_Watersensor();
     }
 
-    delete sd;      
+    if(dev != NULL)
+    {
+      dev->setDeviceParameter(configuration["device"]);
+  
+      SensorData* sd = dev->readParameter();
+  
+      if(sd != NULL)
+      {
+        String reply;
+        
+        for(int i = 0; i<sd->size; i++)
+        {
+          reply = "$D$";
+  
+          reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+          
+          simpleEspConnection.sendMessage((char *)reply.c_str());
+        }
+      }
+  
+      delete sd;      
+    }
+    else
+    {
+      Serial.println("Will not work until device type is set!");
+    }
   }
 
   clockmillis = millis();
@@ -342,6 +356,14 @@ void setDeviceType(String deviceType)
     {
       dev = new Device_DS18B20();
     }
+    else if(deviceType == "HTU21D")
+    {
+      dev = new Device_HTU21D();
+    }
+    else if(deviceType == "WATERSENSOR")
+    {
+      dev = new Device_Watersensor();
+    }
     
 
     dev->initialize();
@@ -374,6 +396,15 @@ String getValue(String data, char separator, int index)
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+void initialization()
+{
+  // format 
+  SPIFFS.format();
+  
+  delay(100);
+  ESP.restart();      
+}
+
 void loop() 
 {
   while (Serial.available()) 
@@ -394,6 +425,10 @@ void loop()
       else if(inputString == "endpair")
       {
         simpleEspConnection.endPairing();
+      }      
+      else if(inputString == "init")
+      {
+        initialization();
       }      
       else if(inputString == "sendtest")
       {

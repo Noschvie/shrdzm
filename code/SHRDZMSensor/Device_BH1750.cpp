@@ -53,7 +53,5 @@ SensorData* Device_BH1750::readParameter()
   al->di[0].nameI = "illuminance";
   al->di[0].valueI = String(BH1750.getLux());  
 
-  Serial.println(BH1750.getLux());
-
   return al;
 }

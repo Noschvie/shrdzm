@@ -6,13 +6,8 @@
 #define SENSORPOWERPIN 14  // sensor is powerd by this pin
 #define MAXCONTROLWAIT 500	// wait 500 millisecond in case gateway wants to control
 
-
-#define DEVICETYPE_DHT22
-#define DEVICETYPE_BH1750
-#define DEVICETYPE_DS18B20
-#define DEVICETYPE_HTU21D
-#define DEVICETYPE_WATERSENSOR
-
-#ifdef DEVICETYPE_DHT22
-	#define DHT22_PIN	12
-#endif
+#include "..\Device_DHT22.h"
+#include "..\Device_BH1750.h"
+#include "..\Device_DS18B20.h"
+#include "..\Device_HTU21D.h"
+#include "..\Device_Watersensor.h"
