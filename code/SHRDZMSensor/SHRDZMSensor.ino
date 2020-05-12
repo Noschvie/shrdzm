@@ -29,6 +29,7 @@ String serverAddress;
 unsigned long clockmillis = 0;
 volatile bool pairingOngoing = false;
 DeviceBase* dev;
+bool deviceTypeSet = true;
 
 bool readConfig()
 {
@@ -143,7 +144,14 @@ void OnMessage(uint8_t* ad, const char* message)
   {
     pairingOngoing = true;
 
-    sendSetup();
+    if(deviceTypeSet)
+    {
+      sendSetup();
+    }
+    else
+    {
+      Serial.println("Gateway asked for settings but I did'nt sent because device type is not set!");    
+    }
 
     pairingOngoing = false;    
   }
@@ -273,6 +281,10 @@ void setup()
           simpleEspConnection.sendMessage((char *)reply.c_str());
         }
       }
+      else
+      {
+        deviceTypeSet = false;
+      }
   
       delete sd;      
     }
@@ -364,7 +376,11 @@ void setDeviceType(String deviceType)
     {
       dev = new Device_Watersensor();
     }
-    
+    else
+    {
+      deviceTypeSet = false;
+      return;
+    }
 
     dev->initialize();
     
@@ -444,10 +460,14 @@ void loop()
   }
 
 #ifndef DISABLEGOTOSLEEP    
-  if (millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) 
+
+//  if(deviceTypeSet)
   {
-    // everything donw and I can go to sleep
-    gotoSleep();
+    if (millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) 
+    {
+      // everything donw and I can go to sleep
+      gotoSleep();
+    }
   }
 #endif    
 }
