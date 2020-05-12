@@ -30,6 +30,7 @@ unsigned long clockmillis = 0;
 volatile bool pairingOngoing = false;
 DeviceBase* dev;
 bool deviceTypeSet = true;
+bool gatewayMessageDone = false;
 
 bool readConfig()
 {
@@ -140,7 +141,11 @@ void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:"+String(message));
 
-  if(String(message) == "$S$") // ask for settings
+  if(String(message) == "$SLEEP$") // force to go sleep
+  {
+    gatewayMessageDone = true;
+  }
+  else if(String(message) == "$S$") // ask for settings
   {
     pairingOngoing = true;
 
@@ -171,6 +176,8 @@ void OnMessage(uint8_t* ad, const char* message)
 
     pairingOngoing = false;    
   }
+
+  gatewayMessageDone = true;
 }
 
 void OnPairingFinished()
@@ -460,14 +467,11 @@ void loop()
   }
 
 #ifndef DISABLEGOTOSLEEP    
-
-//  if(deviceTypeSet)
+  if ((millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) ||
+      gatewayMessageDone)
   {
-    if (millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) 
-    {
-      // everything donw and I can go to sleep
-      gotoSleep();
-    }
+    // everything donw and I can go to sleep
+    gotoSleep();
   }
 #endif    
 }

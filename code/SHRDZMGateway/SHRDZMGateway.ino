@@ -20,10 +20,15 @@ String clientAddress;
 
 SetupObject setupObject;
 
+void OnSendError(uint8_t* ad)
+{
+  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
+}
 
 void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:'"+String(message)+"' from "+simpleEspConnection.macToStr(ad));
+  simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));    
 }
 
 void OnPaired(uint8_t *ga, String ad)
@@ -69,6 +74,7 @@ void setup()
   simpleEspConnection.onMessage(&OnMessage);  
   simpleEspConnection.onPaired(&OnPaired);  
   simpleEspConnection.onPairingFinished(&OnPairingFinished);    
+  simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
 
   Serial.println(WiFi.macAddress());    
