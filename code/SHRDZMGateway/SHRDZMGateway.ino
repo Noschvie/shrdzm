@@ -28,7 +28,6 @@ void OnSendError(uint8_t* ad)
 void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:'"+String(message)+"' from "+simpleEspConnection.macToStr(ad));
-  simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));    
 }
 
 void OnPaired(uint8_t *ga, String ad)
@@ -51,11 +50,14 @@ void OnConnected(uint8_t *ga, String ad)
 
   if(si != NULL)
   {
-    simpleEspConnection.sendMessage((char *)si->m_parameterName.c_str(), clientAddress);  
+    simpleEspConnection.sendMessage((char *)si->m_parameterName.c_str(), ad);  
 
     setupObject.RemoveItem(si);              
   }  
-
+  else
+  {
+    simpleEspConnection.sendMessage("$SLEEP$", ad);        
+  }
 }
 
 void OnPairingFinished()
@@ -110,8 +112,6 @@ void loop()
       else if(inputString.substring(0,9) == "posttest ")
       {
         setupObject.AddItem(clientAddress, inputString.substring(9));
-        
-//        simpleEspConnection.sendMessage((char *)inputString.substring(9).c_str(), clientAddress);
       }          
       
       inputString = "";

@@ -31,6 +31,7 @@ volatile bool pairingOngoing = false;
 DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
+long setupMessageHandled = 0;
 
 bool readConfig()
 {
@@ -144,6 +145,7 @@ void OnMessage(uint8_t* ad, const char* message)
   if(String(message) == "$SLEEP$") // force to go sleep
   {
     gatewayMessageDone = true;
+    return;
   }
   else if(String(message) == "$S$") // ask for settings
   {
@@ -178,6 +180,7 @@ void OnMessage(uint8_t* ad, const char* message)
   }
 
   gatewayMessageDone = true;
+  setupMessageHandled = millis()+500;
 }
 
 void OnPairingFinished()
@@ -195,6 +198,11 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
   configuration["gateway"] = ad;  
 
   writeConfig();    
+}
+
+void OnSendError(uint8_t* ad)
+{
+  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
 }
 
 void setup() 
@@ -226,6 +234,7 @@ void setup()
   simpleEspConnection.begin();
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
+  simpleEspConnection.onSendError(&OnSendError);    
   if(configuration.containsKey("gateway"))
   {
     simpleEspConnection.setServerMac(configuration["gateway"].as<String>());  
@@ -467,7 +476,9 @@ void loop()
   }
 
 #ifndef DISABLEGOTOSLEEP    
-  if ((millis() > MAXCONTROLWAIT+clockmillis && !pairingOngoing) ||
+  if ((millis() > MAXCONTROLWAIT+clockmillis 
+      && millis() > setupMessageHandled
+      && !pairingOngoing) ||
       gatewayMessageDone)
   {
     // everything donw and I can go to sleep
