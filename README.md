@@ -1,5 +1,21 @@
 # shrdzm
 
+<<<<<<< HEAD
 Shrdzm does not stand for an acronym.
 
 It is the name of another home automation component framwork with the goal of open hard and software whithout dependency to a special home automation solution.
+=======
+## shrdzm is intended to become an end-to-end sensor platform.
+It provides wiring digrams, source code and working examples.
+Also plug-ins for most commonly used home automation solutions will be collected.
+
+To build cheap integrations of many kind of sensors into your own automation solution with the focus on energy efficiancy (battery operated devices) and simpleness.
+
+
+## Installation FHEM
+```
+* update add https://raw.githubusercontent.com/saghonfly/shrdzm/master/code/controls_shrdzm.txt
+* update check shrdzm
+* update all shrdzm
+```
+>>>>>>> master
