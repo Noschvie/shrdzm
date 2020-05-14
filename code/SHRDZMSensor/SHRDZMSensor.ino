@@ -3,21 +3,27 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 13 Mai 2020
+  Modified 14 Mai 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
 
 */
 
-// #define DISABLEGOTOSLEEP
+ #define DISABLEGOTOSLEEP
 
+#if defined(ESP8266)
 #include <FS.H>
+#endif
 #include <ArduinoJson.h>
 #include "config/config.h"
 
-#include "SimpleEspNowConnection.h"
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266httpUpdate.h>
 
+#include "SimpleEspNowConnection.h"
+#include "OTAUpgrade.h"
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DynamicJsonDocument configdoc(1024);
@@ -32,6 +38,37 @@ DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
+
+ESP8266WiFiMulti WiFiMulti;
+String SSID;
+String password;
+String host;
+bool firmwareUpdate = false;
+
+// for firmware upgrade
+void update_started() 
+{
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() 
+{
+  Serial.println("CALLBACK:  HTTP update process finished");
+
+  pairingOngoing = false;
+}
+
+void update_progress(int cur, int total) 
+{
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) 
+{
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+}
+
+
 
 bool readConfig()
 {
@@ -136,6 +173,31 @@ void sendSetup()
     }
 
     delete sd;  
+
+    // send firmware version
+    String s = String("$V$")+String(FWVERSION);
+    simpleEspConnection.sendMessage((char *)s.c_str());    
+}
+
+void updateFirmware(String message)
+{
+  // SSID|Password|Host
+  if(message.indexOf('|') == -1)
+    return;
+
+  SSID = getValue(message, '|', 0);
+  password = getValue(message, '|', 1);
+  host = getValue(message, '|', 2);
+
+  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host);
+
+  pairingOngoing = true;
+  firmwareUpdate = true;   
+
+  esp_now_deinit();
+
+  WiFi.mode(WIFI_STA);
+  WiFiMulti.addAP(SSID.c_str(), password.c_str());  
 }
 
 void OnMessage(uint8_t* ad, const char* message)
@@ -145,7 +207,17 @@ void OnMessage(uint8_t* ad, const char* message)
   if(String(message) == "$SLEEP$") // force to go sleep
   {
     gatewayMessageDone = true;
+    Serial.println("FORCE SLEEP MODE");
+    
     return;
+  }
+  else if(String(message).substring(0,3) == "$U$") // update firmware
+  {
+    pairingOngoing = true;
+
+    updateFirmware(String(message).substring(3));
+
+    pairingOngoing = false;        
   }
   else if(String(message) == "$S$") // ask for settings
   {
@@ -179,8 +251,8 @@ void OnMessage(uint8_t* ad, const char* message)
     pairingOngoing = false;    
   }
 
-  gatewayMessageDone = true;
-  setupMessageHandled = millis()+500;
+  //gatewayMessageDone = true;
+  setupMessageHandled = millis()+300;
 }
 
 void OnPairingFinished()
@@ -308,6 +380,13 @@ void setup()
     {
       Serial.println("Will not work until device type is set!");
     }
+
+    // for firmware upgrade
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
+    
   }
 
   clockmillis = millis();
@@ -475,11 +554,28 @@ void loop()
     }
   }
 
+  if(firmwareUpdate)
+  {    
+    if ((WiFiMulti.run() == WL_CONNECTED)) 
+    {        
+      Serial.println("WLAN connected!");
+
+      WiFiClient client;  
+      // 3D:FE:FB:13:B3:90:DA:FC:FC:44:8C:D7:4E:64:A0:E5:06:A1:6F:2E
+      t_httpUpdate_return ret = ESPhttpUpdate.update(host, "", "3D:FE:FB:13:B3:90:DA:FC:FC:44:8C:D7:4E:64:A0:E5:06:A1:6F:2E");    
+
+      firmwareUpdate = false;
+
+    }
+  }
+
 #ifndef DISABLEGOTOSLEEP    
   if ((millis() > MAXCONTROLWAIT+clockmillis 
       && millis() > setupMessageHandled
       && !pairingOngoing) ||
-      gatewayMessageDone)
+      gatewayMessageDone &&
+      !firmwareUpdate
+      )
   {
     // everything donw and I can go to sleep
     gotoSleep();

@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 13 Mai 2020
+  Modified 14 Mai 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -69,7 +69,7 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println();
-  // clientAddress = "ECFABC0CE7A2"; // Test if you know the client
+   clientAddress = "807D3ADC8EF0"; // Test if you know the client
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(2);
