@@ -111,9 +111,25 @@ void OnMessage(uint8_t* ad, const char* message)
 
   String m = message;
 
-  if(m.substring(0,3) == "$D$")
+  if(m.substring(0,3) == "$D$")       // Data
   {
     String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
+    Serial.write(s.c_str(), s.length());
+    delay(100);
+    Serial.print('\n');
+    delay(100);  
+  }
+  else if(m.substring(0,4) == "$SC$")  // Configuration
+  {
+    String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(4);
+    Serial.write(s.c_str(), s.length());
+    delay(100);
+    Serial.print('\n');
+    delay(100);  
+  }
+  else
+  {
+    String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$"+m;
     Serial.write(s.c_str(), s.length());
     delay(100);
     Serial.print('\n');
@@ -133,12 +149,13 @@ void OnPaired(uint8_t *ga, String ad)
     
     writeConfig();
 
-    String s = "*000[P]$"+ad+"$paired:OK";
-    Serial.write(s.c_str(), s.length());
-    delay(100);
-    Serial.print('\n');
-    delay(100);  
   }
+  
+  String s = "*000[P]$"+ad+"$paired:OK";
+  Serial.write(s.c_str(), s.length());
+  delay(100);
+  Serial.print('\n');
+  delay(100);  
 
   // get all possible parameter
   simpleEspConnection.sendMessage("$S$", ad);    
@@ -201,6 +218,15 @@ void setup()
 #endif  
 }
 
+void getConfig()
+{
+  String c; 
+
+  serializeJson(configdoc, c);
+
+  Serial.println("#"+c);    
+}
+
 void loop() 
 {
   while (Serial.available()) 
@@ -218,19 +244,23 @@ void loop()
 #endif        
         ESP.restart();      
       }
-      else if(inputString == "deleteconfig")  // delete my config
+      else if(inputString == "$deleteconfig")  // delete my config
       {
         deleteConfig();
       }
-      else if(inputString == "startpair")
+      else if(inputString == "$getconfig")  // get config
+      {
+        getConfig();
+      }
+      else if(inputString == "$startpair")
       {
         simpleEspConnection.startPairing(30);
       }
-      else if(inputString == "endpair")
+      else if(inputString == "$endpair")
       {
         simpleEspConnection.endPairing();
       }
-      else if(inputString == "changepairingmac")
+      else if(inputString == "$changepairingmac")
       {
         uint8_t np[] {0xCE, 0x50, 0xE3, 0x15, 0xB7, 0x33};
         
