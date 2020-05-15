@@ -3,49 +3,152 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 14 Mai 2020
+  Modified 15 Mai 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
 
 */
 
+#include "config/config.h"
+#include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
+DynamicJsonDocument configdoc(1024);
+JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
 String inputString;
 String clientAddress;
 
 SetupObject setupObject;
 
+bool deleteConfig()
+{
+  configdoc.clear();
+  configurationDevices = configdoc.createNestedObject("devices");
+
+  return writeConfig();
+}
+
+bool readConfig()
+{
+    if (SPIFFS.exists("/shrdzm_config.json")) 
+    {
+      //file exists, reading and loading
+      File configFile = SPIFFS.open("/shrdzm_config.json", "r");
+      if (configFile) 
+      {
+        // Allocate a buffer to store contents of the file.
+
+        String content;
+        
+        for(int i=0;i<configFile.size();i++) //Read upto complete file size
+        {
+          content += (char)configFile.read();
+        }
+
+        DeserializationError error = deserializeJson(configdoc, content);
+        if (error)
+        {
+#ifdef DEBUG
+          Serial.println("Error at deserializeJson");
+#endif      
+          return false;
+        }
+
+        configFile.close();
+      }
+    }
+    else
+    {
+#ifdef DEBUG
+      Serial.println("shrdzm_config.json does not exist");
+#endif
+      return false;
+    }
+
+#ifdef DEBUG
+    serializeJson(configdoc, Serial);
+    Serial.println();
+#endif    
+}
+
+bool writeConfig()
+{
+    File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+    if (!configFile) 
+    {
+#ifdef DEBUG
+      Serial.println("failed to open config file for writing");
+#endif
+      return false;
+    }
+
+    serializeJson(configdoc, configFile);
+
+#ifdef DEBUG
+    serializeJson(configdoc, Serial);
+    Serial.println();
+#endif
+    
+    configFile.close();
+}
+
 void OnSendError(uint8_t* ad)
 {
+#ifdef DEBUG  
   Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
+#endif  
 }
 
 void OnMessage(uint8_t* ad, const char* message)
 {
+#ifdef DEBUG  
   Serial.println("MESSAGE:'"+String(message)+"' from "+simpleEspConnection.macToStr(ad));
+#endif
 
-  clientAddress = simpleEspConnection.macToStr(ad);  
+  String m = message;
+
+  if(m.substring(0,3) == "$D$")
+  {
+    String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
+    Serial.write(s.c_str(), s.length());
+    delay(100);
+    Serial.print('\n');
+    delay(100);  
+  }
 }
 
 void OnPaired(uint8_t *ga, String ad)
 {
+#ifdef DEBUG
   Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
+#endif
 
-  clientAddress = ad;
+  if(!configurationDevices.containsKey(ad))
+  {
+    JsonObject newDevice  = configurationDevices.createNestedObject(ad);
+    
+    writeConfig();
+
+    String s = "*000[P]$"+ad+"$paired:OK";
+    Serial.write(s.c_str(), s.length());
+    delay(100);
+    Serial.print('\n');
+    delay(100);  
+  }
 
   // get all possible parameter
-  simpleEspConnection.sendMessage("$S$", ad);  
-  
+  simpleEspConnection.sendMessage("$S$", ad);    
 }
 
 void OnConnected(uint8_t *ga, String ad)
 {
+#ifdef DEBUG
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+#endif
 
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
@@ -64,14 +167,26 @@ void OnConnected(uint8_t *ga, String ad)
 
 void OnPairingFinished()
 {
+#ifdef DEBUG  
   Serial.println("Pairing finished");
+#endif  
 }
 
 void setup() 
 {
   Serial.begin(9600);
   Serial.println();
-   clientAddress = "807D3ADC8EF0"; // Test if you know the client
+   //clientAddress = "807D3ADC8EF0"; // Test if you know the client
+
+  SPIFFS.begin();
+
+#ifdef DEBUG
+    Serial.println("Will read config now...");
+#endif        
+  if(!readConfig())
+  {    
+    writeConfig();
+  }   
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(2);
@@ -81,7 +196,9 @@ void setup()
   simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
 
+#ifdef DEBUG
   Serial.println(WiFi.macAddress());    
+#endif  
 }
 
 void loop() 
@@ -91,9 +208,21 @@ void loop()
     char inChar = (char)Serial.read();
     if (inChar == '\n') 
     {
+#ifdef DEBUG      
       Serial.println(inputString);
-
-      if(inputString == "startpair")
+#endif      
+      if(inputString == "reset")  // reset me
+      {
+#ifdef DEBUG
+        Serial.println("Reset..");
+#endif        
+        ESP.restart();      
+      }
+      else if(inputString == "deleteconfig")  // delete my config
+      {
+        deleteConfig();
+      }
+      else if(inputString == "startpair")
       {
         simpleEspConnection.startPairing(30);
       }
@@ -115,6 +244,14 @@ void loop()
       {
         setupObject.AddItem(clientAddress, inputString.substring(9));
       }          
+      else if(inputString.substring(0,7) == "$set ") // 
+      {
+
+      }                
+      else if(inputString.substring(0,7) == "$pair") // 
+      {
+        simpleEspConnection.startPairing(30);
+      }                
       
       inputString = "";
     }
