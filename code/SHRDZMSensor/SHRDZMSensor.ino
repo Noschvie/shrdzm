@@ -591,7 +591,7 @@ void loop()
 
       String versionStr = ESP.getSketchMD5();
       Serial.println("WLAN connected!");
-      Serial.println(versionStr);
+//      Serial.println(versionStr);
 
       WiFiClient client;  
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    

@@ -44,7 +44,7 @@ if(
 	exit();
 }
 
-$localBinary = "./bin/SHRDZMSensor.bin";
+$localBinary = "./bin/SHRDZMSensor.ino.generic.bin";
 
 loging2file($_SERVER['HTTP_USER_AGENT']);
 loging2file($_SERVER['HTTP_X_ESP8266_STA_MAC']);
