@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 14 Mai 2020
+  Modified 15 Mai 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -23,7 +23,6 @@
 #include <ESP8266httpUpdate.h>
 
 #include "SimpleEspNowConnection.h"
-#include "OTAUpgrade.h"
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DynamicJsonDocument configdoc(1024);
@@ -38,6 +37,7 @@ DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
+int sendQueue = 0;
 
 ESP8266WiFiMulti WiFiMulti;
 String SSID;
@@ -70,8 +70,6 @@ void update_error(int err)
 
   pairingOngoing = false;
 }
-
-
 
 bool readConfig()
 {
@@ -301,6 +299,17 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 void OnSendError(uint8_t* ad)
 {
   Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
+  sendQueue--;
+}
+
+void OnSendDone(uint8_t* ad)
+{
+#ifdef DEBUG
+  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' DONE");
+#endif
+
+  if(sendQueue > 0)
+    sendQueue--;
 }
 
 void setup() 
@@ -333,6 +342,7 @@ void setup()
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   simpleEspConnection.onSendError(&OnSendError);    
+  simpleEspConnection.onSendDone(&OnSendDone);
   if(configuration.containsKey("gateway"))
   {
     simpleEspConnection.setServerMac(configuration["gateway"].as<String>());  
@@ -378,6 +388,8 @@ void setup()
 
     if(dev != NULL)
     {
+      pairingOngoing = true;
+      
       dev->setDeviceParameter(configuration["device"]);
   
       SensorData* sd = dev->readParameter();
@@ -391,7 +403,8 @@ void setup()
           reply = "$D$";
   
           reply += sd->di[i].nameI+":"+sd->di[i].valueI;
-          
+
+          sendQueue++;
           simpleEspConnection.sendMessage((char *)reply.c_str());
         }
       }
@@ -401,6 +414,8 @@ void setup()
       }
   
       delete sd;      
+      
+      pairingOngoing = true;      
     }
     else
     {
@@ -591,7 +606,6 @@ void loop()
 
       String versionStr = ESP.getSketchMD5();
       Serial.println("WLAN connected!");
-//      Serial.println(versionStr);
 
       WiFiClient client;  
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
@@ -620,7 +634,7 @@ void loop()
       && millis() > setupMessageHandled
       && !pairingOngoing) ||
       gatewayMessageDone) &&
-      !firmwareUpdate
+      !firmwareUpdate && sendQueue == 0
       )
   {
     // everything donw and I can go to sleep
