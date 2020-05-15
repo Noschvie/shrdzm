@@ -182,7 +182,6 @@ void sendSetup()
 
 void updateFirmware(String message)
 {
-  // SSID|Password|Host
   if(message.indexOf('|') == -1)
     return;
 
@@ -213,11 +212,16 @@ void updateFirmware(String message)
   url = host.substring(host.indexOf('/'));
   host = host.substring(0,host.indexOf('/'));
   
-  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host+" url:"+url);
+//  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host+" url:"+url);
 
   pairingOngoing = true;
   firmwareUpdate = true;   
 
+  sendQueue++;
+  simpleEspConnection.sendMessage((char *)String("$FW$"+ESP.getSketchMD5()).c_str());
+
+  delay(100);
+  
   esp_now_deinit();
 
   WiFi.mode(WIFI_STA);
@@ -298,25 +302,31 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 
 void OnSendError(uint8_t* ad)
 {
-  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
   sendQueue--;
+
+  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE! - sendQueue = "+String(sendQueue));
+
+  pairingOngoing = false;
 }
 
 void OnSendDone(uint8_t* ad)
 {
-#ifdef DEBUG
-  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' DONE");
-#endif
-
   if(sendQueue > 0)
     sendQueue--;
+
+#ifdef DEBUG
+  Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done - sendQueue = "+String(sendQueue));
+#endif    
 }
 
 void setup() 
 {
 #ifdef DEBUG
   Serial.begin(9600); Serial.println();
+  Serial.println(ESP.getSketchMD5());
 #endif
+
+
 
   SPIFFS.begin();
 
@@ -626,6 +636,7 @@ void loop()
       }
 
       pairingOngoing = false;
+      sendQueue = 0;
     }
   }
 

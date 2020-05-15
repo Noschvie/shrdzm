@@ -28,6 +28,8 @@ void OnSendError(uint8_t* ad)
 void OnMessage(uint8_t* ad, const char* message)
 {
   Serial.println("MESSAGE:'"+String(message)+"' from "+simpleEspConnection.macToStr(ad));
+
+  clientAddress = simpleEspConnection.macToStr(ad);  
 }
 
 void OnPaired(uint8_t *ga, String ad)
