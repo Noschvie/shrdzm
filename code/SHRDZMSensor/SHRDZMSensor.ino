@@ -10,7 +10,7 @@
 
 */
 
- #define DISABLEGOTOSLEEP
+// #define DISABLEGOTOSLEEP
 
 #if defined(ESP8266)
 #include <FS.H>
@@ -43,6 +43,7 @@ ESP8266WiFiMulti WiFiMulti;
 String SSID;
 String password;
 String host;
+String url;
 bool firmwareUpdate = false;
 
 // for firmware upgrade
@@ -66,6 +67,8 @@ void update_progress(int cur, int total)
 void update_error(int err) 
 {
   Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+
+  pairingOngoing = false;
 }
 
 
@@ -189,7 +192,30 @@ void updateFirmware(String message)
   password = getValue(message, '|', 1);
   host = getValue(message, '|', 2);
 
-  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host);
+  if(host.substring(0,7) != "http://")
+  {
+    Serial.println("Upgrade : only http address supported!");
+    return;    
+  }
+
+  host = host.substring(7);
+
+  if(host.substring(host.length()-4) != ".php")
+  {
+    Serial.println("Upgrade : only php update script supported");
+    return;    
+  }
+
+  if(host.indexOf('/') == -1)
+  {
+    Serial.println("Upgrade : host string not valid");
+    return;    
+  }
+
+  url = host.substring(host.indexOf('/'));
+  host = host.substring(0,host.indexOf('/'));
+  
+  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host+" url:"+url);
 
   pairingOngoing = true;
   firmwareUpdate = true;   
@@ -556,24 +582,26 @@ void loop()
 
   if(firmwareUpdate)
   {    
+    pairingOngoing = true;
     if ((WiFiMulti.run() == WL_CONNECTED)) 
-    {        
+    {     
+      firmwareUpdate = false;
+      
+      ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
+      
       Serial.println("WLAN connected!");
 
       WiFiClient client;  
       // 3D:FE:FB:13:B3:90:DA:FC:FC:44:8C:D7:4E:64:A0:E5:06:A1:6F:2E
-      t_httpUpdate_return ret = ESPhttpUpdate.update(host, "", "3D:FE:FB:13:B3:90:DA:FC:FC:44:8C:D7:4E:64:A0:E5:06:A1:6F:2E");    
-
-      firmwareUpdate = false;
-
+      t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, "1.0.0");    
     }
   }
 
 #ifndef DISABLEGOTOSLEEP    
-  if ((millis() > MAXCONTROLWAIT+clockmillis 
+  if (((millis() > MAXCONTROLWAIT+clockmillis 
       && millis() > setupMessageHandled
       && !pairingOngoing) ||
-      gatewayMessageDone &&
+      gatewayMessageDone) &&
       !firmwareUpdate
       )
   {
