@@ -320,7 +320,12 @@ void loop()
         StringSplitter *splitter = new StringSplitter(inputString, ' ', 4);
         int itemCount = splitter->getItemCount();
 
-        if(itemCount == 3)
+        if(itemCount== 4 && splitter->getItemAtIndex(1) == "upgrade")
+        {
+          String s = "$U$"+splitter->getItemAtIndex(3);
+          setupObject.AddItem(splitter->getItemAtIndex(1), (char *)s.c_str());
+        }
+        else if(itemCount == 3)
         {
           setupObject.AddItem(splitter->getItemAtIndex(1), "$SC$"+splitter->getItemAtIndex(2));        
         }

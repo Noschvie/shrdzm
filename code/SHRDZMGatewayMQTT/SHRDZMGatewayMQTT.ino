@@ -642,7 +642,7 @@ void loop()
   yield();
   
   if (!client.connected()) 
-  {
+  {    
     if (client.connect(nodeName.c_str(),
           MQTTUser, 
           MQTTPassword
@@ -934,8 +934,29 @@ void callback(char* topic, byte* payload, unsigned int length)
 #ifdef DEBUG   
       Serial.println("Config with parameter : "+cmd);
 #endif
-      swSer.write(String("$set "+cmd).c_str());
-      swSer.write('\n'); 
+
+      // check if upgrade
+      StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+      int itemCount = splitter->getItemCount();
+
+      if(itemCount == 3 && splitter->getItemAtIndex(1) == "upgrade")
+      {
+       // Serial.println(WiFi.SSID());
+       // Serial.println(WiFi.psk());
+        String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
+
+#ifdef DEBUG   
+        Serial.println("Send upgrade : '"+upgradeText+"'");
+#endif      
+        
+        swSer.write(upgradeText.c_str());
+        swSer.write('\n'); 
+      }
+      else
+      {
+        swSer.write(String("$set "+cmd).c_str());
+        swSer.write('\n'); 
+      }
   }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
   {

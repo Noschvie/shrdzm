@@ -131,7 +131,7 @@ sub Define()
 		{
 
 			$hash->{TOPIC} = $topic;
-			$hash->{MODULE_VERSION} = "0.5";
+			$hash->{MODULE_VERSION} = "0.6";
 			$hash->{READY} = 0;
 			$hash->{Protocol}= "MQTT";
 

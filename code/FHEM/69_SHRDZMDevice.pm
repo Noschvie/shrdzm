@@ -68,7 +68,7 @@ SHRDZMDevice_Set($@)
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{	
-		return "Unknown argument $cmd, choose one of "."update ".ReadingsVal($name, ".SETS", "");
+		return "Unknown argument $cmd, choose one of "."upgrade ".ReadingsVal($name, ".SETS", "");
 	}
 	
 	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
@@ -200,7 +200,7 @@ SHRDZMDevice_Define($$)
 
 	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
 
-	readingsSingleUpdate($hash, "update", "http\://shrdzm.pintarweb.net/newversion.bin", 1);
+	readingsSingleUpdate($hash, "upgrade", "http\://shrdzm.pintarweb.net/upgrade.php", 1);
 
 	AssignIoPort($hash);
 
