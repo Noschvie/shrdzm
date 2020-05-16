@@ -120,8 +120,12 @@ void OnMessage(uint8_t* ad, const char* message)
     Serial.print('\n');
     delay(100);  
   }
-  else if(m.substring(0,4) == "$SC$")  // Configuration
+  else if((m.substring(0,4) == "$SC$") || // Device Configuration
+          (m.substring(0,4) == "$SP$") || // Sensor Configuration
+          (m.substring(0,4) == "$SD$"))   // Parameter names
   {
+    String prefix = (m.substring(0,4) == "$SC$" || m.substring(0,4) == "$SP$") ? "C" : "P";
+    
     String buffer = m.substring(4);
     int f = -1;
     bool run = true;
@@ -133,7 +137,7 @@ void OnMessage(uint8_t* ad, const char* message)
         int nf = buffer.indexOf('|', f+1);
         if(nf > 0)
         {
-          String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
+          String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
           Serial.write(s.c_str(), s.length());
           Serial.print('\n');
           f = nf;
@@ -142,18 +146,22 @@ void OnMessage(uint8_t* ad, const char* message)
           run = false;
       }while(run);
   
-      String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
+      String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
       Serial.write(s.c_str(), s.length());
       Serial.print('\n');
     }
     else
     {
-      String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
+      String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
       Serial.write(s.c_str(), s.length());
       Serial.print('\n');
-    }
-    
-    
+    }        
+  }
+  else if(m.substring(0,3) == "$V$")  // Version
+  {
+    String s = "*000[V]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
+    Serial.write(s.c_str(), s.length());
+    Serial.print('\n');
   }
   else
   {
@@ -200,7 +208,12 @@ void OnConnected(uint8_t *ga, String ad)
 
   if(si != NULL)
   {
-    simpleEspConnection.sendMessage((char *)si->m_parameterName.c_str(), ad);  
+    String message = si->m_parameterName;
+
+    if(si->m_parameterValue != "")
+      message += ":"+ si->m_parameterValue;
+    
+    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
     setupObject.RemoveItem(si);              
   }  
@@ -310,6 +323,10 @@ void loop()
         if(itemCount == 3)
         {
           setupObject.AddItem(splitter->getItemAtIndex(1), "$SC$"+splitter->getItemAtIndex(2));        
+        }
+        else if(itemCount == 4)
+        {
+          setupObject.AddItem(splitter->getItemAtIndex(1), "$SC$"+splitter->getItemAtIndex(2), splitter->getItemAtIndex(3));        
         }
       }                
       else if(inputString.substring(0,7) == "$pair") // 

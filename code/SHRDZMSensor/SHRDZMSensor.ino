@@ -139,6 +139,7 @@ void sendSetup()
     }
 
     reply.remove(reply.length()-1);
+    
     simpleEspConnection.sendMessage((char *)reply.c_str());
 
     // send device parameter
@@ -176,7 +177,7 @@ void sendSetup()
     delete sd;  
 
     // send firmware version
-    String s = String("$V$")+String(FWVERSION);
+    String s = String("$V$")+ESP.getSketchMD5();
     simpleEspConnection.sendMessage((char *)s.c_str());    
 }
 
@@ -425,7 +426,7 @@ void setup()
   
       delete sd;      
       
-      pairingOngoing = true;      
+      pairingOngoing = false;      
     }
     else
     {
@@ -567,6 +568,15 @@ void initialization()
   ESP.restart();      
 }
 
+void sendInfo()
+{
+  Serial.println("pairingOngoing : "+String(pairingOngoing));
+  Serial.println("gatewayMessageDone : "+String(gatewayMessageDone));
+  Serial.println("firmwareUpdate : "+String(firmwareUpdate));
+  Serial.println("sendQueue : "+String(sendQueue));
+  
+}
+
 void loop() 
 {
   while (Serial.available()) 
@@ -591,6 +601,10 @@ void loop()
       else if(inputString == "init")
       {
         initialization();
+      }      
+      else if(inputString == "info")
+      {
+        sendInfo();
       }      
       else if(inputString == "sendtest")
       {
