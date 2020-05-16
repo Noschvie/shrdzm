@@ -14,6 +14,7 @@
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
+#include "StringSplitter.h"
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 DynamicJsonDocument configdoc(1024);
@@ -121,11 +122,38 @@ void OnMessage(uint8_t* ad, const char* message)
   }
   else if(m.substring(0,4) == "$SC$")  // Configuration
   {
-    String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(4);
-    Serial.write(s.c_str(), s.length());
-    delay(100);
-    Serial.print('\n');
-    delay(100);  
+    String buffer = m.substring(4);
+    int f = -1;
+    bool run = true;
+
+    if(buffer.indexOf('|') > -1)
+    {
+      do
+      {
+        int nf = buffer.indexOf('|', f+1);
+        if(nf > 0)
+        {
+          String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
+          Serial.write(s.c_str(), s.length());
+          Serial.print('\n');
+          f = nf;
+        }
+        else
+          run = false;
+      }while(run);
+  
+      String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
+      Serial.write(s.c_str(), s.length());
+      Serial.print('\n');
+    }
+    else
+    {
+      String s = "*000[C]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
+      Serial.write(s.c_str(), s.length());
+      Serial.print('\n');
+    }
+    
+    
   }
   else
   {
@@ -274,9 +302,15 @@ void loop()
       {
         setupObject.AddItem(clientAddress, inputString.substring(9));
       }          
-      else if(inputString.substring(0,7) == "$set ") // 
+      else if(inputString.substring(0,5) == "$set ") // 
       {
+        StringSplitter *splitter = new StringSplitter(inputString, ' ', 4);
+        int itemCount = splitter->getItemCount();
 
+        if(itemCount == 3)
+        {
+          setupObject.AddItem(splitter->getItemAtIndex(1), "$SC$"+splitter->getItemAtIndex(2));        
+        }
       }                
       else if(inputString.substring(0,7) == "$pair") // 
       {

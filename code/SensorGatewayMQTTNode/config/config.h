@@ -1,4 +1,4 @@
-#define VERSION	0.11
+#define VERSION	0.12
 
 #define DEBUG
 #define LEDPIN 2
