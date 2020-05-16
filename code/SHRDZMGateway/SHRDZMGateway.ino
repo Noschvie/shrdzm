@@ -333,6 +333,16 @@ void loop()
       {
         simpleEspConnection.startPairing(30);
       }                
+      else if(inputString.substring(0,4) == "test") // 
+      {
+        StringSplitter *splitter = new StringSplitter(inputString, ' ', 4);
+        int itemCount = splitter->getItemCount();
+
+        if(itemCount == 3)
+        {
+          setupObject.AddItem(splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
+        }
+      }
       
       inputString = "";
     }

@@ -131,6 +131,8 @@ void sendSetup()
     
     // send device setup
     reply = "$SC$";
+
+    Serial.println("vor JsonPair");
     
     for (JsonPair kv : configuration) 
     {
@@ -156,25 +158,31 @@ void sendSetup()
       reply.remove(reply.length()-1);
       simpleEspConnection.sendMessage((char *)reply.c_str());
     }
-    
+
+    if(dev == NULL)
+      actualizeDeviceType();
+
     // send sensor parameter types
-    SensorData* sd = dev->readParameterTypes();
-
-    if(sd != NULL)
+    if(dev != NULL)
     {
-      reply = "$SD$";
-
-      for(int i = 0; i<sd->size; i++)
+      SensorData* sd = dev->readParameterTypes();
+  
+      if(sd != NULL)
       {
-        reply += sd->di[i].nameI;
-        if(i < sd->size-1)
-          reply += "|";
+        reply = "$SD$";
+  
+        for(int i = 0; i<sd->size; i++)
+        {
+          reply += sd->di[i].nameI;
+          if(i < sd->size-1)
+            reply += "|";
+        }
+  
+        simpleEspConnection.sendMessage((char *)reply.c_str());
       }
-
-      simpleEspConnection.sendMessage((char *)reply.c_str());
+  
+      delete sd; 
     }
-
-    delete sd;  
 
     // send firmware version
     String s = String("$V$")+ESP.getSketchMD5();
@@ -318,6 +326,40 @@ void OnSendDone(uint8_t* ad)
 #ifdef DEBUG
   Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done - sendQueue = "+String(sendQueue));
 #endif    
+}
+
+void actualizeDeviceType()
+{
+  delete dev;
+  
+  // setup the device
+  if(configuration["devicetype"] == "DHT22")
+  {
+    dev = new Device_DHT22();
+  }
+  else if(configuration["devicetype"] == "BH1750")
+  {
+    dev = new Device_BH1750();
+  }
+  else if(configuration["devicetype"] == "DS18B20")
+  {
+    dev = new Device_DS18B20();
+  }
+  else if(configuration["devicetype"] == "HTU21D")
+  {
+    dev = new Device_HTU21D();
+  }
+  else if(configuration["devicetype"] == "WATERSENSOR")
+  {
+    dev = new Device_Watersensor();
+  }
+
+  if(dev != NULL)
+  {
+    pairingOngoing = true;
+    
+    dev->setDeviceParameter(configuration["device"]);
+  }
 }
 
 void setup() 
