@@ -37,7 +37,8 @@ DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
-int sendQueue = 0;
+SensorData* sd = NULL;
+int sensorDataSendCount = 0;
 
 ESP8266WiFiMulti WiFiMulti;
 String SSID;
@@ -131,8 +132,6 @@ void sendSetup()
     
     // send device setup
     reply = "$SC$";
-
-    Serial.println("vor JsonPair");
     
     for (JsonPair kv : configuration) 
     {
@@ -141,6 +140,11 @@ void sendSetup()
     }
 
     reply.remove(reply.length()-1);
+
+    if(!configuration.containsKey("devicetype"))
+    {
+      reply += "|devicetype: ";
+    }
     
     simpleEspConnection.sendMessage((char *)reply.c_str());
 
@@ -156,6 +160,9 @@ void sendSetup()
       }
   
       reply.remove(reply.length()-1);
+
+      Serial.println("send device parameter:"+reply);
+      
       simpleEspConnection.sendMessage((char *)reply.c_str());
     }
 
@@ -226,7 +233,6 @@ void updateFirmware(String message)
   pairingOngoing = true;
   firmwareUpdate = true;   
 
-  sendQueue++;
   simpleEspConnection.sendMessage((char *)String("$FW$"+ESP.getSketchMD5()).c_str());
 
   delay(100);
@@ -311,20 +317,15 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 
 void OnSendError(uint8_t* ad)
 {
-  sendQueue--;
+  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
 
-  Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE! - sendQueue = "+String(sendQueue));
-
-  pairingOngoing = false;
+//  pairingOngoing = false;
 }
 
 void OnSendDone(uint8_t* ad)
 {
-  if(sendQueue > 0)
-    sendQueue--;
-
 #ifdef DEBUG
-  Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done - sendQueue = "+String(sendQueue));
+  Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done");
 #endif    
 }
 
@@ -386,6 +387,8 @@ void setup()
     s = PAIRING_PIN;
     configuration["pairingpin"] = String(s);
 
+    configuration["devicetype"] = "UNKNOWN";
+
     writeConfig();    
   }  
 
@@ -410,6 +413,7 @@ void setup()
   if(digitalRead(configuration["pairingpin"].as<uint8_t>()) == false)
   {
     pairingOngoing = true;
+    Serial.println("Start pairing");    
     simpleEspConnection.startPairing(300);
   }
   else
@@ -444,31 +448,11 @@ void setup()
       pairingOngoing = true;
       
       dev->setDeviceParameter(configuration["device"]);
-  
-      SensorData* sd = dev->readParameter();
-  
-      if(sd != NULL)
-      {
-        String reply;
-        
-        for(int i = 0; i<sd->size; i++)
-        {
-          reply = "$D$";
-  
-          reply += sd->di[i].nameI+":"+sd->di[i].valueI;
 
-          sendQueue++;
-          simpleEspConnection.sendMessage((char *)reply.c_str());
-        }
-      }
-      else
-      {
-        deviceTypeSet = false;
-      }
-  
-      delete sd;      
-      
-      pairingOngoing = false;      
+      sd = dev->readParameter();
+
+      pairingOngoing = false;
+
     }
     else
     {
@@ -614,13 +598,35 @@ void sendInfo()
 {
   Serial.println("pairingOngoing : "+String(pairingOngoing));
   Serial.println("gatewayMessageDone : "+String(gatewayMessageDone));
-  Serial.println("firmwareUpdate : "+String(firmwareUpdate));
-  Serial.println("sendQueue : "+String(sendQueue));
-  
+  Serial.println("firmwareUpdate : "+String(firmwareUpdate));  
 }
 
 void loop() 
 {
+  // send sensor data
+  if(sd != NULL)
+  {
+    String reply;
+  
+    if(simpleEspConnection.canSend())
+    {
+      reply = "$D$";
+
+      reply += sd->di[sensorDataSendCount].nameI+":"+sd->di[sensorDataSendCount].valueI;
+
+      Serial.println("Will send : "+reply);  
+      simpleEspConnection.sendMessage((char *)reply.c_str());
+
+      sensorDataSendCount++;
+
+      if(sensorDataSendCount == sd->size)
+      {
+        delete sd;
+        sd = NULL;
+      }
+    }
+  }
+    
   while (Serial.available()) 
   {
     char inChar = (char)Serial.read();
@@ -692,17 +698,11 @@ void loop()
       }
 
       pairingOngoing = false;
-      sendQueue = 0;
     }
   }
 
 #ifndef DISABLEGOTOSLEEP    
-  if (((millis() > MAXCONTROLWAIT+clockmillis 
-      && millis() > setupMessageHandled
-      && !pairingOngoing) ||
-      gatewayMessageDone) &&
-      !firmwareUpdate && sendQueue == 0
-      )
+  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && !firmwareUpdate)
   {
     // everything donw and I can go to sleep
     gotoSleep();
@@ -716,7 +716,7 @@ void gotoSleep()
   
   int sleepSecs = configuration["interval"]; 
 #ifdef DEBUG
-  Serial.printf("Up for %i ms, going to sleep for %i secs...\n", millis(), sleepSecs); 
+  Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
 #endif
 
   ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);

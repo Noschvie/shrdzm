@@ -320,7 +320,7 @@ void loop()
         StringSplitter *splitter = new StringSplitter(inputString, ' ', 4);
         int itemCount = splitter->getItemCount();
 
-        if(itemCount== 4 && splitter->getItemAtIndex(1) == "upgrade")
+        if(itemCount== 4 && splitter->getItemAtIndex(2) == "upgrade")
         {
           String s = "$U$"+splitter->getItemAtIndex(3);
           setupObject.AddItem(splitter->getItemAtIndex(1), (char *)s.c_str());
