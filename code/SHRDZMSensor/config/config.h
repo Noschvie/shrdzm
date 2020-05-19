@@ -14,5 +14,5 @@
 #include "..\Device_BME280.h"
 #include "..\Device_DS18B20.h"
 #include "..\Device_HTU21D.h"
-#include "..\Device_Watersensor.h"
-#include "..\Device_FC04.h"
+#include "..\Device_WATERSENSOR.h"
+#include "..\Device_ANALOG.h"

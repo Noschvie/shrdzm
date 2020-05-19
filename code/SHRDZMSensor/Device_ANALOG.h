@@ -1,15 +1,15 @@
-#ifndef Device_FC04_H
-#define Device_FC04_H
+#ifndef Device_ANALOG_H
+#define Device_ANALOG_H
 
 #include "DeviceBase.h"
 
 // Sensors
 
-class Device_FC04 : public DeviceBase
+class Device_ANALOG : public DeviceBase
 {   
   public:
-    Device_FC04();
-    ~Device_FC04();
+    Device_ANALOG();
+    ~Device_ANALOG();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    

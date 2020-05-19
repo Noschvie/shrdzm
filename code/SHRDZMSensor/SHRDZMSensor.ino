@@ -362,9 +362,9 @@ void actualizeDeviceType()
   {
     dev = new Device_Watersensor();
   }
-  else if(configuration["devicetype"] == "FC04")
+  else if(configuration["devicetype"] == "ANALOG")
   {
-    dev = new Device_FC04();
+    dev = new Device_ANALOG();
   }
 
   if(dev != NULL)
@@ -462,9 +462,9 @@ void setup()
     {
       dev = new Device_Watersensor();
     }
-    else if(configuration["devicetype"] == "FC04")
+    else if(configuration["devicetype"] == "ANALOG")
     {
-      dev = new Device_FC04();
+      dev = new Device_ANALOG();
     }
 
     if(dev != NULL)
@@ -541,7 +541,7 @@ void setDeviceType(String deviceType)
      deviceType == "BME280" ||
      deviceType == "DS18B20" ||
      deviceType == "HTU21D" ||
-     deviceType == "FC04" ||
+     deviceType == "ANALOG" ||
      deviceType == "WATERSENSOR")
   {
     configuration["devicetype"] = deviceType;
@@ -584,9 +584,9 @@ void setDeviceType(String deviceType)
     {
       dev = new Device_Watersensor();
     }
-    else if(deviceType == "FC04")
+    else if(deviceType == "ANALOG")
     {
-      dev = new Device_Watersensor();
+      dev = new Device_ANALOG();
     }
     else
     {
