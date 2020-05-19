@@ -84,7 +84,6 @@ SensorData* Device_BMP280::readParameter()
 
   // Barometrische Höhenformel:
   // Luftdruck auf Meereshöhe = Barometeranzeige / (1-Temperaturgradient*Höhe/Temperatur auf Meereshöhe in Kelvin)^(0,03416/Temperaturgradient)
-  //float np = / (1-0,0065*atoi(deviceParameter["sealevel"])/
   float kelvin = 273.15 + temp_event.temperature;
   int sealevel = atoi(deviceParameter["sealevel"].as<String>().c_str());
   float factor = (float)(pow(1-0.0065*sealevel/kelvin, 5.255));
@@ -92,7 +91,6 @@ SensorData* Device_BMP280::readParameter()
   float absolute_pressure = 0;
   
   absolute_pressure = pressure_event.pressure/factor;
-  Serial.println( deviceParameter["sealevel"].as<String>() );
   
   SensorData *al = new SensorData(3);
   
