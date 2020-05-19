@@ -15,3 +15,4 @@
 #include "..\Device_DS18B20.h"
 #include "..\Device_HTU21D.h"
 #include "..\Device_Watersensor.h"
+#include "..\Device_FC04.h"
