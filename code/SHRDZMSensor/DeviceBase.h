@@ -39,7 +39,7 @@ class DeviceBase
     void PrintText(String text);
 
     JsonObject deviceParameter;
-    StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+    StaticJsonDocument<JSON_OBJECT_SIZE(10)> doc;
 
 };
 

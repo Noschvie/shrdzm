@@ -342,6 +342,10 @@ void actualizeDeviceType()
   {
     dev = new Device_BH1750();
   }
+  else if(configuration["devicetype"] == "BMP280")
+  {
+    dev = new Device_BMP280();
+  }
   else if(configuration["devicetype"] == "DS18B20")
   {
     dev = new Device_DS18B20();
@@ -430,6 +434,10 @@ void setup()
     {
       dev = new Device_BH1750();
     }
+    else if(configuration["devicetype"] == "BMP280")
+    {
+      dev = new Device_BMP280();
+    }
     else if(configuration["devicetype"] == "DS18B20")
     {
       dev = new Device_DS18B20();
@@ -513,6 +521,7 @@ void setDeviceType(String deviceType)
 {
   if(deviceType == "DHT22" ||
      deviceType == "BH1750" ||
+     deviceType == "BMP280" ||
      deviceType == "DS18B20" ||
      deviceType == "HTU21D" ||
      deviceType == "WATERSENSOR")
@@ -536,6 +545,10 @@ void setDeviceType(String deviceType)
     else if(deviceType == "BH1750")
     {
       dev = new Device_BH1750();
+    }
+    else if(deviceType == "BMP280")
+    {
+      dev = new Device_BMP280();
     }
     else if(deviceType == "DS18B20")
     {

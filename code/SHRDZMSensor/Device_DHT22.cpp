@@ -44,8 +44,8 @@ SensorData* Device_DHT22::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
-  al->di[1].nameI = "pin";
-  al->di[1].valueI = "12";
+  al->di[0].nameI = "pin";
+  al->di[0].valueI = "12";
 
   return al;
 }

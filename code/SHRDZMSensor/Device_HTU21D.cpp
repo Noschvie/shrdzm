@@ -38,7 +38,7 @@ SensorData* Device_HTU21D::readParameterTypes()
 
 SensorData* Device_HTU21D::readInitialSetupParameter()
 {
-  SensorData *al = new SensorData(1);
+  SensorData *al = new SensorData(0);
 
   return al;
 }
