@@ -39,6 +39,8 @@ bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
 SensorData* sd = NULL;
 int sensorDataSendCount = 0;
+String lastVersionNumber;
+bool sendUpdatedVersion = false;
 
 ESP8266WiFiMulti WiFiMulti;
 String SSID;
@@ -56,8 +58,6 @@ void update_started()
 void update_finished() 
 {
   Serial.println("CALLBACK:  HTTP update process finished");
-
-  pairingOngoing = false;
 }
 
 void update_progress(int cur, int total) 
@@ -129,6 +129,9 @@ bool writeConfig()
 void sendSetup()
 {
     String reply;
+
+    // send info to re-init
+    simpleEspConnection.sendMessage("$I$");    
     
     // send device setup
     reply = "$SC$";
@@ -230,16 +233,10 @@ void updateFirmware(String message)
   
 //  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host+" url:"+url);
 
-  pairingOngoing = true;
-  firmwareUpdate = true;   
-
-  simpleEspConnection.sendMessage((char *)String("$FW$"+ESP.getSketchMD5()).c_str());
-
-  delay(100);
-  
   esp_now_deinit();
 
   WiFi.mode(WIFI_STA);
+
   WiFiMulti.addAP(SSID.c_str(), password.c_str());  
 }
 
@@ -256,11 +253,11 @@ void OnMessage(uint8_t* ad, const char* message)
   }
   else if(String(message).substring(0,3) == "$U$") // update firmware
   {
-    pairingOngoing = true;
+    firmwareUpdate = true;   
 
     updateFirmware(String(message).substring(3));
 
-    pairingOngoing = false;        
+  //  pairingOngoing = false;        
   }
   else if(String(message) == "$S$") // ask for settings
   {
@@ -307,7 +304,7 @@ void OnPairingFinished()
 
 void OnNewGatewayAddress(uint8_t *ga, String ad)
 {  
-  Serial.println("New GatewayAddress '"+ad+"'");
+//  Serial.println("New GatewayAddress '"+ad+"'");
 
   simpleEspConnection.setServerMac(ga);
   configuration["gateway"] = ad;  
@@ -383,7 +380,6 @@ void setup()
 #endif
 
 
-
   SPIFFS.begin();
 
   if(!readConfig())
@@ -402,7 +398,18 @@ void setup()
     configuration["devicetype"] = "UNKNOWN";
 
     writeConfig();    
-  }  
+  }
+
+  readLastVersionNumber();
+  String currVersion = ESP.getSketchMD5();
+
+  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+  //if(lastVersionNumber != currVersion)
+  {
+    Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
+    sendUpdatedVersion = true;
+    storeLastVersionNumber();
+  }
 
   pinMode(configuration["sensorpowerpin"].as<uint8_t>(), INPUT_PULLUP);
 
@@ -640,8 +647,63 @@ void sendInfo()
   Serial.println("firmwareUpdate : "+String(firmwareUpdate));  
 }
 
+void storeLastVersionNumber()
+{
+  File file = SPIFFS.open("/version.txt", "w");
+  if (!file) 
+  {
+      Serial.println("Error opening version file for writing");
+      return;
+  }  
+
+  String v = ESP.getSketchMD5();
+
+  int bytesWritten = file.write(v.c_str(), v.length());
+   
+  if (bytesWritten > 0) 
+  {
+      Serial.println("Version file was written");
+      Serial.println(bytesWritten);   
+  } 
+  else 
+  {
+      Serial.println("Version file write failed");
+  }
+
+  file.close();
+}
+
+void readLastVersionNumber()
+{
+  if (!(SPIFFS.exists ("/version.txt") ))
+  {
+    lastVersionNumber = "";
+    return;
+  }
+
+  File file = SPIFFS.open("/version.txt", "r");
+
+  lastVersionNumber= "";
+    
+  for(int i=0;i<file.size();i++) //Read upto complete file size
+  {
+    lastVersionNumber += (char)file.read();
+  }
+
+  file.close();  
+}
+
 void loop() 
 {
+  if(sendUpdatedVersion)
+  {
+    if(simpleEspConnection.canSend())
+    {
+      sendUpdatedVersion = false;
+      sendSetup();
+    }
+  }
+  
   // send sensor data
   if(sd != NULL)
   {
@@ -708,7 +770,6 @@ void loop()
 
   if(firmwareUpdate)
   {    
-    pairingOngoing = true;
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
       firmwareUpdate = false;
@@ -724,7 +785,7 @@ void loop()
       switch (ret) 
       {
         case HTTP_UPDATE_FAILED:
-          Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+          Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion%s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
           break;
   
         case HTTP_UPDATE_NO_UPDATES:
@@ -735,8 +796,6 @@ void loop()
           Serial.println("HTTP_UPDATE_OK");
           break;
       }
-
-      pairingOngoing = false;
     }
   }
 

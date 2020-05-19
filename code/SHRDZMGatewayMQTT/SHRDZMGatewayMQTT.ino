@@ -577,10 +577,10 @@ void sendSensorData(String data)
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
           splitter->getItemAtIndex(2).c_str());
       }
-      else if(splitter->getItemAtIndex(0) == "[I]")  // report status
+      else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {
         client.publish((String(MQTT_TOPIC)+"/state").c_str(), String(t+" "+v).c_str());
-      }
+      }  
       else if(splitter->getItemAtIndex(0) == "[P]") // [P]$500291D60619$paired:OK
       {        
         client.publish((String(MQTT_TOPIC)+"/paired").c_str(), 
@@ -589,6 +589,29 @@ void sendSensorData(String data)
       else if(splitter->getItemAtIndex(0) == "[C]") // [C]$F4CFA2D4009B$interval:30
       {
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
+    }
+    else
+    {
+      if(splitter->getItemAtIndex(0) == "[I]")
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/init").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
+      else if(splitter->getItemAtIndex(0) == "[V]")
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/version").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
+      else if(splitter->getItemAtIndex(0) == "[P]")
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/param").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
+      else
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/error").c_str(), 
           splitter->getItemAtIndex(2).c_str());
       }
     }
