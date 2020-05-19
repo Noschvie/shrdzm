@@ -11,6 +11,7 @@
 #include "..\Device_DHT22.h"
 #include "..\Device_BH1750.h"
 #include "..\Device_BMP280.h"
+#include "..\Device_BME280.h"
 #include "..\Device_DS18B20.h"
 #include "..\Device_HTU21D.h"
 #include "..\Device_Watersensor.h"

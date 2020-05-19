@@ -15,12 +15,10 @@ bool Device_BH1750::setDeviceParameter(JsonObject obj)
   DeviceBase::setDeviceParameter(obj);
 
   bool avail = false;
+
+  uint8_t address = strtoul(deviceParameter["address"], NULL, 0);  
   
-  if(deviceParameter["address"] == "0x23")
-    avail = BH1750.begin(BH1750_TO_GROUND);
-  else
-    avail = BH1750.begin(BH1750_TO_VCC);
-   
+  avail = BH1750.begin(address);
 
   if(!avail)
     Serial.println("Sensor not found!");
