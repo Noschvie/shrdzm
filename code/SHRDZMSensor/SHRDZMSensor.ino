@@ -196,7 +196,7 @@ void sendSetup()
     }
 
     // send firmware version
-    String s = String("$V$")+ESP.getSketchMD5();
+    String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
     simpleEspConnection.sendMessage((char *)s.c_str());    
 }
 
@@ -232,8 +232,6 @@ void updateFirmware(String message)
   url = host.substring(host.indexOf('/'));
   host = host.substring(0,host.indexOf('/'));
   
-//  Serial.println("SSID:"+SSID+" Password:"+password+" Host:"+host+" url:"+url);
-
   esp_now_deinit();
 
   WiFi.mode(WIFI_STA);
@@ -673,12 +671,7 @@ void storeLastVersionNumber()
 
   int bytesWritten = file.write(v.c_str(), v.length());
    
-  if (bytesWritten > 0) 
-  {
-      Serial.println("Version file was written");
-      Serial.println(bytesWritten);   
-  } 
-  else 
+  if (bytesWritten == 0) 
   {
       Serial.println("Version file write failed");
   }
