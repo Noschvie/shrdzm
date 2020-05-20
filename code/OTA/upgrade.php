@@ -71,17 +71,24 @@ if($parts == 3)
 		}
 		else
 		{
+			loging2file("no new version for ".$_SERVER['HTTP_X_ESP8266_STA_MAC']);
 			header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
 		}
 	}
 	else
 	{
+		loging2file("update for unknown device ".$_SERVER['HTTP_X_ESP8266_STA_MAC']." not delivered");
 		header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
 	}
 }
 else
 {
-	header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
+//	loging2file("version does not follow specification for device ".$_SERVER['HTTP_X_ESP8266_STA_MAC']." and will not be not be delivered");
+//	header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
+	loging2file("version does not follow specification for device ".$_SERVER['HTTP_X_ESP8266_STA_MAC']." but I will try to update");
+	
+	sendFile($localBinary);
+	exit();
 }
 
 

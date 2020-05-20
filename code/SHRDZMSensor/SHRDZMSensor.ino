@@ -799,10 +799,14 @@ void loop()
       {
         case HTTP_UPDATE_FAILED:
           Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion%s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+          delay(100);
+          ESP.restart();
           break;
   
         case HTTP_UPDATE_NO_UPDATES:
           Serial.println("HTTP_UPDATE_NO_UPDATES ");
+          delay(100);
+          ESP.restart();
           break;
   
         case HTTP_UPDATE_OK:
