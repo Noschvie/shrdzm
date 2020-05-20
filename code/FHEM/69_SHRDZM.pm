@@ -31,6 +31,9 @@ my @topics = (
     "version",
 	"+/config",
 	"+/sensor",
+	"+/init",
+	"+/param",
+	"+/version",
 );
 
 
@@ -371,7 +374,7 @@ sub onmessage($$$) # from mqtt
 	my $len = @abc;
 	my $name = $hash->{NAME};
 
-    Log3($hash->{NAME}, 5, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
+    Log3($hash->{NAME}, 1, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
 
 	if(substr($topic, 0, length($hash->{FULL_TOPIC})) =~ $hash->{FULL_TOPIC})
 	{
@@ -475,6 +478,26 @@ sub onmessage($$$) # from mqtt
 				{
 					Dispatch($hash, $abc[2] . " value " . $message );
 				}
+			}
+			elsif($abc[3] =~ "init")
+			{
+				Log3 $hash->{NAME}, 5, "init $message";
+
+				Dispatch($hash, $abc[2] . " init " . "init:".$message );
+			}
+			elsif($abc[3] =~ "version")
+			{
+				Dispatch($hash, $abc[2] . " version " . "version:".$message );
+			}
+			elsif($abc[3] =~ "param")
+			{
+				Log3 $hash->{NAME}, 5, "param $message";
+
+				Dispatch($hash, $abc[2] . " param " . "param:".$message );
+			}
+			else
+			{
+				Log3 $hash->{NAME}, 1, "!!! $message !!!";
 			}
 		}
     } 

@@ -19,6 +19,7 @@ BEGIN {
         readingsBulkUpdate
         readingsBeginUpdate
         readingsEndUpdate
+		readingsDelete
         Log3
         SetExtensions
         SetExtensionsCancel
@@ -112,8 +113,12 @@ sub SHRDZMDevice_Parse ($$)
 	my $address = substr($message, 0, 12); 
 	my @items = split(" ", $message);
 
+
 	if(my $hash = $modules{SHRDZMDevice}{defptr}{$address})
 	{
+		Log3($hash->{NAME}, 1, $hash->{NAME} . "parse message : $message");
+
+
 		my @parameter = split(":", $items[2]);
 		
 		if($items[1] =~ "value")
@@ -146,6 +151,36 @@ sub SHRDZMDevice_Parse ($$)
 			
 			return $hash->{NAME};		
 		}
+		elsif($items[1] =~ "version")
+		{
+			$hash->{VERSION} = $parameter[1];
+
+			return $hash->{NAME};		
+		}
+		elsif($items[1] =~ "init")
+		{
+			# delete all readings
+			my @cList = keys %{$hash->{READINGS}};
+			foreach my $oldReading (@cList)
+			{
+				Log3 $hash->{NAME}, 1, "will delete $oldReading";
+				readingsDelete($hash, $oldReading);
+			}
+			
+			
+		#	readingsDelete($hash, $cList[0]);
+			
+			# Log3 $hash->{NAME}, 1, "--- first item $cList[0]";
+			
+			#foreach my $oldReading (keys %{$hash->{READINGS}})
+			#{
+			#	Log3 $hash->{NAME}, 1, "will delete $oldReading";
+			#	readingsDelete($hash, $oldReading);
+			#}
+			
+
+			return $hash->{NAME};		
+		}
 		elsif($items[1] =~ "config")
 		{
 			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
@@ -174,6 +209,12 @@ sub SHRDZMDevice_Parse ($$)
 			}
 
 			return $hash->{NAME};
+		}	
+		elsif($items[1] =~ "version")
+		{
+			$hash->{VERSION} = $message;
+
+			return $hash->{NAME};		
 		}		
 	}
 	else
@@ -181,6 +222,9 @@ sub SHRDZMDevice_Parse ($$)
 		# Keine Gerätedefinition verfügbar
 		# Daher Vorschlag define-Befehl: <NAME> <MODULNAME> <ADDRESSE>
 #		return "UNDEFINED SHRDZM_".$address." SHRDZMDevice $address";
+
+		Log3($hash->{NAME}, 1, $hash->{NAME} . "!!!parse message : $message");
+
 		return undef;
 	}
 }
