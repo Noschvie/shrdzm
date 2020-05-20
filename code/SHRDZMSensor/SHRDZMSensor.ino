@@ -41,6 +41,7 @@ SensorData* sd = NULL;
 int sensorDataSendCount = 0;
 String lastVersionNumber;
 bool sendUpdatedVersion = false;
+String ver, nam;
 
 ESP8266WiFiMulti WiFiMulti;
 String SSID;
@@ -62,7 +63,7 @@ void update_finished()
 
 void update_progress(int cur, int total) 
 {
-  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
 }
 
 void update_error(int err) 
@@ -377,6 +378,18 @@ void setup()
 #ifdef DEBUG
   Serial.begin(9600); Serial.println();
   Serial.println(ESP.getSketchMD5());
+#endif
+
+#ifdef VERSION
+  ver = String(VERSION);
+#else
+  ver = "0.0.0";  
+#endif
+
+#ifdef NAME
+  nam = String(NAME);
+#else
+  nam = "SHRDZMSensor";  
 #endif
 
 
@@ -776,7 +789,7 @@ void loop()
       
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
 
-      String versionStr = ESP.getSketchMD5();
+      String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
       Serial.println("WLAN connected!");
 
       WiFiClient client;  

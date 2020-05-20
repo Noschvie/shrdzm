@@ -57,7 +57,36 @@ loging2file($_SERVER['HTTP_X_ESP8266_VERSION']);
 
 loging2file(md5_file($localBinary));
 
-if($_SERVER['HTTP_X_ESP8266_VERSION'] != md5_file($localBinary))
+$versionparts = explode(" ", $_SERVER['HTTP_X_ESP8266_VERSION']);
+$parts = count($versionparts);
+
+if($parts == 3)
+{
+	if($versionparts[0] == "SHRDZMSensor")
+	{
+		if($versionparts[2] != md5_file($localBinary))
+		{
+			sendFile($localBinary);
+			exit();
+		}
+		else
+		{
+			header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
+		}
+	}
+	else
+	{
+		header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
+	}
+}
+else
+{
+	header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
+}
+
+
+
+/*if($_SERVER['HTTP_X_ESP8266_VERSION'] != md5_file($localBinary))
 {
 	sendFile($localBinary);
 	exit();
@@ -66,6 +95,7 @@ else
 {
 	header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
 }
+*/
 
 //header($_SERVER["SERVER_PROTOCOL"].' 500 no version for ESP MAC', true, 500);
 

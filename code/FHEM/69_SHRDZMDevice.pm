@@ -52,6 +52,7 @@ SHRDZMDevice_Initialize($)
     setList
     useSetExtensions
 	IODev
+	upgradePath
   );
   use warnings 'qw';
   $hash->{AttrList} = join(" ", @attrList)." $readingFnAttributes";
@@ -69,10 +70,19 @@ SHRDZMDevice_Set($@)
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{	
-		return "Unknown argument $cmd, choose one of "."upgrade ".ReadingsVal($name, ".SETS", "");
+		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", "");
 	}
 	
-	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+	if($cmd == "upgrade")
+	{
+		Log3($hash->{NAME}, 1, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
+		
+		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
+	}
+	else
+	{
+		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+	}
 		
 	return undef;
 }
@@ -166,18 +176,8 @@ sub SHRDZMDevice_Parse ($$)
 				Log3 $hash->{NAME}, 1, "will delete $oldReading";
 				readingsDelete($hash, $oldReading);
 			}
-			
-			
-		#	readingsDelete($hash, $cList[0]);
-			
-			# Log3 $hash->{NAME}, 1, "--- first item $cList[0]";
-			
-			#foreach my $oldReading (keys %{$hash->{READINGS}})
-			#{
-			#	Log3 $hash->{NAME}, 1, "will delete $oldReading";
-			#	readingsDelete($hash, $oldReading);
-			#}
-			
+
+			CommandAttr(undef,"$hash->{NAME} upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
 
 			return $hash->{NAME};		
 		}
@@ -244,7 +244,7 @@ SHRDZMDevice_Define($$)
 
 	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
 
-	readingsSingleUpdate($hash, "upgrade", "http\://shrdzm.pintarweb.net/upgrade.php", 1);
+#	readingsSingleUpdate($hash, "upgrade", "http\://shrdzm.pintarweb.net/upgrade.php", 1);
 
 	AssignIoPort($hash);
 

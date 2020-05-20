@@ -1,4 +1,5 @@
-#define FWVERSION	"1.0.0"
+#define VERSION		"1.0.0"
+#define NAME		"SHRDZMSensor"
 
 #define DEBUG
 #define SLEEP_SECS 2 * 60 
