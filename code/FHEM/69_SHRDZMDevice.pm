@@ -72,8 +72,8 @@ SHRDZMDevice_Set($@)
 	{	
 		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", "");
 	}
-	
-	if($cmd == "upgrade")
+
+	if($cmd eq "upgrade")
 	{
 		Log3($hash->{NAME}, 1, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
 		
@@ -81,6 +81,7 @@ SHRDZMDevice_Set($@)
 	}
 	else
 	{
+		Log3($hash->{NAME}, 1, $hash->{NAME} . " !!!! ".join(" ", @args));
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
 	}
 		
