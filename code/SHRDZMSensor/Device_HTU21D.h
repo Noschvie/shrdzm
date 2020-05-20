@@ -20,7 +20,7 @@ class Device_HTU21D : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
-    HTU21D *myHTU21D;
+    HTU21D myHTU21D;
 
   private:
   

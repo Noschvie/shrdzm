@@ -415,14 +415,16 @@ void setup()
   String currVersion = ESP.getSketchMD5();
 
   if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
-  //if(lastVersionNumber != currVersion)
   {
     Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
     sendUpdatedVersion = true;
     storeLastVersionNumber();
   }
 
-  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), INPUT_PULLUP);
+//  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), INPUT_PULLUP);
+  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
+  pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
+
 
   simpleEspConnection.begin();
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
