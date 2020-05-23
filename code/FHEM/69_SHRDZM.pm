@@ -29,6 +29,7 @@ my @topics = (
     "RCData",
     "IP",
     "version",
+    "gatewayaddress",
 	"+/config",
 	"+/sensor",
 	"+/init",
@@ -452,6 +453,10 @@ sub onmessage($$$) # from mqtt
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
+			elsif($item =~ "gatewayaddress")
+			{
+				$hash->{GATEWAY} = $message;
+			}			
 		}
 		elsif($len =~ 4)
 		{
