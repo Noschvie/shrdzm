@@ -250,9 +250,36 @@ sub ParseMessage($$) # from serial
 						Dispatch($hash, $params[1] . " value " . $params[2] );
 					}
 				}
+				elsif(substr($params[0], 5, 1) =~ "I") # INIT
+				{
+					Log3 $name, 5, "--- Init called ----";
+				
+					Dispatch($hash, $params[1] . " init " . "init:".$params[2] );				
+				}
+				elsif(substr($params[0], 5, 1) =~ "V") # Version
+				{
+					Log3 $name, 5, "--- Version called ----";
+				
+					Dispatch($hash, $params[1] . " version " . "version:".$params[2] );
+				}				
 			}
 		}
-	}	
+	}
+	elsif($len =~ 2)
+	{
+		if(substr($params[0], 0, 1) =~ "~" && substr($params[0], 5, 1) =~ "G")
+		{
+			Log3 $name, 5, "--- Gateway called ----";
+		
+			my @parameter = split(':', $params[1]);
+			my $parameterSize = @parameter;
+
+			if($parameterSize =~ 2)
+			{
+				$hash->{GATEWAY} = $parameter[1];
+			}
+		}
+	}
 }
 
 sub Read($)
