@@ -640,6 +640,26 @@ void sendGatewayUpdate(String data)
   client.publish((String(MQTT_TOPIC)+"/update").c_str(), data.c_str());  
 }
 
+void handleGatewayMessage(String cmd)
+{
+  StringSplitter *splitter = new StringSplitter(cmd, '$', 4);
+  int itemCount = splitter->getItemCount();
+
+  if(splitter->getItemAtIndex(0) == "[G]")
+  {
+    StringSplitter *splitter1 = new StringSplitter(splitter->getItemAtIndex(1), ':', 2);
+    int itemCount1 = splitter1->getItemCount();
+  
+    if(itemCount1 == 2)
+    {
+      if(splitter1->getItemAtIndex(0) == "address")
+      {
+        client.publish((String(MQTT_TOPIC)+"/gatewayaddress").c_str(), splitter1->getItemAtIndex(1).c_str());
+      }
+    }
+  }
+}
+
 void loop() 
 {
   server.handleClient();
@@ -724,6 +744,19 @@ void loop()
     else if(r == '#' ) 
     {
       sendGatewayUpdate(readGatewayReply());
+    }
+    else if(r == '~' ) 
+    {
+      while ( ! swSer.available() ) 
+      { 
+        delay(1); 
+      }
+      String cmd = readSerialSS();
+
+#ifdef DEBUG
+      Serial.println("Gateway message : "+cmd);
+#endif        
+      handleGatewayMessage(cmd);
     }
   }
 

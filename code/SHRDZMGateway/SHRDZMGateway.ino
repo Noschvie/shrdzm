@@ -22,6 +22,7 @@ JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
 String inputString;
 String clientAddress;
+String myAddress;
 
 SetupObject setupObject;
 
@@ -240,7 +241,6 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println();
-   //clientAddress = "807D3ADC8EF0"; // Test if you know the client
 
   SPIFFS.begin();
 
@@ -252,6 +252,16 @@ void setup()
     writeConfig();
   }   
 
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  myAddress = simpleEspConnection.macToStr(pmac);
+
+  String s = "~000[G]$address:"+myAddress;
+  Serial.write(s.c_str(), s.length());
+  Serial.write('\n');
+  delay(100);
+
+
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(2);
   simpleEspConnection.onMessage(&OnMessage);  
@@ -259,10 +269,6 @@ void setup()
   simpleEspConnection.onPairingFinished(&OnPairingFinished);    
   simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
-
-#ifdef DEBUG
-  Serial.println(WiFi.macAddress());    
-#endif  
 }
 
 void getConfig()
