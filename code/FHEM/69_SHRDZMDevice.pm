@@ -70,7 +70,7 @@ SHRDZMDevice_Set($@)
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{	
-		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", "");
+		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", ""). " devicetype:".ReadingsVal($name, ".SENSORS", "");
 	}
 
 	if($cmd eq "upgrade")
@@ -174,27 +174,40 @@ sub SHRDZMDevice_Parse ($$)
 			my @cList = keys %{$hash->{READINGS}};
 			foreach my $oldReading (@cList)
 			{
-				Log3 $hash->{NAME}, 1, "will delete $oldReading";
-				readingsDelete($hash, $oldReading);
+				if(!($oldReading =~ ".SENSORS"))
+				{
+					Log3 $hash->{NAME}, 1, "will delete $oldReading";
+					
+					readingsDelete($hash, $oldReading);
+				}
 			}
 
 			CommandAttr(undef,"$hash->{NAME} upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
 
 			return $hash->{NAME};		
 		}
+		elsif($items[1] =~ "sensors")
+		{			
+			readingsSingleUpdate($hash, ".SENSORS", $parameter[1], 0);
+			
+			return $hash->{NAME};		
+		}
 		elsif($items[1] =~ "config")
 		{
-			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
-			
-			my @existing = split(' ', $sl);
-						
-			if ( !($parameter[0] ~~ @existing ))
+			if(!($parameter[0] =~ "devicetype"))
 			{
-				push(@existing, $parameter[0]);
+				my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
+				
+				my @existing = split(' ', $sl);
+							
+				if ( !($parameter[0] ~~ @existing ))
+				{
+					push(@existing, $parameter[0]);
 
-				readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
+					readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
+				}
 			}
-
+			
 			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
 			$hash->{STATE} = "OK";
 

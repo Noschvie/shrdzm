@@ -32,6 +32,7 @@ my @topics = (
     "gatewayaddress",
 	"+/config",
 	"+/sensor",
+	"+/sensors",
 	"+/init",
 	"+/param",
 	"+/version",
@@ -262,6 +263,12 @@ sub ParseMessage($$) # from serial
 				
 					Dispatch($hash, $params[1] . " version " . "version:".$params[2] );
 				}				
+				elsif(substr($params[0], 5, 1) =~ "X") # Supported sensors
+				{
+					Log3 $name, 5, "--- Supported sensors called ----";
+				
+					Dispatch($hash, $params[1] . " sensors " . "sensors:".$params[2] );
+				}								
 			}
 		}
 	}
@@ -510,6 +517,12 @@ sub onmessage($$$) # from mqtt
 				{
 					Dispatch($hash, $abc[2] . " value " . $message );
 				}
+			}
+			elsif($item =~ "sensors")
+			{
+				Log3 $hash->{NAME}, 5, "sensors value $message";
+
+				Dispatch($hash, $abc[2] . " sensors " . "sensors:".$message );
 			}
 			elsif($abc[3] =~ "init")
 			{
