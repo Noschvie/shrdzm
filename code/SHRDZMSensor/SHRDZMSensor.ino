@@ -206,19 +206,24 @@ void sendSetup()
 #endif
 }
 
-void updateFirmware(String message)
+bool updateFirmware(String message)
 {
   if(message.indexOf('|') == -1)
-    return;
+  {
+    Serial.println("firmware update not possible ! "+message);
+    return false;
+  }
 
   SSID = getValue(message, '|', 0);
   password = getValue(message, '|', 1);
   host = getValue(message, '|', 2);
 
+  Serial.println("SSID:"+SSID+" password:"+password+" host:"+host);
+
   if(host.substring(0,7) != "http://")
   {
     Serial.println("Upgrade : only http address supported!");
-    return;    
+    return false;    
   }
 
   host = host.substring(7);
@@ -226,13 +231,13 @@ void updateFirmware(String message)
   if(host.substring(host.length()-4) != ".php")
   {
     Serial.println("Upgrade : only php update script supported");
-    return;    
+    return false;    
   }
 
   if(host.indexOf('/') == -1)
   {
     Serial.println("Upgrade : host string not valid");
-    return;    
+    return false;    
   }
 
   url = host.substring(host.indexOf('/'));
@@ -243,6 +248,8 @@ void updateFirmware(String message)
   WiFi.mode(WIFI_STA);
 
   WiFiMulti.addAP(SSID.c_str(), password.c_str());  
+
+  return true;
 }
 
 void OnMessage(uint8_t* ad, const char* message)
@@ -260,7 +267,11 @@ void OnMessage(uint8_t* ad, const char* message)
   {
     firmwareUpdate = true;   
 
-    updateFirmware(String(message).substring(3));
+    if(!updateFirmware(String(message).substring(3)))
+    {
+      delay(100);    
+      ESP.restart();            
+    }
   }
   else if(String(message) == "$S$") // ask for settings
   {
@@ -350,7 +361,8 @@ void actualizeDeviceType()
   {
     dev = new Device_DS18B20();
   }
-  else if(configuration["devicetype"] == "HTU21D")
+  else if(configuration["devicetype"] == "HTU21D" || configuration["devicetype"] == "HTU21" ||
+          configuration["devicetype"] == "SI7021" || configuration["devicetype"] == "SHT21")
   {
     dev = new Device_HTU21D();
   }
@@ -409,6 +421,9 @@ void setup()
     configuration["devicetype"] = "UNKNOWN";
 
     writeConfig();    
+
+    delay(100);    
+    ESP.restart();      
   }
 
   readLastVersionNumber();
@@ -421,10 +436,8 @@ void setup()
     storeLastVersionNumber();
   }
 
-//  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), INPUT_PULLUP);
   pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
   pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
-
 
   simpleEspConnection.begin();
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
@@ -474,7 +487,8 @@ void setup()
     {
       dev = new Device_DS18B20();
     }
-    else if(configuration["devicetype"] == "HTU21D")
+    else if(configuration["devicetype"] == "HTU21D" || configuration["devicetype"] == "HTU21" ||
+            configuration["devicetype"] == "SI7021" || configuration["devicetype"] == "SHT21")
     {
       dev = new Device_HTU21D();
     }
@@ -561,6 +575,9 @@ void setDeviceType(String deviceType)
      deviceType == "BME280" ||
      deviceType == "DS18B20" ||
      deviceType == "HTU21D" ||
+     deviceType == "HTU21" ||
+     deviceType == "SI7021" ||
+     deviceType == "SHT21" ||
      deviceType == "ANALOG" ||
      deviceType == "WATER")
   {
@@ -596,7 +613,8 @@ void setDeviceType(String deviceType)
     {
       dev = new Device_DS18B20();
     }
-    else if(deviceType == "HTU21D")
+    else if(deviceType == "HTU21D" || deviceType == "HTU21" ||
+            deviceType == "SI7021" || deviceType == "SHT21")
     {
       dev = new Device_HTU21D();
     }
@@ -750,6 +768,9 @@ void loop()
       else if(inputString.substring(0,14) == "setdevicetype ")
       {
         setDeviceType(inputString.substring(14));
+        
+        delay(100);
+        ESP.restart();
       }    
       else if(inputString == "endpair")
       {
@@ -814,7 +835,7 @@ void loop()
 #ifndef DISABLEGOTOSLEEP    
   if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && !firmwareUpdate)
   {
-    // everything donw and I can go to sleep
+    // everything down and I can go to sleep
     gotoSleep();
   }
 #endif    
@@ -825,6 +846,23 @@ void gotoSleep()
   delete dev;
   
   int sleepSecs = configuration["interval"]; 
+
+  if(configuration["devicetype"] == "UNKNOWN") // goto sleep just for 5 seconds and flash 2 times
+  {
+    sleepSecs = 5;
+#ifdef LEDPIN
+    pinMode(LEDPIN, OUTPUT);
+
+    digitalWrite(LEDPIN, LOW);
+    delay(500);
+    digitalWrite(LEDPIN, HIGH);
+    delay(500);
+    digitalWrite(LEDPIN, LOW);
+    delay(500);
+    digitalWrite(LEDPIN, HIGH);
+#endif
+  }
+
 #ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
 #endif
