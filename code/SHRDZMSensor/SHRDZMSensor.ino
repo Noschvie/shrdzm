@@ -530,6 +530,13 @@ void setup()
 
 void setConfig(String cmd)
 {
+  if(cmd == "configuration")
+  {
+    sendSetup();     
+
+    return;
+  }
+  
   if(cmd.indexOf(':') == -1)
     return;
 

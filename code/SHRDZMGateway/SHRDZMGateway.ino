@@ -352,6 +352,12 @@ void loop()
           setupObject.AddItem(splitter->getItemAtIndex(1), "$SC$"+splitter->getItemAtIndex(2), splitter->getItemAtIndex(3));        
         }
       }                
+      else if(inputString.substring(0,14) == "$configuration") // $configuration A4CF12D5D767 
+      {
+        StringSplitter *splitter = new StringSplitter(inputString, ' ', 4);
+        String s = "$A$";
+        setupObject.AddItem(splitter->getItemAtIndex(1), (char *)s.c_str());
+      }                
       else if(inputString.substring(0,7) == "$pair") // 
       {
         simpleEspConnection.startPairing(30);

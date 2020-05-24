@@ -37,6 +37,7 @@ SHRDZMDevice_Initialize($)
   my ($hash) = @_;
 
   $hash->{SetFn}     = "SHRDZMDevice_Set";
+  $hash->{GetFn}     = "SHRDZMDevice_Get";
   $hash->{DefFn}     = "SHRDZMDevice_Define";
   $hash->{ParseFn}   = "SHRDZMDevice_Parse";
   $hash->{UndefFn}   = "SHRDZMDevice_Undef";
@@ -61,6 +62,25 @@ SHRDZMDevice_Initialize($)
 }
 
 ###################################
+sub
+SHRDZMDevice_Get($$@)
+{
+	my ( $hash, $name, $opt, @args ) = @_;
+
+	return "\"get $name\" needs at least one argument" unless(defined($opt));
+
+	if($opt eq "configuration") 
+	{
+		Log3($hash->{NAME}, 1, $hash->{NAME} . " Get configuration called ");
+		
+		my $ret = IOWrite($hash, $hash->{DEF} . " configuration");		
+	}
+	else
+	{
+		return "Unknown argument $opt, choose one of configuration:noArg";
+	}
+}
+
 sub
 SHRDZMDevice_Set($@)
 {
@@ -188,6 +208,8 @@ sub SHRDZMDevice_Parse ($$)
 		}
 		elsif($items[1] =~ "sensors")
 		{			
+			Log3($hash->{NAME}, 1, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
+		
 			readingsSingleUpdate($hash, ".SENSORS", $parameter[1], 0);
 			
 			return $hash->{NAME};		

@@ -609,6 +609,11 @@ void sendSensorData(String data)
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/param").c_str(), 
           splitter->getItemAtIndex(2).c_str());
       }
+      else if(splitter->getItemAtIndex(0) == "[X]")  // Sensors
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensors").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }  
       else
       {
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/error").c_str(), 
@@ -1017,6 +1022,15 @@ void callback(char* topic, byte* payload, unsigned int length)
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
   {
       swSer.write("$getconfig");
+      swSer.write('\n');    
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,13) == "configuration")
+  {
+      StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+
+      String configurationText = String("$configuration "+splitter->getItemAtIndex(0));
+    
+      swSer.write(configurationText.c_str());
       swSer.write('\n');    
   }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")

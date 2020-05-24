@@ -506,6 +506,12 @@ sub onmessage($$$) # from mqtt
 					Dispatch($hash, $abc[2] . " config " . $message );
 				}
 			}
+			elsif($abc[3] =~ "sensors")
+			{
+				Log3 $hash->{NAME}, 1, "sensors value $message";
+
+				Dispatch($hash, $abc[2] . " sensors " . "sensors:".$message );
+			}
 			elsif($abc[3] =~ "sensor")
 			{
 				Log3 $hash->{NAME}, 5, "sensor value $message";
@@ -517,12 +523,6 @@ sub onmessage($$$) # from mqtt
 				{
 					Dispatch($hash, $abc[2] . " value " . $message );
 				}
-			}
-			elsif($item =~ "sensors")
-			{
-				Log3 $hash->{NAME}, 5, "sensors value $message";
-
-				Dispatch($hash, $abc[2] . " sensors " . "sensors:".$message );
 			}
 			elsif($abc[3] =~ "init")
 			{
