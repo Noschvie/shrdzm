@@ -73,7 +73,11 @@ SHRDZMDevice_Get($$@)
 	{
 		Log3($hash->{NAME}, 1, $hash->{NAME} . " Get configuration called ");
 		
-		my $ret = IOWrite($hash, $hash->{DEF} . " configuration");		
+		my $ret = IOWrite($hash, $hash->{DEF} . " configuration");	
+
+		return "Device ".
+		$hash->{NAME}.
+		" will be refreshed next time when it is up. Please be patient...";
 	}
 	else
 	{
@@ -98,11 +102,18 @@ SHRDZMDevice_Set($@)
 		Log3($hash->{NAME}, 1, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
 		
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
+		
+		return "Device ".
+		$hash->{NAME}.
+		" will be upgraded next time when it is up. Please be patient...";		
 	}
 	else
 	{
 		Log3($hash->{NAME}, 1, $hash->{NAME} . " !!!! ".join(" ", @args));
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+		
+		return $cmd.		
+		" will be changed next time when Device ".$hash->{NAME}." is up. Please be patient...";		
 	}
 		
 	return undef;
@@ -279,8 +290,6 @@ SHRDZMDevice_Define($$)
 	$modules{SHRDZMDevice}{defptr}{$address} = $hash;  
 
 	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
-
-#	readingsSingleUpdate($hash, "upgrade", "http\://shrdzm.pintarweb.net/upgrade.php", 1);
 
 	AssignIoPort($hash);
 
