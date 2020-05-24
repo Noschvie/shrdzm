@@ -198,6 +198,12 @@ void sendSetup()
     // send firmware version
     String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
     simpleEspConnection.sendMessage((char *)s.c_str());    
+
+    // send supported devices
+#ifdef SUPPORTED_DEVICES
+    s = String("$X$")+String(SUPPORTED_DEVICES);
+    simpleEspConnection.sendMessage((char *)s.c_str());    
+#endif
 }
 
 void updateFirmware(String message)
@@ -255,8 +261,6 @@ void OnMessage(uint8_t* ad, const char* message)
     firmwareUpdate = true;   
 
     updateFirmware(String(message).substring(3));
-
-  //  pairingOngoing = false;        
   }
   else if(String(message) == "$S$") // ask for settings
   {
@@ -303,8 +307,6 @@ void OnPairingFinished()
 
 void OnNewGatewayAddress(uint8_t *ga, String ad)
 {  
-//  Serial.println("New GatewayAddress '"+ad+"'");
-
   simpleEspConnection.setServerMac(ga);
   configuration["gateway"] = ad;  
 
@@ -314,8 +316,6 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 void OnSendError(uint8_t* ad)
 {
   Serial.println("SENDING TO '"+simpleEspConnection.macToStr(ad)+"' WAS NOT POSSIBLE!");
-
-//  pairingOngoing = false;
 }
 
 void OnSendDone(uint8_t* ad)
@@ -354,9 +354,9 @@ void actualizeDeviceType()
   {
     dev = new Device_HTU21D();
   }
-  else if(configuration["devicetype"] == "WATERSENSOR")
+  else if(configuration["devicetype"] == "WATER")
   {
-    dev = new Device_Watersensor();
+    dev = new Device_WATER();
   }
   else if(configuration["devicetype"] == "ANALOG")
   {
@@ -478,9 +478,9 @@ void setup()
     {
       dev = new Device_HTU21D();
     }
-    else if(configuration["devicetype"] == "WATERSENSOR")
+    else if(configuration["devicetype"] == "WATER")
     {
-      dev = new Device_Watersensor();
+      dev = new Device_WATER();
     }
     else if(configuration["devicetype"] == "ANALOG")
     {
@@ -562,7 +562,7 @@ void setDeviceType(String deviceType)
      deviceType == "DS18B20" ||
      deviceType == "HTU21D" ||
      deviceType == "ANALOG" ||
-     deviceType == "WATERSENSOR")
+     deviceType == "WATER")
   {
     configuration["devicetype"] = deviceType;
 
@@ -600,9 +600,9 @@ void setDeviceType(String deviceType)
     {
       dev = new Device_HTU21D();
     }
-    else if(deviceType == "WATERSENSOR")
+    else if(deviceType == "WATER")
     {
-      dev = new Device_Watersensor();
+      dev = new Device_WATER();
     }
     else if(deviceType == "ANALOG")
     {

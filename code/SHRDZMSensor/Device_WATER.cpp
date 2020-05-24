@@ -1,16 +1,16 @@
-#include "Device_Watersensor.h"
+#include "Device_WATER.h"
 
-Device_Watersensor::Device_Watersensor()
+Device_WATER::Device_WATER()
 {  
   
 }
 
-Device_Watersensor::~Device_Watersensor()
+Device_WATER::~Device_WATER()
 {
   Serial.println("Watersensor Instance deleted");
 }
 
-bool Device_Watersensor::setDeviceParameter(JsonObject obj)
+bool Device_WATER::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
@@ -20,7 +20,7 @@ bool Device_Watersensor::setDeviceParameter(JsonObject obj)
   }
 }
 
-bool Device_Watersensor::initialize()
+bool Device_WATER::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
@@ -30,7 +30,7 @@ bool Device_Watersensor::initialize()
   return true;
 }
 
-SensorData* Device_Watersensor::readParameterTypes()
+SensorData* Device_WATER::readParameterTypes()
 {
   SensorData *al = new SensorData(1);
 
@@ -39,7 +39,7 @@ SensorData* Device_Watersensor::readParameterTypes()
   return al;
 }
 
-SensorData* Device_Watersensor::readInitialSetupParameter()
+SensorData* Device_WATER::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
@@ -49,7 +49,7 @@ SensorData* Device_Watersensor::readInitialSetupParameter()
   return al;
 }
 
-SensorData* Device_Watersensor::readParameter()
+SensorData* Device_WATER::readParameter()
 {
   SensorData *al = new SensorData(1);
 

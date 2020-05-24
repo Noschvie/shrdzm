@@ -164,6 +164,12 @@ void OnMessage(uint8_t* ad, const char* message)
     Serial.write(s.c_str(), s.length());
     Serial.print('\n');
   }
+  else if(m.substring(0,3) == "$X$")  // Supported devices
+  {
+    String s = "*000[X]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
+    Serial.write(s.c_str(), s.length());
+    Serial.print('\n');
+  }
   else if(m.substring(0,3) == "$I$")  // Init due to new firmware
   {
     String s = "*000[I]$"+simpleEspConnection.macToStr(ad)+"$INIT";
