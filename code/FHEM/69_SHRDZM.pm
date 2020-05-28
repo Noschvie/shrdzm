@@ -120,7 +120,7 @@ sub Define()
 	
 	if($len =~ 4) # serial connection
 	{
-		Log3($hash->{NAME}, 0, "NEW serial device : " . $args[3]);
+		Log3($hash->{NAME}, 5, "NEW serial device : " . $args[3]);
 		$hash->{Protocol}= "serial";
 		$hash->{DeviceName}= $args[3];
 		my $ret = undef;
@@ -171,8 +171,6 @@ sub Define()
 sub Write ($$)
 {
 	my ( $hash, @arguments) = @_;
-
-    Log3($hash->{NAME}, 5, "Bin im Write vom SHRDZM. Parameter = ".join(" ", @arguments));
 
 	if($hash->{Protocol} =~ "serial")
 	{
@@ -409,7 +407,7 @@ sub onmessage($$$) # from mqtt
 	my $len = @abc;
 	my $name = $hash->{NAME};
 
-    Log3($hash->{NAME}, 1, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
+    Log3($hash->{NAME}, 5, "received message '" . $message . "' for topic: " . $topic . " - " . $len . " items");
 
 	if(substr($topic, 0, length($hash->{FULL_TOPIC})) =~ $hash->{FULL_TOPIC})
 	{
@@ -591,28 +589,27 @@ sub Attr($$$$)
 
 =pod
 =item helper
-=item summary    dummy device
-=item summary_DE dummy Ger&auml;t
+=item summary    Gateway which connects SHRDZMDevices via serial or MQTT
 =begin html
 
-<a name="dummy"></a>
-<h3>dummy</h3>
+<a name="SHRDZM"></a>
+<h3>SHRDZM</h3>
 <ul>
 
-  Define a dummy. A dummy can take via <a href="#set">set</a> any values.
-  Used for programming.
+  Gateway which connects SHRDZMDevices via serial or MQTT.
   <br><br>
 
-  <a name="dummydefine"></a>
+  <a name="SHRDZMdefine"></a>
   <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
+  <ul>    
+  
+    <code>define &lt;name&gt; SHRDZM &lt;device&gt; &lt;deviceid&gt; [&lt;serialPort&gt;]@9600</code>
     <br><br>
 
     Example:
     <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
+      <code>define serialSHRDZM SHRDZM B4E62D26F273 /dev/serial/by-path/platform-3f980000.usb-usb-0:1.5:1.0-port0@9600</code><br>
+      <code>define mqttSHRDZM SHRDZM ECFABC0CE7A2</code><br>
     </ul>
   </ul>
   <br>
@@ -660,72 +657,5 @@ sub Attr($$$$)
 
 =end html
 
-=begin html_DE
-
-<a name="dummy"></a>
-<h3>dummy</h3>
-<ul>
-
-  Definiert eine Pseudovariable, der mit <a href="#set">set</a> jeder beliebige
-  Wert zugewiesen werden kann.  Sinnvoll zum Programmieren.
-  <br><br>
-
-  <a name="dummydefine"></a>
-  <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
-    <br><br>
-
-    Beispiel:
-    <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
-    </ul>
-  </ul>
-  <br>
-
-  <a name="dummyset"></a>
-  <b>Set</b>
-  <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Weist einen Wert zu.
-  </ul>
-  <br>
-
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
-
-  <a name="dummyattr"></a>
-  <b>Attributes</b>
-  <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Leerzeichen getrennte Liste mit Readings, die mit "set" gesetzt werden
-      k&ouml;nnen.</li>
-
-    <li><a name="setList">setList</a><br>
-      Liste mit Werten durch Leerzeichen getrennt. Diese Liste wird mit "set
-      name ?" ausgegeben.  Damit kann das FHEMWEB-Frontend Auswahl-Men&uuml;s
-      oder Schalter erzeugen.<br> Beispiel: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      Falls gesetzt, und setList enth&auml;lt on und off, dann sind die <a
-      href="#setExtensions">set extensions</a> verf&uuml;gbar.<br>
-      Seiteneffekt: falls gesetzt, werden nur die spezifizierten Parameter
-      akzeptiert, auch dann, wenn setList kein on und off enth&auml;lt.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      Falls gesetzt, enth&auml;lt das Event den im SetExtensions
-      implementierten Befehl (z.Bsp. on-for-timer 10), sonst den
-      Ausgef&uuml;rten (z.Bsp. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
-  </ul>
-  <br>
-
-</ul>
-
-=end html_DE
 
 =cut

@@ -99,7 +99,14 @@ SHRDZMDevice_Set($@)
 
 	if($cmd eq "upgrade")
 	{
-		Log3($hash->{NAME}, 1, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
+		if($hash->{IODev}{Protocol} eq 'serial')
+		{
+			return "Device ".
+			$hash->{NAME}.
+			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
+		}
+		
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
 		
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
 		
@@ -109,7 +116,7 @@ SHRDZMDevice_Set($@)
 	}
 	else
 	{
-		Log3($hash->{NAME}, 1, $hash->{NAME} . " !!!! ".join(" ", @args));
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " !!!! ".join(" ", @args));
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
 		
 		return $cmd.		
@@ -135,7 +142,7 @@ sub SHRDZMDevice_GetUpdate ($$)
 
 	readingsSingleUpdate($hash, "online", "0", 1);	
 
-	Log3($hash->{NAME}, 1, $hash->{NAME} . " went OFFLINE");
+	Log3($hash->{NAME}, 5, $hash->{NAME} . " went OFFLINE");
 }
 
 sub SHRDZMDevice_Fingerprint($$)
@@ -158,7 +165,7 @@ sub SHRDZMDevice_Parse ($$)
 
 	if(my $hash = $modules{SHRDZMDevice}{defptr}{$address})
 	{
-		Log3($hash->{NAME}, 1, $hash->{NAME} . "parse message : $message");
+		Log3($hash->{NAME}, 5, $hash->{NAME} . "parse message : $message");
 
 
 		my @parameter = split(":", $items[2]);
@@ -219,7 +226,7 @@ sub SHRDZMDevice_Parse ($$)
 		}
 		elsif($items[1] =~ "sensors")
 		{			
-			Log3($hash->{NAME}, 1, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
+			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
 		
 			readingsSingleUpdate($hash, ".SENSORS", $parameter[1], 0);
 			
@@ -250,8 +257,6 @@ sub SHRDZMDevice_Parse ($$)
 				
 				my $t1 = gettimeofday()+($parameter[1]*2);
 			
-				Log3($hash->{NAME}, 5, "jetzt = ".localtime(gettimeofday()).", timer auf ".localtime($t1));
-				
 				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 			}
 
@@ -270,7 +275,7 @@ sub SHRDZMDevice_Parse ($$)
 		# Daher Vorschlag define-Befehl: <NAME> <MODULNAME> <ADDRESSE>
 #		return "UNDEFINED SHRDZM_".$address." SHRDZMDevice $address";
 
-		Log3($hash->{NAME}, 1, $hash->{NAME} . "!!!parse message : $message");
+		Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!parse message : $message");
 
 		return undef;
 	}
