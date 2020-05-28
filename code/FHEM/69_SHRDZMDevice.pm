@@ -305,68 +305,73 @@ SHRDZMDevice_Define($$)
 
 =pod
 =item helper
-=item summary    dummy device
-=item summary_DE dummy Ger&auml;t
+=item summary    Single SHRDZM sensor device
 =begin html
 
-<a name="dummy"></a>
-<h3>dummy</h3>
+<a name="SHRDZMDevice"></a>
+<h3>SHRDZMDevice</h3>
 <ul>
 
-  Define a dummy. A dummy can take via <a href="#set">set</a> any values.
-  Used for programming.
+  Single SHRDZM device which is connected via EspNow protocol to a SHRDZM Gateway.
+  <br>
+  <br>
+	More detailed information about SHRDZM Sensor Integration Platform is available in the<br/>
+	<a href="https://github.com/saghonfly/shrdzm/wiki/" target="_blank">SHRDZM Wiki</a>
   <br><br>
-
-  <a name="dummydefine"></a>
+  <a name="SHRDZMDevice_Define"></a>
   <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
+  <ul>    
+  
+    <code>define &lt;name&gt; SHRDZMDevice &lt;unique-deviceid&gt;</code><br/>
     <br><br>
 
-    Example:
-    <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
-    </ul>
+	This module represents a single SHRDZM sensor device.<br>
+	SHRDZMDevice will be crated automatically by a SHRDZM Gateway during pairing.
+	<br/><br/>
   </ul>
   <br>
 
-  <a name="dummyset"></a>
+  <a name="SHRDZMDevice_Set"></a>
   <b>Set</b>
   <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Set any value.
+	<li>
+		<p>
+			<code>set &lt;devicetype&gt; &lt;value&gt</code><br>
+			Sets the type of the sensor.<br/>
+		</p>
+	</li>
+	<li>
+		<p>
+			<code>set &lt;upgrade&gt;</code><br>
+			Will update the physical SHRDZMDevice sensor module with the newest firmware defined in the upgradePath attribute.<br/>
+			This is only working if the device is connected via MQTT Gateway.
+		</p>
+	</li>
   </ul>
   <br>
 
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
+  <a name="SHRDZMDevice_Get"></a>
+  <b>Get</b>
+  <ul>
+	<li>
+		<p>
+			<code>get &lt;configuration&gt;</code><br>
+			Configuration will be refreshed at next time when the sensor is up.<br/>
+		</p>
+	</li>
+  </ul>
+  <br>
 
-  <a name="dummyattr"></a>
+  <a name="SHRDZMDevice_Attr"></a>
   <b>Attributes</b>
   <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Space separated list of readings, which will be set, if the first
-      argument of the set command matches one of them.</li>
-
-    <li><a name="setList">setList</a><br>
-      Space separated list of commands, which will be returned upon "set name
-      ?", so the FHEMWEB frontend can construct a dropdown and offer on/off
-      switches. Example: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      If set, and setList contains on and off, then the
-      <a href="#setExtensions">set extensions</a> are available.<br>
-      Side-effect: if set, only the specified parameters are accepted, even if
-      setList contains no on and off.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      If set, the event will contain the command implemented by SetExtensions
-      (e.g. on-for-timer 10), else the executed command (e.g. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
+	<li>
+      <p>
+		<code>attr &lt;name&gt; upgradePath &lt;http-address&gt;</code><br/>
+        specify the http-path which provides the newest sensor firmware for over-the-air upgrade.<br/>
+		This is only working if the device is connected via MQTT Gateway. 
+	  </p>	
+	</li>
   </ul>
   <br>
 
@@ -374,72 +379,5 @@ SHRDZMDevice_Define($$)
 
 =end html
 
-=begin html_DE
-
-<a name="dummy"></a>
-<h3>dummy</h3>
-<ul>
-
-  Definiert eine Pseudovariable, der mit <a href="#set">set</a> jeder beliebige
-  Wert zugewiesen werden kann.  Sinnvoll zum Programmieren.
-  <br><br>
-
-  <a name="dummydefine"></a>
-  <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
-    <br><br>
-
-    Beispiel:
-    <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
-    </ul>
-  </ul>
-  <br>
-
-  <a name="dummyset"></a>
-  <b>Set</b>
-  <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Weist einen Wert zu.
-  </ul>
-  <br>
-
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
-
-  <a name="dummyattr"></a>
-  <b>Attributes</b>
-  <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Leerzeichen getrennte Liste mit Readings, die mit "set" gesetzt werden
-      k&ouml;nnen.</li>
-
-    <li><a name="setList">setList</a><br>
-      Liste mit Werten durch Leerzeichen getrennt. Diese Liste wird mit "set
-      name ?" ausgegeben.  Damit kann das FHEMWEB-Frontend Auswahl-Men&uuml;s
-      oder Schalter erzeugen.<br> Beispiel: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      Falls gesetzt, und setList enth&auml;lt on und off, dann sind die <a
-      href="#setExtensions">set extensions</a> verf&uuml;gbar.<br>
-      Seiteneffekt: falls gesetzt, werden nur die spezifizierten Parameter
-      akzeptiert, auch dann, wenn setList kein on und off enth&auml;lt.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      Falls gesetzt, enth&auml;lt das Event den im SetExtensions
-      implementierten Befehl (z.Bsp. on-for-timer 10), sonst den
-      Ausgef&uuml;rten (z.Bsp. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
-  </ul>
-  <br>
-
-</ul>
-
-=end html_DE
 
 =cut

@@ -605,7 +605,7 @@ sub Attr($$$$)
 	More detailed information about SHRDZM Sensor Integration Platform is available in the<br/>
 	<a href="https://github.com/saghonfly/shrdzm/wiki/" target="_blank">SHRDZM Wiki</a>
   <br><br>
-  <a name="SHRDZMdefine"></a>
+  <a name="Define"></a>
   <b>Define</b>
   <ul>    
   
