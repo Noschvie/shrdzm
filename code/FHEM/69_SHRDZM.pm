@@ -597,15 +597,24 @@ sub Attr($$$$)
 <ul>
 
   Gateway which connects SHRDZMDevices via serial or MQTT.
+  <br>
+  <br>
+	Note: MQTT mode requires a MQTT-device as IODev. <br/>
+	This module is based on Net::MQTT which needs to be installed from CPAN first.
   <br><br>
-
+	More detailed information about SHRDZM Sensor Integration Platform is available in the<br/>
+	<a href="https://github.com/saghonfly/shrdzm/wiki/" target="_blank">SHRDZM Wiki</a>
+  <br><br>
   <a name="SHRDZMdefine"></a>
   <b>Define</b>
   <ul>    
   
-    <code>define &lt;name&gt; SHRDZM &lt;device&gt; &lt;deviceid&gt; [&lt;serialPort&gt;]@9600</code>
+    <code>define &lt;name&gt; SHRDZM &lt;device&gt; &lt;devicename&gt; [&lt;serial-device&gt;]@9600</code><br/>
+    <code>define &lt;name&gt; SHRDZM &lt;device&gt; &lt;mqtt-deviceid&gt;</code>
     <br><br>
 
+	This module acts as gateway and generates automatically SHRDZMDevice instances when paired.
+	<br/><br/>
     Example:
     <ul>
       <code>define serialSHRDZM SHRDZM B4E62D26F273 /dev/serial/by-path/platform-3f980000.usb-usb-0:1.5:1.0-port0@9600</code><br>
@@ -614,44 +623,33 @@ sub Attr($$$$)
   </ul>
   <br>
 
-  <a name="dummyset"></a>
+  <a name="Set"></a>
   <b>Set</b>
   <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Set any value.
+	<li>
+		<p>
+			<code>set &lt;RCSend&gt; &lt;value&gt</code><br>
+			Sends a 433MHz code.<br/>
+			Only available if Protocol is MQTT and if SHRDZM Integration Style is 
+			<a href="https://github.com/saghonfly/shrdzm/raw/dev/hardware/IntegrationStyle_2a.png?raw=true" target="_blank">IIa</a>.<br/>
+		</p>
+	</li>
+	<li>
+		<p>
+			<code>set &lt;pair&gt; &lt;value&gt</code><br>
+			Sets the gateway to pairing mode.<br/>
+		</p>
+	</li>
+	<li>
+		<p>
+			<code>set &lt;reset&gt;</code><br>
+			Resets the gateway.<br/>
+		</p>
+	</li>
   </ul>
   <br>
 
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
 
-  <a name="dummyattr"></a>
-  <b>Attributes</b>
-  <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Space separated list of readings, which will be set, if the first
-      argument of the set command matches one of them.</li>
-
-    <li><a name="setList">setList</a><br>
-      Space separated list of commands, which will be returned upon "set name
-      ?", so the FHEMWEB frontend can construct a dropdown and offer on/off
-      switches. Example: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      If set, and setList contains on and off, then the
-      <a href="#setExtensions">set extensions</a> are available.<br>
-      Side-effect: if set, only the specified parameters are accepted, even if
-      setList contains no on and off.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      If set, the event will contain the command implemented by SetExtensions
-      (e.g. on-for-timer 10), else the executed command (e.g. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
-  </ul>
-  <br>
 
 </ul>
 
