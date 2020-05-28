@@ -374,6 +374,14 @@ void actualizeDeviceType()
   {
     dev = new Device_ANALOG();
   }
+  else if(configuration["devicetype"] == "DIGITAL")
+  {
+    dev = new Device_DIGITAL();
+  }
+  else if(configuration["devicetype"] == "DIGITAL")
+  {
+    dev = new Device_DIGITALGROUND();
+  }
 
   if(dev != NULL)
   {
@@ -500,6 +508,14 @@ void setup()
     {
       dev = new Device_ANALOG();
     }
+    else if(configuration["devicetype"] == "DIGITAL")
+    {
+      dev = new Device_DIGITAL();
+    }
+    else if(configuration["devicetype"] == "DIGITALGROUND")
+    {
+      dev = new Device_DIGITALGROUND();
+    }
 
     if(dev != NULL)
     {
@@ -586,6 +602,8 @@ void setDeviceType(String deviceType)
      deviceType == "SI7021" ||
      deviceType == "SHT21" ||
      deviceType == "ANALOG" ||
+     deviceType == "DIGITAL" ||
+     deviceType == "DIGITALGROUND" ||
      deviceType == "WATER")
   {
     configuration["devicetype"] = deviceType;
@@ -632,6 +650,14 @@ void setDeviceType(String deviceType)
     else if(deviceType == "ANALOG")
     {
       dev = new Device_ANALOG();
+    }
+    else if(deviceType == "DIGITAL")
+    {
+      dev = new Device_DIGITAL();
+    }
+    else if(deviceType == "DIGITALGROUND")
+    {
+      dev = new Device_DIGITALGROUND();
     }
     else
     {
@@ -770,7 +796,7 @@ void loop()
 
       if(inputString == "startpair")
       {
-        simpleEspConnection.startPairing(30);
+        simpleEspConnection.startPairing(60);
       }
       else if(inputString.substring(0,14) == "setdevicetype ")
       {

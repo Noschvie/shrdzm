@@ -10,7 +10,7 @@
 #define SENSORPOWERPIN 14  // sensor is powerd by this pin
 #define MAXCONTROLWAIT 500	// wait 500 millisecond in case gateway wants to control
 
-#define SUPPORTED_DEVICES "DHT22,BH1750,BMP280,BME280,DS18B20,HTU21,HTU21D,SI7021,SHT21,WATER,ANALOG"
+#define SUPPORTED_DEVICES "DHT22,BH1750,BMP280,BME280,DS18B20,HTU21,HTU21D,SI7021,SHT21,WATER,ANALOG,DIGITAL,DIGITALGROUND"
 
 #include "..\Device_DHT22.h"
 #include "..\Device_BH1750.h"
@@ -20,3 +20,5 @@
 #include "..\Device_HTU21D.h"
 #include "..\Device_WATER.h"
 #include "..\Device_ANALOG.h"
+#include "..\Device_DIGITAL.h"
+#include "..\Device_DIGITALGROUND.h"
