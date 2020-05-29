@@ -1,17 +1,14 @@
-#ifndef Device_HTU21D_H
-#define Device_HTU21D_H
+#ifndef Device_WATER_H
+#define Device_WATER_H
 
-#include <Wire.h>
 #include "DeviceBase.h"
 
-// Sensors
-#include <HTU21D.h>
 
-class Device_HTU21D : public DeviceBase
+class Device_WATER : public DeviceBase
 {   
   public:
-    Device_HTU21D();
-    ~Device_HTU21D();
+    Device_WATER();
+    ~Device_WATER();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
@@ -20,10 +17,10 @@ class Device_HTU21D : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
-    HTU21D myHTU21D;
+
 
   private:
-  
+
 
 };
 

@@ -1,17 +1,18 @@
-#ifndef Device_HTU21D_H
-#define Device_HTU21D_H
+#ifndef Device_BME280_H
+#define Device_BME280_H
 
 #include <Wire.h>
 #include "DeviceBase.h"
 
 // Sensors
-#include <HTU21D.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
-class Device_HTU21D : public DeviceBase
+class Device_BME280 : public DeviceBase
 {   
   public:
-    Device_HTU21D();
-    ~Device_HTU21D();
+    Device_BME280();
+    ~Device_BME280();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
@@ -20,7 +21,7 @@ class Device_HTU21D : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
-    HTU21D myHTU21D;
+    Adafruit_BME280 bme;
 
   private:
   

@@ -2,20 +2,16 @@
 
 Device_HTU21D::Device_HTU21D()
 {  
-  myHTU21D = new HTU21D(HTU21D_RES_RH12_TEMP14);
 }
 
 Device_HTU21D::~Device_HTU21D()
 {
   Serial.println("HTU21D Instance deleted");
-  delete myHTU21D;
 }
 
 bool Device_HTU21D::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
-
-  myHTU21D->begin();
 }
 
 bool Device_HTU21D::initialize()
@@ -38,19 +34,21 @@ SensorData* Device_HTU21D::readParameterTypes()
 
 SensorData* Device_HTU21D::readInitialSetupParameter()
 {
-  SensorData *al = new SensorData(1);
+  SensorData *al = new SensorData(0);
 
   return al;
 }
 
 SensorData* Device_HTU21D::readParameter()
 {
+  myHTU21D.begin();
+  
   SensorData *al = new SensorData(2);
   
   al->di[0].nameI = "humidity";
-  al->di[0].valueI = String(myHTU21D->readHumidity());  
+  al->di[0].valueI = String(myHTU21D.readHumidity());  
   al->di[1].nameI = "temperature";
-  al->di[1].valueI = String(myHTU21D->readTemperature());  
+  al->di[1].valueI = String(myHTU21D.readTemperature());  
 
   return al;
 }

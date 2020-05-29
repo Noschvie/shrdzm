@@ -14,7 +14,11 @@ bool Device_BH1750::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
-  bool avail = BH1750.begin(BH1750_TO_GROUND);
+  bool avail = false;
+
+  uint8_t address = strtoul(deviceParameter["address"], NULL, 0);  
+  
+  avail = BH1750.begin(address);
 
   if(!avail)
     Serial.println("Sensor not found!");
@@ -26,6 +30,8 @@ bool Device_BH1750::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
+
+  deviceParameter["address"] = "0x23"; // default is GND to address pin, 0x5C means address pin is connetced to VCC
       
   return true;
 }
@@ -42,6 +48,9 @@ SensorData* Device_BH1750::readParameterTypes()
 SensorData* Device_BH1750::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
+
+  al->di[0].nameI = "address";
+  al->di[0].valueI = "0x23";
 
   return al;
 }

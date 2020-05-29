@@ -19,6 +19,7 @@ BEGIN {
         readingsBulkUpdate
         readingsBeginUpdate
         readingsEndUpdate
+		readingsDelete
         Log3
         SetExtensions
         SetExtensionsCancel
@@ -36,6 +37,7 @@ SHRDZMDevice_Initialize($)
   my ($hash) = @_;
 
   $hash->{SetFn}     = "SHRDZMDevice_Set";
+  $hash->{GetFn}     = "SHRDZMDevice_Get";
   $hash->{DefFn}     = "SHRDZMDevice_Define";
   $hash->{ParseFn}   = "SHRDZMDevice_Parse";
   $hash->{UndefFn}   = "SHRDZMDevice_Undef";
@@ -51,6 +53,7 @@ SHRDZMDevice_Initialize($)
     setList
     useSetExtensions
 	IODev
+	upgradePath
   );
   use warnings 'qw';
   $hash->{AttrList} = join(" ", @attrList)." $readingFnAttributes";
@@ -60,6 +63,29 @@ SHRDZMDevice_Initialize($)
 
 ###################################
 sub
+SHRDZMDevice_Get($$@)
+{
+	my ( $hash, $name, $opt, @args ) = @_;
+
+	return "\"get $name\" needs at least one argument" unless(defined($opt));
+
+	if($opt eq "configuration") 
+	{
+		Log3($hash->{NAME}, 1, $hash->{NAME} . " Get configuration called ");
+		
+		my $ret = IOWrite($hash, $hash->{DEF} . " configuration");	
+
+		return "Device ".
+		$hash->{NAME}.
+		" will be refreshed next time when it is up. Please be patient...";
+	}
+	else
+	{
+		return "Unknown argument $opt, choose one of configuration:noArg";
+	}
+}
+
+sub
 SHRDZMDevice_Set($@)
 {
 	my ( $hash, $name, $cmd, @args ) = @_;
@@ -68,10 +94,34 @@ SHRDZMDevice_Set($@)
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{	
-		return "Unknown argument $cmd, choose one of "."update ".ReadingsVal($name, ".SETS", "");
+		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", ""). " devicetype:".ReadingsVal($name, ".SENSORS", "");
 	}
-	
-	my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+
+	if($cmd eq "upgrade")
+	{
+		if($hash->{IODev}{Protocol} eq 'serial')
+		{
+			return "Device ".
+			$hash->{NAME}.
+			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
+		}
+		
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
+		
+		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
+		
+		return "Device ".
+		$hash->{NAME}.
+		" will be upgraded next time when it is up. Please be patient...";		
+	}
+	else
+	{
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " !!!! ".join(" ", @args));
+		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+		
+		return $cmd.		
+		" will be changed next time when Device ".$hash->{NAME}." is up. Please be patient...";		
+	}
 		
 	return undef;
 }
@@ -92,7 +142,7 @@ sub SHRDZMDevice_GetUpdate ($$)
 
 	readingsSingleUpdate($hash, "online", "0", 1);	
 
-	Log3($hash->{NAME}, 1, $hash->{NAME} . " went OFFLINE");
+	Log3($hash->{NAME}, 5, $hash->{NAME} . " went OFFLINE");
 }
 
 sub SHRDZMDevice_Fingerprint($$)
@@ -112,8 +162,12 @@ sub SHRDZMDevice_Parse ($$)
 	my $address = substr($message, 0, 12); 
 	my @items = split(" ", $message);
 
+
 	if(my $hash = $modules{SHRDZMDevice}{defptr}{$address})
 	{
+		Log3($hash->{NAME}, 5, $hash->{NAME} . "parse message : $message");
+
+
 		my @parameter = split(":", $items[2]);
 		
 		if($items[1] =~ "value")
@@ -146,19 +200,54 @@ sub SHRDZMDevice_Parse ($$)
 			
 			return $hash->{NAME};		
 		}
-		elsif($items[1] =~ "config")
+		elsif($items[1] =~ "version")
 		{
-			my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
-			
-			my @existing = split(' ', $sl);
-						
-			if ( !($parameter[0] ~~ @existing ))
-			{
-				push(@existing, $parameter[0]);
+			$hash->{VERSION} = $parameter[1];
 
-				readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
+			return $hash->{NAME};		
+		}
+		elsif($items[1] =~ "init")
+		{
+			# delete all readings
+			my @cList = keys %{$hash->{READINGS}};
+			foreach my $oldReading (@cList)
+			{
+				if(!($oldReading =~ ".SENSORS"))
+				{
+					Log3 $hash->{NAME}, 1, "will delete $oldReading";
+					
+					readingsDelete($hash, $oldReading);
+				}
 			}
 
+			CommandAttr(undef,"$hash->{NAME} upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
+
+			return $hash->{NAME};		
+		}
+		elsif($items[1] =~ "sensors")
+		{			
+			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
+		
+			readingsSingleUpdate($hash, ".SENSORS", $parameter[1], 0);
+			
+			return $hash->{NAME};		
+		}
+		elsif($items[1] =~ "config")
+		{
+			if(!($parameter[0] =~ "devicetype"))
+			{
+				my $sl = ReadingsVal($hash->{NAME}, ".SETS", "");
+				
+				my @existing = split(' ', $sl);
+							
+				if ( !($parameter[0] ~~ @existing ))
+				{
+					push(@existing, $parameter[0]);
+
+					readingsSingleUpdate($hash, ".SETS", join(" ", @existing), 0);				
+				}
+			}
+			
 			my $rv = readingsSingleUpdate($hash, $parameter[0], $parameter[1], 1);
 			$hash->{STATE} = "OK";
 
@@ -168,12 +257,16 @@ sub SHRDZMDevice_Parse ($$)
 				
 				my $t1 = gettimeofday()+($parameter[1]*2);
 			
-				Log3($hash->{NAME}, 5, "jetzt = ".localtime(gettimeofday()).", timer auf ".localtime($t1));
-				
 				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
 			}
 
 			return $hash->{NAME};
+		}	
+		elsif($items[1] =~ "version")
+		{
+			$hash->{VERSION} = $message;
+
+			return $hash->{NAME};		
 		}		
 	}
 	else
@@ -181,6 +274,9 @@ sub SHRDZMDevice_Parse ($$)
 		# Keine Gerätedefinition verfügbar
 		# Daher Vorschlag define-Befehl: <NAME> <MODULNAME> <ADDRESSE>
 #		return "UNDEFINED SHRDZM_".$address." SHRDZMDevice $address";
+
+		Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!parse message : $message");
+
 		return undef;
 	}
 }
@@ -200,8 +296,6 @@ SHRDZMDevice_Define($$)
 
 	return "Invalid number of arguments: define <name> SHRDZMDevice identifier" if (int(@a) < 2);
 
-	readingsSingleUpdate($hash, "update", "http\://shrdzm.pintarweb.net/newversion.bin", 1);
-
 	AssignIoPort($hash);
 
 	return undef;
@@ -211,68 +305,73 @@ SHRDZMDevice_Define($$)
 
 =pod
 =item helper
-=item summary    dummy device
-=item summary_DE dummy Ger&auml;t
+=item summary    Single SHRDZM sensor device
 =begin html
 
-<a name="dummy"></a>
-<h3>dummy</h3>
+<a name="SHRDZMDevice"></a>
+<h3>SHRDZMDevice</h3>
 <ul>
 
-  Define a dummy. A dummy can take via <a href="#set">set</a> any values.
-  Used for programming.
+  Single SHRDZM device which is connected via EspNow protocol to a SHRDZM Gateway.
+  <br>
+  <br>
+	More detailed information about SHRDZM Sensor Integration Platform is available in the<br/>
+	<a href="https://github.com/saghonfly/shrdzm/wiki/" target="_blank">SHRDZM Wiki</a>
   <br><br>
-
-  <a name="dummydefine"></a>
+  <a name="SHRDZMDevice_Define"></a>
   <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
+  <ul>    
+  
+    <code>define &lt;name&gt; SHRDZMDevice &lt;unique-deviceid&gt;</code><br/>
     <br><br>
 
-    Example:
-    <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
-    </ul>
+	This module represents a single SHRDZM sensor device.<br>
+	SHRDZMDevice will be crated automatically by a SHRDZM Gateway during pairing.
+	<br/><br/>
   </ul>
   <br>
 
-  <a name="dummyset"></a>
+  <a name="SHRDZMDevice_Set"></a>
   <b>Set</b>
   <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Set any value.
+	<li>
+		<p>
+			<code>set &lt;devicetype&gt; &lt;value&gt</code><br>
+			Sets the type of the sensor.<br/>
+		</p>
+	</li>
+	<li>
+		<p>
+			<code>set &lt;upgrade&gt;</code><br>
+			Will update the physical SHRDZMDevice sensor module with the newest firmware defined in the upgradePath attribute.<br/>
+			This is only working if the device is connected via MQTT Gateway.
+		</p>
+	</li>
   </ul>
   <br>
 
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
+  <a name="SHRDZMDevice_Get"></a>
+  <b>Get</b>
+  <ul>
+	<li>
+		<p>
+			<code>get &lt;configuration&gt;</code><br>
+			Configuration will be refreshed at next time when the sensor is up.<br/>
+		</p>
+	</li>
+  </ul>
+  <br>
 
-  <a name="dummyattr"></a>
+  <a name="SHRDZMDevice_Attr"></a>
   <b>Attributes</b>
   <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Space separated list of readings, which will be set, if the first
-      argument of the set command matches one of them.</li>
-
-    <li><a name="setList">setList</a><br>
-      Space separated list of commands, which will be returned upon "set name
-      ?", so the FHEMWEB frontend can construct a dropdown and offer on/off
-      switches. Example: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      If set, and setList contains on and off, then the
-      <a href="#setExtensions">set extensions</a> are available.<br>
-      Side-effect: if set, only the specified parameters are accepted, even if
-      setList contains no on and off.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      If set, the event will contain the command implemented by SetExtensions
-      (e.g. on-for-timer 10), else the executed command (e.g. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
+	<li>
+      <p>
+		<code>attr &lt;name&gt; upgradePath &lt;http-address&gt;</code><br/>
+        specify the http-path which provides the newest sensor firmware for over-the-air upgrade.<br/>
+		This is only working if the device is connected via MQTT Gateway. 
+	  </p>	
+	</li>
   </ul>
   <br>
 
@@ -280,72 +379,5 @@ SHRDZMDevice_Define($$)
 
 =end html
 
-=begin html_DE
-
-<a name="dummy"></a>
-<h3>dummy</h3>
-<ul>
-
-  Definiert eine Pseudovariable, der mit <a href="#set">set</a> jeder beliebige
-  Wert zugewiesen werden kann.  Sinnvoll zum Programmieren.
-  <br><br>
-
-  <a name="dummydefine"></a>
-  <b>Define</b>
-  <ul>
-    <code>define &lt;name&gt; dummy</code>
-    <br><br>
-
-    Beispiel:
-    <ul>
-      <code>define myvar dummy</code><br>
-      <code>set myvar 7</code><br>
-    </ul>
-  </ul>
-  <br>
-
-  <a name="dummyset"></a>
-  <b>Set</b>
-  <ul>
-    <code>set &lt;name&gt; &lt;value&gt</code><br>
-    Weist einen Wert zu.
-  </ul>
-  <br>
-
-  <a name="dummyget"></a>
-  <b>Get</b> <ul>N/A</ul><br>
-
-  <a name="dummyattr"></a>
-  <b>Attributes</b>
-  <ul>
-    <li><a href="#disable">disable</a></li>
-    <li><a href="#disabledForIntervals">disabledForIntervals</a></li>
-    <li><a name="readingList">readingList</a><br>
-      Leerzeichen getrennte Liste mit Readings, die mit "set" gesetzt werden
-      k&ouml;nnen.</li>
-
-    <li><a name="setList">setList</a><br>
-      Liste mit Werten durch Leerzeichen getrennt. Diese Liste wird mit "set
-      name ?" ausgegeben.  Damit kann das FHEMWEB-Frontend Auswahl-Men&uuml;s
-      oder Schalter erzeugen.<br> Beispiel: attr dummyName setList on off </li>
-
-    <li><a name="useSetExtensions">useSetExtensions</a><br>
-      Falls gesetzt, und setList enth&auml;lt on und off, dann sind die <a
-      href="#setExtensions">set extensions</a> verf&uuml;gbar.<br>
-      Seiteneffekt: falls gesetzt, werden nur die spezifizierten Parameter
-      akzeptiert, auch dann, wenn setList kein on und off enth&auml;lt.</li>
-
-    <li><a name="setExtensionsEvent">setExtensionsEvent</a><br>
-      Falls gesetzt, enth&auml;lt das Event den im SetExtensions
-      implementierten Befehl (z.Bsp. on-for-timer 10), sonst den
-      Ausgef&uuml;rten (z.Bsp. on).</li>
-
-    <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
-  </ul>
-  <br>
-
-</ul>
-
-=end html_DE
 
 =cut
