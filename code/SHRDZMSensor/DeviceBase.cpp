@@ -1,5 +1,22 @@
 #include "DeviceBase.h"
 
+ConfigData::ConfigDataItem::ConfigDataItem(String value)
+{
+  valueI = value;
+}
+
+ConfigData::ConfigData(int size)
+{
+  di = new ConfigDataItem[size];
+  this->size = size;
+}
+
+ConfigData::~ConfigData()
+{
+  delete [] di;
+}
+
+
 SensorData::DataItem::DataItem(String name, String value)
 {
   nameI = name;

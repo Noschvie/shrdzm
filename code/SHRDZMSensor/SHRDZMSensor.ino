@@ -37,11 +37,14 @@ DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
+bool sendSetupFlag = false;
 SensorData* sd = NULL;
 int sensorDataSendCount = 0;
+int configDataSendCount = 0;
 String lastVersionNumber;
 bool sendUpdatedVersion = false;
 String ver, nam;
+ConfigData *configData;
 
 ESP8266WiFiMulti WiFiMulti;
 String SSID;
@@ -127,83 +130,90 @@ bool writeConfig()
     configFile.close();
 }
 
-void sendSetup()
+void prepareSetup()
 {
-    String reply;
+  String reply;
 
-    // send info to re-init
-    simpleEspConnection.sendMessage("$I$");    
-    
-    // send device setup
-    reply = "$SC$";
-    
-    for (JsonPair kv : configuration) 
+  configData = new ConfigData(6);
+  
+  configData->di[0].valueI = "$I$";
+
+  reply = "$SC$";
+  
+  for (JsonPair kv : configuration) 
+  {
+    if(String(kv.key().c_str()) != "device")
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+  }
+
+  reply.remove(reply.length()-1);
+
+  if(!configuration.containsKey("devicetype"))
+  {
+    reply += "|devicetype: ";
+  }
+  configData->di[1].valueI = reply;
+
+  // send device parameter
+  if(configuration["device"].size() > 0)
+  {
+    reply = "$SP$";
+
+    JsonObject sp = configuration["device"];
+    for (JsonPair kv : sp) 
     {
-      if(String(kv.key().c_str()) != "device")
-        reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
     }
 
     reply.remove(reply.length()-1);
 
-    if(!configuration.containsKey("devicetype"))
-    {
-      reply += "|devicetype: ";
-    }
+    Serial.println("send device parameter:"+reply);
     
-    simpleEspConnection.sendMessage((char *)reply.c_str());
+    configData->di[2].valueI = reply;
+  }
+  
+  if(dev == NULL)
+    actualizeDeviceType();
 
-    // send device parameter
-    if(configuration["device"].size() > 0)
+  if(dev != NULL)
+  {
+    SensorData* sd = dev->readParameterTypes();
+
+    if(sd != NULL)
     {
-      reply = "$SP$";
-  
-      JsonObject sp = configuration["device"];
-      for (JsonPair kv : sp) 
-      {
-        reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
-      }
-  
-      reply.remove(reply.length()-1);
+      reply = "$SD$";
 
-      Serial.println("send device parameter:"+reply);
-      
-      simpleEspConnection.sendMessage((char *)reply.c_str());
+      for(int i = 0; i<sd->size; i++)
+      {
+        reply += sd->di[i].nameI;
+        if(i < sd->size-1)
+          reply += "|";
+      }
+
+      configData->di[3].valueI = reply;
     }
 
-    if(dev == NULL)
-      actualizeDeviceType();
+    delete sd; 
+  }
 
-    // send sensor parameter types
-    if(dev != NULL)
-    {
-      SensorData* sd = dev->readParameterTypes();
-  
-      if(sd != NULL)
-      {
-        reply = "$SD$";
-  
-        for(int i = 0; i<sd->size; i++)
-        {
-          reply += sd->di[i].nameI;
-          if(i < sd->size-1)
-            reply += "|";
-        }
-  
-        simpleEspConnection.sendMessage((char *)reply.c_str());
-      }
-  
-      delete sd; 
-    }
+  String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
+  configData->di[4].valueI = s;
 
-    // send firmware version
-    String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
-    simpleEspConnection.sendMessage((char *)s.c_str());    
+  // send supported devices
+  s = String("$X$")+String(SUPPORTED_DEVICES);
+  configData->di[5].valueI = s;
 
-    // send supported devices
-#ifdef SUPPORTED_DEVICES
-    s = String("$X$")+String(SUPPORTED_DEVICES);
-    simpleEspConnection.sendMessage((char *)s.c_str());    
-#endif
+/*  for(int i=0;i<6;i++)
+  {
+    Serial.println("---"+configData->di[i].valueI);
+  }*/
+}
+
+void sendSetup()
+{
+  prepareSetup();
+
+  sendSetupFlag = true;
 }
 
 bool updateFirmware(String message)
@@ -332,7 +342,7 @@ void OnSendError(uint8_t* ad)
 void OnSendDone(uint8_t* ad)
 {
 #ifdef DEBUG
-  Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done");
+//  Serial.println("Sending to '"+simpleEspConnection.macToStr(ad)+"' done");
 #endif    
 }
 
@@ -440,7 +450,9 @@ void setup()
   if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
   {
     Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
-    sendUpdatedVersion = true;
+    //sendUpdatedVersion = true;
+    //prepareSetup();
+    sendSetup();
     storeLastVersionNumber();
   }
 
@@ -754,12 +766,26 @@ void readLastVersionNumber()
 
 void loop() 
 {
-  if(sendUpdatedVersion)
+  if(sendSetupFlag)
   {
     if(simpleEspConnection.canSend())
     {
-      sendUpdatedVersion = false;
-      sendSetup();
+      if(configData != NULL)
+      {
+        if(configData->di[configDataSendCount].valueI != "")
+        {
+          simpleEspConnection.sendMessage((char *)configData->di[configDataSendCount].valueI.c_str());
+        }
+
+        configDataSendCount++;
+        if(configDataSendCount >= configData->size)
+        {
+          Serial.println("delete configData");
+
+          sendSetupFlag = false;
+          delete configData;
+        }
+      }
     }
   }
   
@@ -774,7 +800,6 @@ void loop()
 
       reply += sd->di[sensorDataSendCount].nameI+":"+sd->di[sensorDataSendCount].valueI;
 
-      Serial.println("Will send : "+reply);  
       simpleEspConnection.sendMessage((char *)reply.c_str());
 
       sensorDataSendCount++;
@@ -866,7 +891,8 @@ void loop()
   }
 
 #ifndef DISABLEGOTOSLEEP    
-  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && !firmwareUpdate)
+  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && 
+    !firmwareUpdate && !sendSetupFlag)
   {
     // everything down and I can go to sleep
     gotoSleep();

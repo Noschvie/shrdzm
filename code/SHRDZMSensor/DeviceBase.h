@@ -4,6 +4,24 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+class ConfigData
+{
+  public:
+    ConfigData(int size);
+    ~ConfigData();
+
+    class ConfigDataItem 
+    { 
+      public:
+        String valueI;
+        ConfigDataItem(){};
+        ConfigDataItem(String value);
+    };  
+  
+    ConfigDataItem *di;
+    int size;
+};
+
 class SensorData
 {
   public:
