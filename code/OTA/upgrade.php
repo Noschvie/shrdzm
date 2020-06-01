@@ -44,7 +44,10 @@ if(
 	exit();
 }
 
-$localBinary = "./bin/SHRDZMSensor.ino.generic.bin";
+$localSHRDZMSensorBinary = "./bin/SHRDZMSensor.ino.generic.bin";
+$localSHRDZMGatewayBinary = "./bin/SHRDZMGateway.ino.generic.bin";
+$localSHRDZMGatewayMQTTBinary = "./bin/SHRDZMGatewayMQTT.ino.generic.bin";
+
 
 loging2file($_SERVER['HTTP_USER_AGENT']);
 loging2file($_SERVER['HTTP_X_ESP8266_STA_MAC']);
@@ -55,8 +58,6 @@ loging2file($_SERVER['HTTP_X_ESP8266_CHIP_SIZE']);
 loging2file($_SERVER['HTTP_X_ESP8266_SDK_VERSION']);
 loging2file($_SERVER['HTTP_X_ESP8266_VERSION']);
 
-loging2file(md5_file($localBinary));
-
 $versionparts = explode(" ", $_SERVER['HTTP_X_ESP8266_VERSION']);
 $parts = count($versionparts);
 
@@ -64,9 +65,38 @@ if($parts == 3)
 {
 	if($versionparts[0] == "SHRDZMSensor")
 	{
-		if($versionparts[2] != md5_file($localBinary))
+		loging2file(md5_file($localSHRDZMSensorBinary));
+		if($versionparts[2] != md5_file($localSHRDZMSensorBinary))
 		{
-			sendFile($localBinary);
+			sendFile($localSHRDZMSensorBinary);
+			exit();
+		}
+		else
+		{
+			loging2file("no new version for ".$_SERVER['HTTP_X_ESP8266_STA_MAC']);
+			header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
+		}
+	}
+	elseif($versionparts[0] == "SHRDZMGateway")
+	{
+		loging2file(md5_file($localSHRDZMGatewayBinary));
+		if($versionparts[2] != md5_file($localSHRDZMGatewayBinary))
+		{
+			sendFile($localSHRDZMGatewayBinary);
+			exit();
+		}
+		else
+		{
+			loging2file("no new version for ".$_SERVER['HTTP_X_ESP8266_STA_MAC']);
+			header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
+		}
+	}
+	elseif($versionparts[0] == "SHRDZMGatewayMQTT")
+	{
+		loging2file(md5_file($localSHRDZMGatewayMQTTBinary));
+		if($versionparts[2] != md5_file($localSHRDZMGatewayMQTTBinary))
+		{
+			sendFile($localSHRDZMGatewayMQTTBinary);
 			exit();
 		}
 		else
@@ -87,23 +117,9 @@ else
 //	header($_SERVER["SERVER_PROTOCOL"].' 500 no version for this device', true, 500);
 	loging2file("version does not follow specification for device ".$_SERVER['HTTP_X_ESP8266_STA_MAC']." but I will try to update");
 	
-	sendFile($localBinary);
+	sendFile($localSHRDZMSensorBinary);
 	exit();
 }
 
-
-
-/*if($_SERVER['HTTP_X_ESP8266_VERSION'] != md5_file($localBinary))
-{
-	sendFile($localBinary);
-	exit();
-}
-else
-{
-	header($_SERVER["SERVER_PROTOCOL"].' 304 Not Modified', true, 304);
-}
-*/
-
-//header($_SERVER["SERVER_PROTOCOL"].' 500 no version for ESP MAC', true, 500);
 
 ?>
