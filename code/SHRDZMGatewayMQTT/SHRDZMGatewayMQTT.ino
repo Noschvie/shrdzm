@@ -236,10 +236,10 @@ void handleDeleteConfig()
   "<!DOCTYPE html>\
   <html>\
   <head>\
-  <meta http-equiv='refresh' content='20; url=/'>\
+ // <meta http-equiv='refresh' content='20; url=/'>\
   </head>\
   <body>\
-  <h1>Please wait. Will reboot in 20 seconds. Site will be reloaded automatically ...</h1>\
+  <h1>SHRDZMGatewayMQTT has initialized all settings and will start with as initial access point. Please connect to them...</h1>\
   </body>\
   </html>\
   ");
@@ -248,6 +248,11 @@ void handleDeleteConfig()
 
   swSer.write("$deleteconfig");
   swSer.write('\n');  
+
+  WiFiManager wifiManager;
+  
+  eraseConfig();
+  wifiManager.resetSettings();
 
   delay(2000);
   
