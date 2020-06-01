@@ -34,6 +34,7 @@ String host;
 String url;
 bool firmwareUpdate = false;
 String lastVersionNumber;
+String currVersion;
 String ver, nam;
 
 ESP8266WiFiMulti WiFiMulti;
@@ -53,7 +54,7 @@ void update_started()
 
 void update_finished() 
 {
-  //Serial.println("CALLBACK:  HTTP update process finished");
+  //Serial.println("CALLBACK: HTTP update process finished");
 
   String s = "~000[U]$upgrade:finished";
   Serial.write(s.c_str(), s.length());
@@ -63,7 +64,7 @@ void update_finished()
 
 void update_progress(int cur, int total) 
 {
-  //Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
+  //Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes.\n", cur, total);
 }
 
 void update_error(int err) 
@@ -355,11 +356,11 @@ void setup()
   SPIFFS.begin();
 
   readLastVersionNumber();
-  String currVersion = ESP.getSketchMD5();
+  currVersion = ESP.getSketchMD5();
 
 #ifdef DEBUG
-  Serial.println("Will read config now... ");
-  Serial.println("Last Version :"+lastVersionNumber);
+//  Serial.println("Will read config now... ");
+  Serial.println("Last Version : "+lastVersionNumber+", Curr Version : "+currVersion);
 #endif        
   if(!readConfig())
   {    
@@ -393,12 +394,6 @@ void setup()
   simpleEspConnection.onPairingFinished(&OnPairingFinished);    
   simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
-
-  // for firmware upgrade
-  ESPhttpUpdate.onStart(update_started);
-  ESPhttpUpdate.onEnd(update_finished);
-  ESPhttpUpdate.onProgress(update_progress);
-  ESPhttpUpdate.onError(update_error);  
 }
 
 void getConfig()
@@ -423,7 +418,7 @@ void updateFirmware(String parameter)
 
     if(host.substring(0,7) != "http://")
     {
-      Serial.println("Upgrade : only http address supported!");
+      Serial.println("Upgrade : only http addresses supported!");
       return;    
     }    
 
@@ -447,12 +442,13 @@ void updateFirmware(String parameter)
     firmwareUpdate = true;
 
     esp_now_deinit();
+    delay(100);
   
     WiFi.mode(WIFI_STA);
   
     WiFiMulti.addAP(SSID.c_str(), password.c_str());    
   
-    Serial.println("upgrade started with SSID:"+SSID+" password:"+password+" host:"+host);
+    //Serial.println("upgrade started with SSID:"+SSID+" password:"+password+" host:"+host);
   }
 }
 
@@ -466,7 +462,13 @@ void loop()
       
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
 
-      String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
+      // for firmware upgrade
+      ESPhttpUpdate.onStart(update_started);
+      ESPhttpUpdate.onEnd(update_finished);
+      ESPhttpUpdate.onProgress(update_progress);
+      ESPhttpUpdate.onError(update_error);  
+
+      String versionStr = nam+" "+ver+" "+currVersion;
       Serial.println("WLAN connected!");
 
       WiFiClient client;  
