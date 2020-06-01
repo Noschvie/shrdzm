@@ -44,21 +44,36 @@ SetupObject setupObject;
 void update_started() 
 {
   Serial.println("CALLBACK:  HTTP update process started");
+  
+  String s = "~000[U]$upgrade:started";
+  Serial.write(s.c_str(), s.length());
+  Serial.write('\n');
+  delay(100);
 }
 
 void update_finished() 
 {
-  Serial.println("CALLBACK:  HTTP update process finished");
+  //Serial.println("CALLBACK:  HTTP update process finished");
+
+  String s = "~000[U]$upgrade:finished";
+  Serial.write(s.c_str(), s.length());
+  Serial.write('\n');
+  delay(100);
 }
 
 void update_progress(int cur, int total) 
 {
-  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
+  //Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
 }
 
 void update_error(int err) 
 {
-  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+  //Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+
+  String s = "~000[U]$upgrade:error";
+  Serial.write(s.c_str(), s.length());
+  Serial.write('\n');
+  delay(100);
 }
 
 bool deleteConfig()
@@ -366,6 +381,10 @@ void setup()
   Serial.write('\n');
   delay(100);
 
+  s = "~000[V]$version:"+ver+"-"+currVersion;
+  Serial.write(s.c_str(), s.length());
+  Serial.write('\n');
+  delay(100);
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(2);
@@ -443,7 +462,7 @@ void loop()
   {
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
-      firmwareUpdate = false;
+ //     firmwareUpdate = false;
       
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
 
@@ -456,19 +475,34 @@ void loop()
       switch (ret) 
       {
         case HTTP_UPDATE_FAILED:
-          Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion%s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-          delay(100);
-          ESP.restart();
+          {
+            String s = "~000[U]$upgrade:failed";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+          
+            ESP.restart();
+          }
           break;
   
         case HTTP_UPDATE_NO_UPDATES:
-          Serial.println("HTTP_UPDATE_NO_UPDATES");
-          delay(100);
-          ESP.restart();
+          {
+            String s = "~000[U]$upgrade:noupdate";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+  
+            ESP.restart();
+          }
           break;
   
         case HTTP_UPDATE_OK:
-          Serial.println("HTTP_UPDATE_OK");
+          {
+            String s = "~000[U]$upgrade:done";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+          }
           break;
       }
     }
