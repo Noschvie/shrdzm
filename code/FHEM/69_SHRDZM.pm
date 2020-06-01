@@ -30,6 +30,7 @@ my @topics = (
     "IP",
     "version",
     "gatewayaddress",
+    "gatewayversion",
 	"+/config",
 	"+/sensor",
 	"+/sensors",
@@ -52,7 +53,7 @@ sub SHRDZM_Initialize($) {
     $hash->{SetFn}      = "SHRDZM::DEVICE::Set";
 	$hash->{AttrFn} 	= "SHRDZM::DEVICE::Attr";
 	$hash->{ReadyFn} 	= "SHRDZM::DEVICE::Ready";
-    $hash->{AttrList} 	= "IODev qos retain publishSet publishSet_.* subscribeReading_.* autoSubscribeReadings " . $main::readingFnAttributes;
+    $hash->{AttrList} 	= "IODev upgradePath qos retain publishSet publishSet_.* subscribeReading_.* autoSubscribeReadings " . $main::readingFnAttributes;
     $hash->{OnMessageFn} = "SHRDZM::DEVICE::onmessage";
 
 	$hash->{Clients} = "SHRDZMDevice";
@@ -145,6 +146,11 @@ sub Define()
 			$hash->{TYPE} = 'MQTT_DEVICE';
 			my $ret = MQTT::Client_Define($hash, $def);
 			$hash->{TYPE} = $type;
+			
+			CommandAttr(undef,"$name room SHRDZM");			
+
+			CommandAttr(undef,"$name upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
+			
 			
 			# Subscribe Readings
 			foreach (@topics) 
@@ -272,7 +278,7 @@ sub ParseMessage($$) # from serial
 	}
 	elsif($len =~ 2)
 	{
-		if(substr($params[0], 0, 1) =~ "~" && substr($params[0], 5, 1) =~ "G")
+		if(substr($params[0], 0, 1) =~ "~" && substr($params[0], 5, 1) =~ "G") # gateway id
 		{
 			Log3 $name, 5, "--- Gateway called ----";
 		
@@ -282,6 +288,18 @@ sub ParseMessage($$) # from serial
 			if($parameterSize =~ 2)
 			{
 				$hash->{GATEWAY} = $parameter[1];
+			}
+		}
+		elsif(substr($params[0], 0, 1) =~ "~" && substr($params[0], 5, 1) =~ "V") # gateway version
+		{
+			Log3 $name, 5, "--- Gatewayversion called ----";
+		
+			my @parameter = split(':', $params[1]);
+			my $parameterSize = @parameter;
+
+			if($parameterSize =~ 2)
+			{
+				$hash->{GATEWAYVERSION} = $parameter[1];
 			}
 		}
 	}
@@ -346,10 +364,16 @@ sub Undefine($$)
 sub Set($$$@) 
 {
     my ($hash, $name, $command, @values) = @_;
+	my $update = "";
+
+	if($hash->{Protocol} eq "MQTT")
+	{
+		$update = "upgradeGateway:noArg ";
+	}
 
 	if ($command eq '?' || $command =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{
-		return SetExtensions($hash, 
+		return SetExtensions($hash, $update .
 			join(" ", map { "$_$SHRDZM_sets{$_}" } keys %SHRDZM_sets) . " " . join(" ", map {$hash->{sets}->{$_} eq "" ? $_ : "$_:".$hash->{sets}->{$_}} sort keys %{$hash->{sets}}), $name, $command, @values);
 	}
 
@@ -369,7 +393,7 @@ sub Set($$$@)
 		my $qos = $hash->{".qos"}->{'*'};	
 		my $value = join (" ", @values);
 		
-		if($command =~ "RCSend")
+		if($command eq "RCSend")
 		{
 			my $sendcommand = $value;
 			my $topic = $hash->{FULL_TOPIC} . "RCSend";	
@@ -377,6 +401,17 @@ sub Set($$$@)
 			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
 
 			Log3($hash->{NAME}, 5, "sent (cmnd) '" . $value . "' to " . $topic);
+		}
+		elsif ($command eq "upgradeGateway")
+		{
+			# GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
+
+			my $sendcommand = "GATEWAY upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php");;
+			my $topic = $hash->{FULL_TOPIC} . "config/set";	
+		
+			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+
+			Log3($hash->{NAME}, 5, "sent (cmnd) '" . $sendcommand . "' to " . $topic);
 		}
 		else
 		{	
@@ -415,7 +450,7 @@ sub onmessage($$$) # from mqtt
 
 		if($len =~ 3)
 		{			
-			if($item =~ "update")
+			if($item eq "update")
 			{
 				if (eval {JSON::decode_json($message)}) 
 				{
@@ -451,11 +486,11 @@ sub onmessage($$$) # from mqtt
 					}
 				}
 			}
-			elsif($item =~ "state")
+			elsif($item eq "state")
 			{		
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
-			elsif($item =~ "paired")
+			elsif($item eq "paired")
 			{
 				Log3 $hash->{NAME}, 5, "--- Pairing called from $name ----";
 			
@@ -473,26 +508,30 @@ sub onmessage($$$) # from mqtt
 					$cmdret= CommandAttr(undef,"$devname IODev $hash->{NAME}");			
 				}
 			}
-			elsif($item =~ "RCData")
+			elsif($item eq "RCData")
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
-			elsif($item =~ "IP")
+			elsif($item eq "IP")
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
-			elsif($item =~ "version")
+			elsif($item eq "version")
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
-			elsif($item =~ "gatewayaddress")
+			elsif($item eq "gatewayaddress")
 			{
 				$hash->{GATEWAY} = $message;
+			}			
+			elsif($item eq "gatewayversion")
+			{
+				$hash->{GATEWAYVERSION} = $message;
 			}			
 		}
 		elsif($len =~ 4)
 		{
-			if($abc[3] =~ "config")
+			if($abc[3] eq "config")
 			{
 				Log3 $hash->{NAME}, 5, "sensor config $message";
 
@@ -504,13 +543,13 @@ sub onmessage($$$) # from mqtt
 					Dispatch($hash, $abc[2] . " config " . $message );
 				}
 			}
-			elsif($abc[3] =~ "sensors")
+			elsif($abc[3] eq "sensors")
 			{
 				Log3 $hash->{NAME}, 1, "sensors value $message";
 
 				Dispatch($hash, $abc[2] . " sensors " . "sensors:".$message );
 			}
-			elsif($abc[3] =~ "sensor")
+			elsif($abc[3] eq "sensor")
 			{
 				Log3 $hash->{NAME}, 5, "sensor value $message";
 
@@ -522,17 +561,17 @@ sub onmessage($$$) # from mqtt
 					Dispatch($hash, $abc[2] . " value " . $message );
 				}
 			}
-			elsif($abc[3] =~ "init")
+			elsif($abc[3] eq "init")
 			{
 				Log3 $hash->{NAME}, 5, "init $message";
 
 				Dispatch($hash, $abc[2] . " init " . "init:".$message );
 			}
-			elsif($abc[3] =~ "version")
+			elsif($abc[3] eq "version")
 			{
 				Dispatch($hash, $abc[2] . " version " . "version:".$message );
 			}
-			elsif($abc[3] =~ "param")
+			elsif($abc[3] eq "param")
 			{
 				Log3 $hash->{NAME}, 5, "param $message";
 

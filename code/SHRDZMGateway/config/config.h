@@ -1,3 +1,7 @@
+#define VERSION		"1.0.0"
+#define NAME		"SHRDZMGateway"
+
+
 #define DEBUG
 #define LEDPIN 2
 #define WIFI_CHANNEL 4

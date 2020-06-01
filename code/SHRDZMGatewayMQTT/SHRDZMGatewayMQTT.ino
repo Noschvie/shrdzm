@@ -663,6 +663,19 @@ void handleGatewayMessage(String cmd)
       }
     }
   }
+  else if(splitter->getItemAtIndex(0) == "[V]")  // gateway version
+  {
+    StringSplitter *splitter1 = new StringSplitter(splitter->getItemAtIndex(1), ':', 2);
+    int itemCount1 = splitter1->getItemCount();
+  
+    if(itemCount1 == 2)
+    {
+      if(splitter1->getItemAtIndex(0) == "version")
+      {
+        client.publish((String(MQTT_TOPIC)+"/gatewayversion").c_str(), splitter1->getItemAtIndex(1).c_str());
+      }
+    }
+  }
 }
 
 void loop() 
@@ -1002,16 +1015,28 @@ void callback(char* topic, byte* payload, unsigned int length)
 
       if(itemCount == 3 && splitter->getItemAtIndex(1) == "upgrade")
       {
-       // Serial.println(WiFi.SSID());
-       // Serial.println(WiFi.psk());
-        String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
-
+        if(splitter->getItemAtIndex(0) != "GATEWAY")
+        {
+          String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
+  
 #ifdef DEBUG   
-        Serial.println("Send upgrade : '"+upgradeText+"'");
+          Serial.println("Send upgrade : '"+upgradeText+"'");
 #endif      
-        
-        swSer.write(upgradeText.c_str());
-        swSer.write('\n'); 
+          
+          swSer.write(upgradeText.c_str());
+          swSer.write('\n'); 
+        }
+        else // Gateway upgrade called
+        {
+          String upgradeText = String("$upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
+          
+#ifdef DEBUG   
+          Serial.println("Send upgrade of GATEWAY called : '"+upgradeText+"'");
+#endif      
+
+          swSer.write(upgradeText.c_str());
+          swSer.write('\n'); 
+        }
       }
       else
       {
