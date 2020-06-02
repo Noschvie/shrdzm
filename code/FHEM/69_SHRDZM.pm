@@ -31,6 +31,7 @@ my @topics = (
     "version",
     "gatewayaddress",
     "gatewayversion",
+    "gatewaymqttversion",
 	"+/config",
 	"+/sensor",
 	"+/sensors",
@@ -368,7 +369,7 @@ sub Set($$$@)
 
 	if($hash->{Protocol} eq "MQTT")
 	{
-		$update = "upgradeGateway:noArg ";
+		$update = "upgradeGateway:noArg upgradeGatewayMQTT:noArg ";
 	}
 
 	if ($command eq '?' || $command =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
@@ -407,6 +408,17 @@ sub Set($$$@)
 			# GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
 
 			my $sendcommand = "GATEWAY upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php");;
+			my $topic = $hash->{FULL_TOPIC} . "config/set";	
+		
+			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
+
+			Log3($hash->{NAME}, 5, "sent (cmnd) '" . $sendcommand . "' to " . $topic);
+		}
+		elsif ($command eq "upgradeGatewayMQTT")
+		{
+			# GATEWAYMQTT upgrade http://shrdzm.pintarweb.net/upgrade.php
+
+			my $sendcommand = "GATEWAYMQTT upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php");;
 			my $topic = $hash->{FULL_TOPIC} . "config/set";	
 		
 			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);
@@ -528,6 +540,10 @@ sub onmessage($$$) # from mqtt
 			{
 				$hash->{GATEWAYVERSION} = $message;
 			}			
+			elsif($item eq "gatewaymqttversion")
+			{
+				$hash->{GATEWAYMQTTVERSION} = $message;
+			}
 		}
 		elsif($len =~ 4)
 		{
