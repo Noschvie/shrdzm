@@ -11,12 +11,20 @@
 #include <WiFiManager.h> 
 #include <PubSubClient.h>
 #include <EEPROM.h>
+#include <ESP8266httpUpdate.h>
+#include <ESP8266WiFiMulti.h>
 
 String MQTT_TOPIC;
 String subcribeTopicSet;
 String subcribeTopicConfig;
 String nodeName;
 String deviceName;
+bool firmwareUpdate = false;
+String lastVersionNumber;
+String currVersion;
+String ver, nam;
+String host;
+String url;
 DynamicJsonDocument configdoc(1024);
 JsonObject configuration  = configdoc.createNestedObject("configuration");
 JsonObject web_configuration  = configuration.createNestedObject("web");
@@ -49,6 +57,8 @@ ESP8266WebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+ESP8266WiFiMulti WiFiMulti;
+
 configData_t cfg;
 int cfgStart= 0;
 bool shouldSaveConfig = false;
@@ -58,6 +68,47 @@ const char* MQTTHost = "127.0.0.1";
 const char* MQTTPort = "1883";
 const char* MQTTUser = NULL;
 const char* MQTTPassword = NULL;
+
+void storeLastVersionNumber()
+{
+  File file = SPIFFS.open("/version.txt", "w");
+  if (!file) 
+  {
+      Serial.println("Error opening version file for writing");
+      return;
+  }  
+
+  String v = ESP.getSketchMD5();
+
+  int bytesWritten = file.write(v.c_str(), v.length());
+   
+  if (bytesWritten == 0) 
+  {
+      Serial.println("Version file write failed");
+  }
+
+  file.close();
+}
+
+void readLastVersionNumber()
+{
+  if (!(SPIFFS.exists ("/version.txt") ))
+  {
+    lastVersionNumber = "";
+    return;
+  }
+
+  File file = SPIFFS.open("/version.txt", "r");
+
+  lastVersionNumber= "";
+    
+  for(int i=0;i<file.size();i++) //Read upto complete file size
+  {
+    lastVersionNumber += (char)file.read();
+  }
+
+  file.close();  
+}
 
 void saveConfigCallback () 
 {
@@ -394,6 +445,18 @@ void setup()
   Serial.begin(9600);
 #endif  
 
+#ifdef VERSION
+  ver = String(VERSION);
+#else
+  ver = "0.0.0";  
+#endif
+
+#ifdef NAME
+  nam = String(NAME);
+#else
+  nam = "SHRDZMGateway";  
+#endif
+
   setDeviceName();
   
   WiFiManager wifiManager;
@@ -435,6 +498,14 @@ void setup()
 // !!  
   loadConfig();  
   
+  readLastVersionNumber();
+  currVersion = ESP.getSketchMD5();
+
+  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+  {
+    // TODO
+    storeLastVersionNumber();
+  }
 
 #ifdef SERIALBAUD
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
@@ -557,11 +628,6 @@ void setup()
   delay(100);
   digitalWrite(RESET_PIN,HIGH);
 #endif  
-  
-/*  delay(1000);
-
-  swSer.write("$getconfig");
-  swSer.write('\n');    */
 }
 
 void sendSensorData(String data)
@@ -682,9 +748,85 @@ void handleGatewayMessage(String cmd)
     }
   }
 }
+void update_started() 
+{
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() 
+{
+  Serial.println("CALLBACK: HTTP update process finished");
+
+}
+
+void update_progress(int cur, int total) 
+{
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes.\n", cur, total);
+}
+
+void update_error(int err) 
+{
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+
+}
 
 void loop() 
 {
+  if(firmwareUpdate)
+  {
+    if ((WiFiMulti.run() == WL_CONNECTED)) 
+    {     
+      ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
+
+      // for firmware upgrade
+      ESPhttpUpdate.onStart(update_started);
+      ESPhttpUpdate.onEnd(update_finished);
+      ESPhttpUpdate.onProgress(update_progress);
+      ESPhttpUpdate.onError(update_error);  
+
+      String versionStr = nam+" "+ver+" "+currVersion;
+      Serial.println("WLAN connected!");
+
+      WiFiClient client;  
+      t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+      
+      switch (ret) 
+      {
+        case HTTP_UPDATE_FAILED:
+          {
+            String s = "~000[U]$upgrade:failed";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+          
+            ESP.restart();
+          }
+          break;
+  
+        case HTTP_UPDATE_NO_UPDATES:
+          {
+            String s = "~000[U]$upgrade:noupdate";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+  
+            ESP.restart();
+          }
+          break;
+  
+        case HTTP_UPDATE_OK:
+          {
+            String s = "~000[U]$upgrade:done";
+            Serial.write(s.c_str(), s.length());
+            Serial.write('\n');
+            delay(100);
+          }
+          break;
+      }
+    }
+    return;
+  }
+  
   server.handleClient();
   
 #ifdef RCSWITCH_SUPPORT
@@ -723,6 +865,7 @@ void loop()
       client.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
 #endif
 
+      client.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());
 
       client.subscribe(subcribeTopicSet.c_str());
       client.subscribe(subcribeTopicConfig.c_str());
@@ -953,6 +1096,41 @@ String readSerialHW()
   return cmd;  
 }
 
+void updateFirmware(String host)
+{
+    if(host.substring(0,7) != "http://")
+    {
+      Serial.println("Upgrade : only http addresses supported!");
+      return;    
+    }    
+
+    host = host.substring(7);
+  
+    if(host.substring(host.length()-4) != ".php")
+    {
+      Serial.println("Upgrade : only php update script supported");
+      return;    
+    }
+  
+    if(host.indexOf('/') == -1)
+    {
+      Serial.println("Upgrade : host string not valid");
+      return;    
+    }
+  
+    url = host.substring(host.indexOf('/'));
+    host = host.substring(0,host.indexOf('/'));
+
+    firmwareUpdate = true;
+
+    String SSID = WiFi.SSID();
+    String password = WiFi.psk();
+
+    WiFi.mode(WIFI_STA);
+  
+    WiFiMulti.addAP(SSID.c_str(), password.c_str());    
+}
+
 void callback(char* topic, byte* payload, unsigned int length) 
 {
   char* p = (char*)malloc(length+1);
@@ -1020,18 +1198,7 @@ void callback(char* topic, byte* payload, unsigned int length)
 
       if(itemCount == 3 && splitter->getItemAtIndex(1) == "upgrade")
       {
-        if(splitter->getItemAtIndex(0) != "GATEWAY")
-        {
-          String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
-  
-#ifdef DEBUG   
-          Serial.println("Send upgrade : '"+upgradeText+"'");
-#endif      
-          
-          swSer.write(upgradeText.c_str());
-          swSer.write('\n'); 
-        }
-        else // Gateway upgrade called
+        if(splitter->getItemAtIndex(0) == "GATEWAY")
         {
           String upgradeText = String("$upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
           
@@ -1039,6 +1206,25 @@ void callback(char* topic, byte* payload, unsigned int length)
           Serial.println("Send upgrade of GATEWAY called : '"+upgradeText+"'");
 #endif      
 
+          swSer.write(upgradeText.c_str());
+          swSer.write('\n');           
+        }
+        else if(splitter->getItemAtIndex(0) == "GATEWAYMQTT") // upgrade yourself
+        {
+#ifdef DEBUG   
+          Serial.println("Upgrade myself..");
+#endif      
+
+          updateFirmware(splitter->getItemAtIndex(2));
+        }
+        else // Gateway upgrade called
+        {
+          String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
+  
+#ifdef DEBUG   
+          Serial.println("Send upgrade : '"+upgradeText+"'");
+#endif      
+          
           swSer.write(upgradeText.c_str());
           swSer.write('\n'); 
         }
