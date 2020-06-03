@@ -462,10 +462,6 @@ void setup()
   WiFiManager wifiManager;
   SPIFFS.begin();
 
-//  eraseConfig();
-//  wifiManager.resetSettings();
-
-
 #ifdef RCSWITCH_SUPPORT
   mySwitch.enableReceive(RCSWITCHPIN);
 #ifdef DEBUG
@@ -774,7 +770,7 @@ void loop()
 {
   if(firmwareUpdate)
   {
-    if ((WiFiMulti.run() == WL_CONNECTED)) 
+//    if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
 
@@ -785,7 +781,7 @@ void loop()
       ESPhttpUpdate.onError(update_error);  
 
       String versionStr = nam+" "+ver+" "+currVersion;
-      Serial.println("WLAN connected!");
+      Serial.println("WLAN connected! ");
 
       WiFiClient client;  
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
@@ -1096,15 +1092,15 @@ String readSerialHW()
   return cmd;  
 }
 
-void updateFirmware(String host)
+void updateFirmware(String parameter)
 {
-    if(host.substring(0,7) != "http://")
+    if(parameter.substring(0,7) != "http://")
     {
-      Serial.println("Upgrade : only http addresses supported!");
+      Serial.println("Upgrade : only http addresses supported! ");
       return;    
     }    
 
-    host = host.substring(7);
+    host = parameter.substring(7);
   
     if(host.substring(host.length()-4) != ".php")
     {
@@ -1123,12 +1119,12 @@ void updateFirmware(String host)
 
     firmwareUpdate = true;
 
-    String SSID = WiFi.SSID();
+/*    String SSID = WiFi.SSID();
     String password = WiFi.psk();
 
     WiFi.mode(WIFI_STA);
   
-    WiFiMulti.addAP(SSID.c_str(), password.c_str());    
+    WiFiMulti.addAP(SSID.c_str(), password.c_str());    */
 }
 
 void callback(char* topic, byte* payload, unsigned int length) 
