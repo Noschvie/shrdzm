@@ -14,13 +14,17 @@
 
 #if defined(ESP8266)
 #include <FS.H>
+#else if defined(ESP32)
+#include "SPIFFS.h"
 #endif
 #include <ArduinoJson.h>
 #include "config/config.h"
 
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266httpUpdate.h>
+#endif
 
 #include "SimpleEspNowConnection.h"
 
@@ -46,7 +50,9 @@ bool sendUpdatedVersion = false;
 String ver, nam;
 ConfigData *configData;
 
+#if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
+#endif
 String SSID;
 String password;
 String host;
@@ -218,6 +224,7 @@ void sendSetup()
 
 bool updateFirmware(String message)
 {
+#if defined(ESP8266)  
   if(message.indexOf('|') == -1)
   {
     Serial.println("firmware update not possible ! "+message);
@@ -260,6 +267,9 @@ bool updateFirmware(String message)
   WiFiMulti.addAP(SSID.c_str(), password.c_str());  
 
   return true;
+#else
+  return false;
+#endif  
 }
 
 void OnMessage(uint8_t* ad, const char* message)
@@ -546,11 +556,12 @@ void setup()
     }
 
     // for firmware upgrade
+#if defined(ESP8266)
     ESPhttpUpdate.onStart(update_started);
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
-    
+#endif    
   }
 
   clockmillis = millis();
@@ -734,7 +745,11 @@ void storeLastVersionNumber()
 
   String v = ESP.getSketchMD5();
 
+#if defined(ESP8266)
   int bytesWritten = file.write(v.c_str(), v.length());
+#else if defined(ESP32)
+  int bytesWritten = file.println(v);
+#endif
    
   if (bytesWritten == 0) 
   {
@@ -855,6 +870,7 @@ void loop()
     }
   }
 
+#if defined(ESP8266)
   if(firmwareUpdate)
   {    
     if ((WiFiMulti.run() == WL_CONNECTED)) 
@@ -889,6 +905,7 @@ void loop()
       }
     }
   }
+#endif
 
 #ifndef DISABLEGOTOSLEEP    
   if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && 
@@ -926,6 +943,10 @@ void gotoSleep()
   Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
 #endif
 
+#if defined (ESP8266)
   ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
+else if defined(ESP32)
+#endif
+
   delay(100);
 }
