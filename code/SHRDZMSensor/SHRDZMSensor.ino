@@ -386,6 +386,10 @@ void actualizeDeviceType()
   {
     dev = new Device_HTU21D();
   }
+  else if(configuration["devicetype"] == "MQ135")
+  {
+    dev = new Device_MQ135();
+  }
   else if(configuration["devicetype"] == "WATER")
   {
     dev = new Device_WATER();
@@ -522,6 +526,10 @@ void setup()
     {
       dev = new Device_HTU21D();
     }
+    else if(configuration["devicetype"] == "MQ135")
+    {
+      dev = new Device_MQ135();
+    }
     else if(configuration["devicetype"] == "WATER")
     {
       dev = new Device_WATER();
@@ -624,6 +632,7 @@ void setDeviceType(String deviceType)
      deviceType == "HTU21" ||
      deviceType == "SI7021" ||
      deviceType == "SHT21" ||
+     deviceType == "MQ135" ||
      deviceType == "ANALOG" ||
      deviceType == "DIGITAL" ||
      deviceType == "DIGITALGROUND" ||
@@ -665,6 +674,10 @@ void setDeviceType(String deviceType)
             deviceType == "SI7021" || deviceType == "SHT21")
     {
       dev = new Device_HTU21D();
+    }
+    else if(deviceType == "MQ135")
+    {
+      dev = new Device_MQ135();
     }
     else if(deviceType == "WATER")
     {
@@ -945,7 +958,7 @@ void gotoSleep()
 
 #if defined (ESP8266)
   ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
-else if defined(ESP32)
+#else if defined(ESP32)
 #endif
 
   delay(100);
