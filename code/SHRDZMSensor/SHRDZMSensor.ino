@@ -474,6 +474,9 @@ void setup()
   pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
 
   simpleEspConnection.begin();
+
+  Serial.println(simpleEspConnection.macToStr(simpleEspConnection.getMyAddress()));
+  
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   simpleEspConnection.onSendError(&OnSendError);    
