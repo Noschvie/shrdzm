@@ -28,10 +28,11 @@ bool Device_MQ135::initialize()
 
 SensorData* Device_MQ135::readParameterTypes()
 {
-  SensorData *al = new SensorData(2);
+  SensorData *al = new SensorData(3);
 
   al->di[0].nameI = "conductivity";
   al->di[1].nameI = "steps";
+  al->di[2].nameI = "sensoroutputvoltage";
 
   return al;
 }
@@ -52,7 +53,7 @@ SensorData* Device_MQ135::readInitialSetupParameter()
 
 SensorData* Device_MQ135::readParameter()
 {  
-  SensorData *al = new SensorData(2);
+  SensorData *al = new SensorData(3);
 
   int gas = analogRead(A0);
 
@@ -60,17 +61,15 @@ SensorData* Device_MQ135::readParameter()
               (atoi(deviceParameter["R1_Ohm"].as<String>().c_str())+
               (atoi(deviceParameter["R2_Ohm"].as<String>().c_str())));
 
-  float cond = atof(deviceParameter["ADC_Volt"].as<String>().c_str())/1023*gas;
-  
-//  Serial.println("u2 = "+String(u2));
-//  Serial.println("u2 = "+String(cond,3));
-
-//  Serial.println("analog value = "+String(gas));
+  float volt = atof(deviceParameter["ADC_Volt"].as<String>().c_str())/1023*gas;
+  float cond = volt * 100 / 5;
   
   al->di[0].nameI = "conductivity";
   al->di[0].valueI = String(cond,3);  
   al->di[1].nameI = "steps";
   al->di[1].valueI = String(gas);  
+  al->di[2].nameI = "sensoroutputvoltage";
+  al->di[2].valueI = String(volt,3);  
 
   return al;
 }
