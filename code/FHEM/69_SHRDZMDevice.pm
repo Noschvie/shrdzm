@@ -6,10 +6,9 @@ use strict;
 use warnings;
 use SetExtensions;
 use GPUtils qw(:all);
-#use Time::HiRes qw( usleep ualarm gettimeofday tv_interval nanosleep
-#					clock_gettime clock_getres clock_nanosleep clock
- #                   stat lstat utime);
-					  
+
+my $offlinecounter = 0;
+	
 BEGIN {
     GP_Import(qw(
 		CommandDefine
@@ -54,6 +53,7 @@ SHRDZMDevice_Initialize($)
     useSetExtensions
 	IODev
 	upgradePath
+	offlinesensitivity:1,2,3,4,5
   );
   use warnings 'qw';
   $hash->{AttrList} = join(" ", @attrList)." $readingFnAttributes";
@@ -140,9 +140,23 @@ sub SHRDZMDevice_GetUpdate ($$)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
-	readingsSingleUpdate($hash, "online", "0", 1);	
+	$offlinecounter ++;
 
-	Log3($hash->{NAME}, 5, $hash->{NAME} . " went OFFLINE");
+	Log3 $hash->{NAME}, 1, "Offlinetimer : $offlinecounter ";
+
+	if($offlinecounter >= AttrVal($hash->{NAME}, "offlinesensitivity", "1"))
+	{
+		readingsSingleUpdate($hash, "online", "0", 1);
+		$offlinecounter = 0;
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " went OFFLINE");
+	}
+	else
+	{
+		my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+		my $t1 = gettimeofday()+($sl*2);
+	
+		InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+	}
 }
 
 sub SHRDZMDevice_Fingerprint($$)
@@ -180,6 +194,7 @@ sub SHRDZMDevice_Parse ($$)
 			if($oldOnlineState =~ 0)
 			{
 				readingsBulkUpdate($hash, "online", "1", 1);
+				$offlinecounter = 0;
 			}
 			readingsEndUpdate($hash, 1);
 

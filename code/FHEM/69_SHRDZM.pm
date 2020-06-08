@@ -189,6 +189,8 @@ sub Write ($$)
 		my $retain = $hash->{".retain"}->{'*'};
 		my $qos = $hash->{".qos"}->{'*'};	
 
+		Log3 $hash->{NAME}, 5, "--- Publish ".join(" ", @arguments);
+
 		my $msgid = send_publish($hash->{IODev}, topic => $topic, message => join(" ", @arguments), qos => $qos, retain => $retain);
 	}
 }
