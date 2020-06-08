@@ -6,7 +6,7 @@ Device_MQ135::Device_MQ135()
 
 Device_MQ135::~Device_MQ135()
 {
-  Serial.println("MQ135 Instance deleted");
+  Serial.println("MQ135 Instance deleted ");
 }
 
 bool Device_MQ135::setDeviceParameter(JsonObject obj)
