@@ -10,7 +10,7 @@
 
 */
 
-// #define DISABLEGOTOSLEEP
+//#define DISABLEGOTOSLEEP
 
 #if defined(ESP8266)
 #include <FS.H>
@@ -217,9 +217,69 @@ void prepareSetup()
 
 void sendSetup()
 {
-  prepareSetup();
+  String reply = "$SC$";
+  
+  for (JsonPair kv : configuration) 
+  {
+    if(String(kv.key().c_str()) != "device")
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+  }
 
-  sendSetupFlag = true;
+  reply.remove(reply.length()-1);
+
+  if(!configuration.containsKey("devicetype"))
+  {
+    reply += "|devicetype: ";
+  }
+
+  simpleEspConnection.sendMessage((char *)reply.c_str());
+
+  // send device parameter
+  if(configuration["device"].size() > 0)
+  {
+    reply = "$SP$";
+
+    JsonObject sp = configuration["device"];
+    for (JsonPair kv : sp) 
+    {
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+    }
+
+    reply.remove(reply.length()-1);
+
+    simpleEspConnection.sendMessage((char *)reply.c_str());
+  }
+
+  if(dev == NULL)
+    actualizeDeviceType();
+
+  if(dev != NULL)
+  {
+    SensorData* sd = dev->readParameterTypes();
+
+    if(sd != NULL)
+    {
+      reply = "$SD$";
+
+      for(int i = 0; i<sd->size; i++)
+      {
+        reply += sd->di[i].nameI;
+        if(i < sd->size-1)
+          reply += "|";
+      }
+
+      simpleEspConnection.sendMessage((char *)reply.c_str());
+
+      delete sd; 
+    }    
+  }
+
+  String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
+  simpleEspConnection.sendMessage((char *)s.c_str());
+
+  // send supported devices
+  s = String("$X$")+String(SUPPORTED_DEVICES);
+  simpleEspConnection.sendMessage((char *)s.c_str());
 }
 
 bool updateFirmware(String message)
@@ -272,28 +332,28 @@ bool updateFirmware(String message)
 #endif  
 }
 
-void OnMessage(uint8_t* ad, const char* message)
+void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
-  Serial.println("MESSAGE:"+String(message));
+  Serial.println("MESSAGE:"+String((char *)message));
 
-  if(String(message) == "$SLEEP$") // force to go sleep
+  if(String((char *)message) == "$SLEEP$") // force to go sleep
   {
     gatewayMessageDone = true;
     Serial.println("FORCE SLEEP MODE");
     
     return;
   }
-  else if(String(message).substring(0,3) == "$U$") // update firmware
+  else if(String((char *)message).substring(0,3) == "$U$") // update firmware
   {
     firmwareUpdate = true;   
 
-    if(!updateFirmware(String(message).substring(3)))
+    if(!updateFirmware(String((char *)message).substring(3)))
     {
       delay(100);    
       ESP.restart();            
     }
   }
-  else if(String(message) == "$S$") // ask for settings
+  else if(String((char *)message) == "$S$") // ask for settings
   {
     pairingOngoing = true;
 
@@ -308,19 +368,19 @@ void OnMessage(uint8_t* ad, const char* message)
 
     pairingOngoing = false;    
   }
-  else if(String(message).substring(0,5) == "$SDT$") // set device type
+  else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
   {
     pairingOngoing = true;
 
-    setDeviceType(String(message).substring(5));
+    setDeviceType(String((char *)message).substring(5));
 
     pairingOngoing = false;    
   }
-  else if(String(message).substring(0,4) == "$SC$") // set configuration
+  else if(String((char *)message).substring(0,4) == "$SC$") // set configuration
   {
     pairingOngoing = true;
 
-    setConfig(String(message).substring(4));
+    setConfig(String((char *)message).substring(4));
 
     pairingOngoing = false;    
   }
@@ -434,6 +494,7 @@ void setup()
   nam = "SHRDZMSensor";  
 #endif
 
+  dev = NULL;
 
   SPIFFS.begin();
 
@@ -475,7 +536,7 @@ void setup()
 
   simpleEspConnection.begin();
 
-  Serial.println(simpleEspConnection.macToStr(simpleEspConnection.getMyAddress()));
+  Serial.println(simpleEspConnection.myAddress);
   
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
@@ -559,7 +620,6 @@ void setup()
       sd = dev->readParameter();
 
       pairingOngoing = false;
-
     }
     else
     {
@@ -797,9 +857,14 @@ void readLastVersionNumber()
 
 void loop() 
 {
-  if(sendSetupFlag)
+  simpleEspConnection.loop();
+
+/*  if(sendSetupFlag)
   {
-    if(simpleEspConnection.canSend())
+     Serial.println("send setupFlag set!");
+
+    
+//    if(simpleEspConnection.canSend())
     {
       if(configData != NULL)
       {
@@ -818,14 +883,14 @@ void loop()
         }
       }
     }
-  }
+  } */
   
   // send sensor data
   if(sd != NULL)
   {
     String reply;
   
-    if(simpleEspConnection.canSend())
+//    if(simpleEspConnection.canSend())
     {
       reply = "$D$";
 
@@ -924,10 +989,11 @@ void loop()
 #endif
 
 #ifndef DISABLEGOTOSLEEP    
-  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && 
+//  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && 
+  if(!pairingOngoing && sd == NULL && simpleEspConnection.isSendBufferEmpty() && 
     !firmwareUpdate && !sendSetupFlag)
   {
-    // everything down and I can go to sleep
+    // everything is done and I can go to sleep
     gotoSleep();
   }
 #endif    
