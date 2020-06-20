@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 01 June 2020
+  Modified 20 June 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -41,14 +41,13 @@ DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
 long setupMessageHandled = 0;
-bool sendSetupFlag = false;
-SensorData* sd = NULL;
 int sensorDataSendCount = 0;
 int configDataSendCount = 0;
 String lastVersionNumber;
 bool sendUpdatedVersion = false;
 String ver, nam;
 ConfigData *configData;
+bool initRestart = false;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -136,88 +135,11 @@ bool writeConfig()
     configFile.close();
 }
 
-void prepareSetup()
-{
-  String reply;
-
-  configData = new ConfigData(6);
-  
-  configData->di[0].valueI = "$I$";
-
-  reply = "$SC$";
-  
-  for (JsonPair kv : configuration) 
-  {
-    if(String(kv.key().c_str()) != "device")
-      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
-  }
-
-  reply.remove(reply.length()-1);
-
-  if(!configuration.containsKey("devicetype"))
-  {
-    reply += "|devicetype: ";
-  }
-  configData->di[1].valueI = reply;
-
-  // send device parameter
-  if(configuration["device"].size() > 0)
-  {
-    reply = "$SP$";
-
-    JsonObject sp = configuration["device"];
-    for (JsonPair kv : sp) 
-    {
-      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
-    }
-
-    reply.remove(reply.length()-1);
-
-    Serial.println("send device parameter:"+reply);
-    
-    configData->di[2].valueI = reply;
-  }
-  
-  if(dev == NULL)
-    actualizeDeviceType();
-
-  if(dev != NULL)
-  {
-    SensorData* sd = dev->readParameterTypes();
-
-    if(sd != NULL)
-    {
-      reply = "$SD$";
-
-      for(int i = 0; i<sd->size; i++)
-      {
-        reply += sd->di[i].nameI;
-        if(i < sd->size-1)
-          reply += "|";
-      }
-
-      configData->di[3].valueI = reply;
-    }
-
-    delete sd; 
-  }
-
-  String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
-  configData->di[4].valueI = s;
-
-  // send supported devices
-  s = String("$X$")+String(SUPPORTED_DEVICES);
-  configData->di[5].valueI = s;
-
-/*  for(int i=0;i<6;i++)
-  {
-    Serial.println("---"+configData->di[i].valueI);
-  }*/
-}
-
 void sendSetup()
 {
   String reply = "$SC$";
+
+  simpleEspConnection.sendMessage((char *)"$I$");
   
   for (JsonPair kv : configuration) 
   {
@@ -522,14 +444,7 @@ void setup()
   readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
 
-  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
-  {
-    Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
-    //sendUpdatedVersion = true;
-    //prepareSetup();
-    sendSetup();
-    storeLastVersionNumber();
-  }
+  Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
 
   pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
   pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
@@ -551,8 +466,6 @@ void setup()
   simpleEspConnection.onMessage(&OnMessage);  
 
   ///////////////////
-  
-
   if(digitalRead(configuration["pairingpin"].as<uint8_t>()) == false)
   {
     pairingOngoing = true;
@@ -561,71 +474,96 @@ void setup()
   }
   else
   {
-    pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
-    digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
-
-    // setup the device
-    if(configuration["devicetype"] == "DHT22")
-    {
-      dev = new Device_DHT22();
-    }
-    else if(configuration["devicetype"] == "BH1750")
-    {
-      dev = new Device_BH1750();
-    }
-    else if(configuration["devicetype"] == "BMP280")
-    {
-      dev = new Device_BMP280();
-    }
-    else if(configuration["devicetype"] == "BME280")
-    {
-      dev = new Device_BME280();
-    }
-    else if(configuration["devicetype"] == "DS18B20")
-    {
-      dev = new Device_DS18B20();
-    }
-    else if(configuration["devicetype"] == "HTU21D" || configuration["devicetype"] == "HTU21" ||
-            configuration["devicetype"] == "SI7021" || configuration["devicetype"] == "SHT21")
-    {
-      dev = new Device_HTU21D();
-    }
-    else if(configuration["devicetype"] == "MQ135")
-    {
-      dev = new Device_MQ135();
-    }
-    else if(configuration["devicetype"] == "WATER")
-    {
-      dev = new Device_WATER();
-    }
-    else if(configuration["devicetype"] == "ANALOG")
-    {
-      dev = new Device_ANALOG();
-    }
-    else if(configuration["devicetype"] == "DIGITAL")
-    {
-      dev = new Device_DIGITAL();
-    }
-    else if(configuration["devicetype"] == "DIGITALGROUND")
-    {
-      dev = new Device_DIGITALGROUND();
-    }
-
-    if(dev != NULL)
-    {
-      pairingOngoing = true;
+    if(configuration.containsKey("gateway"))
+    {    
+      pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
+      digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
+  
+      // setup the device
+      if(configuration["devicetype"] == "DHT22")
+      {
+        dev = new Device_DHT22();
+      }
+      else if(configuration["devicetype"] == "BH1750")
+      {
+        dev = new Device_BH1750();
+      }
+      else if(configuration["devicetype"] == "BMP280")
+      {
+        dev = new Device_BMP280();
+      }
+      else if(configuration["devicetype"] == "BME280")
+      {
+        dev = new Device_BME280();
+      }
+      else if(configuration["devicetype"] == "DS18B20")
+      {
+        dev = new Device_DS18B20();
+      }
+      else if(configuration["devicetype"] == "HTU21D" || configuration["devicetype"] == "HTU21" ||
+              configuration["devicetype"] == "SI7021" || configuration["devicetype"] == "SHT21")
+      {
+        dev = new Device_HTU21D();
+      }
+      else if(configuration["devicetype"] == "MQ135")
+      {
+        dev = new Device_MQ135();
+      }
+      else if(configuration["devicetype"] == "WATER")
+      {
+        dev = new Device_WATER();
+      }
+      else if(configuration["devicetype"] == "ANALOG")
+      {
+        dev = new Device_ANALOG();
+      }
+      else if(configuration["devicetype"] == "DIGITAL")
+      {
+        dev = new Device_DIGITAL();
+      }
+      else if(configuration["devicetype"] == "DIGITALGROUND")
+      {
+        dev = new Device_DIGITALGROUND();
+      }
+  
+      if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+      {    
+        sendSetup();
+        storeLastVersionNumber();
+      }  
+  
+      if(dev != NULL)
+      {
+        pairingOngoing = true;
+        
+        dev->setDeviceParameter(configuration["device"]);
+  
+        SensorData* sd = dev->readParameter();
+  
+        if(sd != NULL)
+        {
+          String reply;
+          
+          for(int i = 0; i<sd->size; i++)
+          {
+            reply = "$D$";
       
-      dev->setDeviceParameter(configuration["device"]);
-
-      sd = dev->readParameter();
-
-      pairingOngoing = false;
+            reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+      
+            simpleEspConnection.sendMessage((char *)reply.c_str());  
+          }
+          delete sd;
+          sd = NULL;
+        }
+        
+        pairingOngoing = false;
+      }
+      else
+      {
+        Serial.println("Will not work until device type is set!");
+      }
     }
-    else
-    {
-      Serial.println("Will not work until device type is set!");
-    }
-
+    
     // for firmware upgrade
 #if defined(ESP8266)
     ESPhttpUpdate.onStart(update_started);
@@ -772,6 +710,8 @@ void setDeviceType(String deviceType)
     writeConfig();    
     
     sendSetup();
+
+    initRestart = true;
   }  
 }
 
@@ -859,55 +799,6 @@ void loop()
 {
   simpleEspConnection.loop();
 
-/*  if(sendSetupFlag)
-  {
-     Serial.println("send setupFlag set!");
-
-    
-//    if(simpleEspConnection.canSend())
-    {
-      if(configData != NULL)
-      {
-        if(configData->di[configDataSendCount].valueI != "")
-        {
-          simpleEspConnection.sendMessage((char *)configData->di[configDataSendCount].valueI.c_str());
-        }
-
-        configDataSendCount++;
-        if(configDataSendCount >= configData->size)
-        {
-          Serial.println("delete configData");
-
-          sendSetupFlag = false;
-          delete configData;
-        }
-      }
-    }
-  } */
-  
-  // send sensor data
-  if(sd != NULL)
-  {
-    String reply;
-  
-//    if(simpleEspConnection.canSend())
-    {
-      reply = "$D$";
-
-      reply += sd->di[sensorDataSendCount].nameI+":"+sd->di[sensorDataSendCount].valueI;
-
-      simpleEspConnection.sendMessage((char *)reply.c_str());
-
-      sensorDataSendCount++;
-
-      if(sensorDataSendCount == sd->size)
-      {
-        delete sd;
-        sd = NULL;
-      }
-    }
-  }
-    
   while (Serial.available()) 
   {
     char inChar = (char)Serial.read();
@@ -988,10 +879,12 @@ void loop()
   }
 #endif
 
+  if(initRestart && simpleEspConnection.isSendBufferEmpty())
+    ESP.restart();      
+
+
 #ifndef DISABLEGOTOSLEEP    
-//  if(!pairingOngoing && sd == NULL && simpleEspConnection.canSend() && 
-  if(!pairingOngoing && sd == NULL && simpleEspConnection.isSendBufferEmpty() && 
-    !firmwareUpdate && !sendSetupFlag)
+  if(!pairingOngoing && simpleEspConnection.isSendBufferEmpty() && !firmwareUpdate)
   {
     // everything is done and I can go to sleep
     gotoSleep();
