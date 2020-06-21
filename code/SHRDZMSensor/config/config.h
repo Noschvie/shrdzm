@@ -2,7 +2,7 @@
 #define NAME		"SHRDZMSensor"
 
 
-#define DEBUG
+//#define DEBUG
 #define SLEEP_SECS 2 * 60 
 #define SEND_TIMEOUT 1000  // 245 millis seconds timeout 
 #define LEDPIN 		2

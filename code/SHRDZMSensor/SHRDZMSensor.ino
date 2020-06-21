@@ -86,13 +86,16 @@ bool readConfig()
     if (SPIFFS.exists("/shrdzm_config.json")) 
     {
       //file exists, reading and loading
+#ifdef DEBUG
       Serial.println("reading config file");
+#endif
       File configFile = SPIFFS.open("/shrdzm_config.json", "r");
       if (configFile) 
       {
+#ifdef DEBUG
         Serial.println("opened config file");
+#endif        
         // Allocate a buffer to store contents of the file.
-
         String content;
         
         for(int i=0;i<configFile.size();i++) //Read upto complete file size
@@ -108,7 +111,6 @@ bool readConfig()
         if (error)
         {
           Serial.println("Error at deserializeJson");
-      
           return false;
         }
 
@@ -256,13 +258,16 @@ bool updateFirmware(String message)
 
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
+#ifdef DEBUG
   Serial.println("MESSAGE:"+String((char *)message));
+#endif
 
   if(String((char *)message) == "$SLEEP$") // force to go sleep
   {
     gatewayMessageDone = true;
+#ifdef DEBUG
     Serial.println("FORCE SLEEP MODE");
-    
+#endif    
     return;
   }
   else if(String((char *)message).substring(0,3) == "$U$") // update firmware
@@ -399,8 +404,8 @@ void actualizeDeviceType()
 
 void setup() 
 {
-#ifdef DEBUG
   Serial.begin(9600); Serial.println();
+#ifdef DEBUG
   Serial.println(ESP.getSketchMD5());
 #endif
 
@@ -444,14 +449,18 @@ void setup()
   readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
 
+#ifdef DEBUG
   Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
+#endif
 
   pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
   pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
 
   simpleEspConnection.begin();
 
+#ifdef DEBUG
   Serial.println(simpleEspConnection.myAddress);
+#endif
   
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
@@ -591,7 +600,9 @@ void setConfig(String cmd)
   String pname = getValue(cmd, ':', 0);
   String pvalue = getValue(cmd, ':', 1);
 
+#ifdef DEBUG
    Serial.println("setConfig "+pvalue);
+#endif
 
   if( pname == "interval" || 
       pname == "sensorpowerpin" || 
@@ -641,8 +652,9 @@ void setDeviceType(String deviceType)
   {
     configuration["devicetype"] = deviceType;
 
+#ifdef DEBUG
    Serial.println("setDeviceType "+deviceType);
-
+#endif
 
     if(configuration.containsKey("device"))
     {
@@ -914,9 +926,9 @@ void gotoSleep()
 #endif
   }
 
-#ifdef DEBUG
+//#ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
-#endif
+//#endif
 
 #if defined (ESP8266)
   ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);

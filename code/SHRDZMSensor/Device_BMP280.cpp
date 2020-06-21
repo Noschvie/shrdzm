@@ -19,7 +19,7 @@ bool Device_BMP280::setDeviceParameter(JsonObject obj)
 
   uint8_t address = strtoul(deviceParameter["address"], NULL, 0);
 
-  Serial.println(address);
+//  Serial.println(address);
 
   avail = bmp.begin(address);   
 
