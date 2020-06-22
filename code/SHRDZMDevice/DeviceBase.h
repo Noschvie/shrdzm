@@ -47,6 +47,7 @@ class DeviceBase
     DeviceBase(){};
 
     virtual bool setDeviceParameter(JsonObject obj);
+    virtual void prepare(){};
     virtual bool initialize();
     JsonObject getDeviceParameter();
     virtual SensorData* readParameterTypes();

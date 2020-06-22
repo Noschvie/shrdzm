@@ -49,6 +49,14 @@ SensorData* Device_MQ135::readInitialSetupParameter()
   return al;
 }
 
+void Device_MQ135::prepare()
+{
+  // enable sensor
+  Serial.println("MQ135 Sensor Power enabled");
+
+  
+}
+
 SensorData* Device_MQ135::readParameter()
 {  
   SensorData *al = new SensorData(3);

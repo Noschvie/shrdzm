@@ -36,7 +36,9 @@ JsonObject device_configuration = configuration.createNestedObject("device");
 String inputString;
 String serverAddress;
 unsigned long clockmillis = 0;
+unsigned long prepareend = 0;
 volatile bool pairingOngoing = false;
+bool measurementDone = false;
 DeviceBase* dev;
 bool deviceTypeSet = true;
 bool gatewayMessageDone = false;
@@ -496,6 +498,9 @@ void setup()
   }
   else
   {
+    // check if preparation is needed
+    prepareend = 1000 * atoi(configuration["preparetime"]);
+    
     if(configuration.containsKey("gateway"))
     {    
       pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
@@ -553,8 +558,13 @@ void setup()
         sendSetup();
         storeLastVersionNumber();
       }  
-  
+
       if(dev != NULL)
+      {
+        dev->prepare();
+      }
+  
+/*      if(dev != NULL)
       {
         pairingOngoing = true;
         
@@ -583,8 +593,8 @@ void setup()
       else
       {
         Serial.println("Will not work until device type is set!");
-      }
-    }
+      } */
+    } 
     
     // for firmware upgrade
 #if defined(ESP8266)
@@ -594,7 +604,7 @@ void setup()
     ESPhttpUpdate.onError(update_error);
 #endif    
   }
-
+  
   clockmillis = millis();
 }
 
@@ -836,10 +846,54 @@ void readLastVersionNumber()
   file.close();  
 }
 
+bool getMeasurementData()
+{
+  if(configuration.containsKey("gateway"))
+  {      
+    if(dev != NULL)
+    {
+      pairingOngoing = true;
+      
+      dev->setDeviceParameter(configuration["device"]);
+  
+      SensorData* sd = dev->readParameter();
+  
+      if(sd != NULL)
+      {
+        String reply;
+        
+        for(int i = 0; i<sd->size; i++)
+        {
+          reply = "$D$";
+    
+          reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+    
+          simpleEspConnection.sendMessage((char *)reply.c_str());  
+        }
+        delete sd;
+        sd = NULL;
+      }
+      
+      pairingOngoing = false;
+    }
+    else
+    {
+      Serial.println("Will not work until device type is set!");
+    }
+  }  
+
+  measurementDone = true;
+}
+
 void loop() 
 {
   simpleEspConnection.loop();
 
+  if(!measurementDone && millis() >= prepareend)
+  {
+    measurementDone = getMeasurementData();
+  }
+  
   while (Serial.available()) 
   {
     char inChar = (char)Serial.read();
@@ -920,6 +974,9 @@ void loop()
   }
 #endif
 
+  if(!measurementDone)
+    return;
+
   if(initRestart && simpleEspConnection.isSendBufferEmpty())
     ESP.restart();      
 
@@ -937,9 +994,8 @@ void loop()
 
 void gotoSleep() 
 {  
-  delete dev;
-  
-  int sleepSecs = configuration["interval"]; 
+  delete dev;  
+  int sleepSecs;
 
   if(configuration["devicetype"] == "UNKNOWN") // goto sleep just for 5 seconds and flash 2 times
   {
@@ -956,15 +1012,27 @@ void gotoSleep()
     digitalWrite(LEDPIN, HIGH);
 #endif
   }
+  else
+  {
+    sleepSecs = atoi(configuration["interval"]) - atoi(configuration["preparetime"]);
+    Serial.printf("%d\n", configuration["interval"].as<uint8_t>()); 
+  }
 
 //#ifdef DEBUG
   Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
 //#endif
 
+  if(sleepSecs > 0)
+  {
 #if defined (ESP8266)
-  ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
+    ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
 #else if defined(ESP32)
 #endif
-
+  }
+  else
+  {
+    measurementDone = false;
+  }
+  
   delay(100);
 }

@@ -13,6 +13,7 @@ class Device_MQ135 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    void prepare();
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
