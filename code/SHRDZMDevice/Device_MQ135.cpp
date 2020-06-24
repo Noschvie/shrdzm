@@ -20,7 +20,7 @@ bool Device_MQ135::initialize()
   deviceParameter = doc.to<JsonObject>();
 
   deviceParameter["R1_Ohm"] = "4700";
-  deviceParameter["R2_Ohm"] = "10000";
+  deviceParameter["R2_Ohm"] = "22000";
   deviceParameter["ADC_Volt"] = "3.3";
 
   return true;
@@ -44,7 +44,7 @@ SensorData* Device_MQ135::readInitialSetupParameter()
   al->di[0].nameI = "interval";
   al->di[0].valueI = "300";
   al->di[1].nameI = "preparetime";
-  al->di[1].valueI = "45";
+  al->di[1].valueI = "25";
 
   return al;
 }

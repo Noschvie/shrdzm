@@ -630,6 +630,7 @@ void setConfig(String cmd)
   if( pname == "interval" || 
       pname == "sensorpowerpin" || 
       pname == "devicetype" || 
+      pname == "preparetime" || 
       pname == "gateway")
   {
     if(pname == "devicetype")
