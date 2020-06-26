@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 20 June 2020
+  Modified 25 June 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -453,6 +453,12 @@ void setup()
     writeConfigAndReboot = true;
   }
 
+  if(!configuration.containsKey("processtime"))
+  {
+    configuration["processtime"] = "0";
+    writeConfigAndReboot = true;
+  }
+
   if(writeConfigAndReboot)
   {
     writeConfig();    
@@ -563,37 +569,6 @@ void setup()
       {
         dev->prepare();
       }
-  
-/*      if(dev != NULL)
-      {
-        pairingOngoing = true;
-        
-        dev->setDeviceParameter(configuration["device"]);
-  
-        SensorData* sd = dev->readParameter();
-  
-        if(sd != NULL)
-        {
-          String reply;
-          
-          for(int i = 0; i<sd->size; i++)
-          {
-            reply = "$D$";
-      
-            reply += sd->di[i].nameI+":"+sd->di[i].valueI;
-      
-            simpleEspConnection.sendMessage((char *)reply.c_str());  
-          }
-          delete sd;
-          sd = NULL;
-        }
-        
-        pairingOngoing = false;
-      }
-      else
-      {
-        Serial.println("Will not work until device type is set!");
-      } */
     } 
     
     // for firmware upgrade
@@ -631,6 +606,7 @@ void setConfig(String cmd)
       pname == "sensorpowerpin" || 
       pname == "devicetype" || 
       pname == "preparetime" || 
+      pname == "processtime" || 
       pname == "gateway")
   {
     if(pname == "devicetype")
