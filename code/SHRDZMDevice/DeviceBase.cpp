@@ -51,6 +51,11 @@ JsonObject DeviceBase::getDeviceParameter()
   return deviceParameter;
 }
 
+JsonObject DeviceBase::getActionParameter()
+{
+  return actionParameter;
+}
+
 SensorData* DeviceBase::readParameterTypes()
 {
     return NULL;

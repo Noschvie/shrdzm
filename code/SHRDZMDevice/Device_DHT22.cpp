@@ -23,10 +23,9 @@ bool Device_DHT22::setDeviceParameter(JsonObject obj)
 bool Device_DHT22::initialize()
 {
   // create an object
-  deviceParameter = doc.to<JsonObject>();
-  
+  deviceParameter = doc.to<JsonObject>();  
   deviceParameter["pin"] = "12";
-  
+
   return true;
 }
 

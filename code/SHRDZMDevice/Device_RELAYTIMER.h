@@ -1,15 +1,15 @@
-#ifndef Device_RELAY_H
-#define Device_RELAY_H
+#ifndef Device_RELAYTIMER_H
+#define Device_RELAYTIMER_H
 
 #include "DeviceBase.h"
 
 // Sensors
 
-class Device_RELAY : public DeviceBase
+class Device_RELAYTIMER : public DeviceBase
 {   
   public:
-    Device_RELAY();
-    ~Device_RELAY();
+    Device_RELAYTIMER();
+    ~Device_RELAYTIMER();
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    

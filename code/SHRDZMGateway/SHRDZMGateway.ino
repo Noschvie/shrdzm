@@ -174,9 +174,13 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
   else if((m.substring(0,4) == "$SC$") || // Device Configuration
           (m.substring(0,4) == "$SP$") || // Sensor Configuration
+          (m.substring(0,4) == "$AP$") || // Action Configuration
           (m.substring(0,4) == "$SD$"))   // Parameter names
   {
     String prefix = (m.substring(0,4) == "$SC$" || m.substring(0,4) == "$SP$") ? "C" : "P";
+
+    if(m.substring(0,4) == "$AP$")
+      prefix = "A";
     
     String buffer = m.substring(4);
     int f = -1;

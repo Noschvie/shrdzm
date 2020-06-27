@@ -658,6 +658,11 @@ void sendSensorData(String data)
         client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
           splitter->getItemAtIndex(2).c_str());
       }
+      else if(splitter->getItemAtIndex(0) == "[A]")
+      {
+        client.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/actions").c_str(), 
+          splitter->getItemAtIndex(2).c_str());
+      }
     }
     else
     {

@@ -37,6 +37,7 @@ my @topics = (
 	"+/sensors",
 	"+/init",
 	"+/param",
+	"+/actions",
 	"+/version",
 );
 
@@ -246,6 +247,18 @@ sub ParseMessage($$) # from serial
 						Dispatch($hash, $params[1] . " config " . $params[2] );
 					}
 				}
+				elsif(substr($params[0], 5, 1) eq "A") # Supported actions
+				{
+					Log3 $name, 5, "--- Supported actions called ----";
+				
+					my @parameter = split(':', $params[2]);
+					my $parameterSize = @parameter;
+
+					if($parameterSize == 2)
+					{
+						Dispatch($hash, $params[1] . " actions " . $params[2] );
+					}
+				}								
 				elsif(substr($params[0], 5, 1) =~ "D")
 				{
 					Log3 $name, 5, "--- Data called ----";
@@ -594,6 +607,12 @@ sub onmessage($$$) # from mqtt
 				Log3 $hash->{NAME}, 5, "param $message";
 
 				Dispatch($hash, $abc[2] . " param " . "param:".$message );
+			}
+			elsif($abc[3] eq "actions")
+			{
+				Log3 $hash->{NAME}, 5, "actions $message";
+
+				Dispatch($hash, $abc[2] . " actions " . "actions:".$message );
 			}
 			else
 			{

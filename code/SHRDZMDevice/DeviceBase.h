@@ -46,10 +46,13 @@ class DeviceBase
   public:
     DeviceBase(){};
 
-    virtual bool setDeviceParameter(JsonObject obj);
-    virtual void prepare(){};
-    virtual bool initialize();
     JsonObject getDeviceParameter();
+    virtual bool setDeviceParameter(JsonObject obj);
+    JsonObject getActionParameter();
+    virtual bool setAction(String action){return false;};
+    virtual void prepare(){};
+//    virtual bool initialize();
+    virtual bool initialize(){return true;};
     virtual SensorData* readParameterTypes();
     virtual SensorData* readParameter();
     virtual SensorData* readInitialSetupParameter(){return NULL;};
@@ -58,8 +61,10 @@ class DeviceBase
     void PrintText(String text);
 
     JsonObject deviceParameter;
+    JsonObject actionParameter;
+    
     StaticJsonDocument<JSON_OBJECT_SIZE(10)> doc;
-
+    StaticJsonDocument<JSON_OBJECT_SIZE(10)> docAction;
 };
 
 #endif

@@ -37,6 +37,7 @@ String inputString;
 String serverAddress;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
+unsigned long processend = 0;
 volatile bool pairingOngoing = false;
 bool measurementDone = false;
 DeviceBase* dev;
@@ -50,6 +51,7 @@ bool sendUpdatedVersion = false;
 String ver, nam;
 ConfigData *configData;
 bool initRestart = false;
+bool postActionDone = false;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -198,6 +200,22 @@ void sendSetup()
 
       delete sd; 
     }    
+  }
+
+  // Actionparameter
+  JsonObject ap = dev->getActionParameter();
+  if(ap != NULL)
+  {
+    reply = "$AP$";
+
+    for (JsonPair kv : ap) 
+    {
+      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+    }
+
+    reply.remove(reply.length()-1);
+
+    simpleEspConnection.sendMessage((char *)reply.c_str());    
   }
 
   String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
@@ -395,6 +413,10 @@ void actualizeDeviceType()
   {
     dev = new Device_DIGITALGROUND();
   }
+  else if(configuration["devicetype"] == "RELAYTIMER")
+  {
+    dev = new Device_RELAYTIMER();
+  }
 
   if(dev != NULL)
   {
@@ -558,6 +580,10 @@ void setup()
       {
         dev = new Device_DIGITALGROUND();
       }
+      else if(configuration["devicetype"] == "RELAYTIMER")
+      {
+        dev = new Device_RELAYTIMER();
+      }
   
       if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
       {    
@@ -648,6 +674,7 @@ void setDeviceType(String deviceType)
      deviceType == "ANALOG" ||
      deviceType == "DIGITAL" ||
      deviceType == "DIGITALGROUND" ||
+     deviceType == "RELAYTIMER" ||
      deviceType == "WATER")
   {
     configuration["devicetype"] = deviceType;
@@ -707,6 +734,10 @@ void setDeviceType(String deviceType)
     else if(deviceType == "DIGITALGROUND")
     {
       dev = new Device_DIGITALGROUND();
+    }
+    else if(deviceType == "RELAYTIMER")
+    {
+      dev = new Device_RELAYTIMER();
     }
     else
     {
@@ -869,6 +900,24 @@ void loop()
   if(!measurementDone && millis() >= prepareend)
   {
     measurementDone = getMeasurementData();
+
+    if(atof(configuration["processtime"]) > 0.0f)
+    {
+      processend = 1000 * atof(configuration["processtime"]) + millis();      
+      postActionDone = false;         
+    }
+    else
+    {
+      postActionDone = true;         
+    }
+  }
+
+  if(!postActionDone && measurementDone && millis() >= processend)
+  {
+#ifdef DEBUG
+      Serial.printf("Did wait %f seconds. Now I will start the postaction\n", atof(configuration["processtime"]));          
+#endif   
+    postActionDone = true;   
   }
   
   while (Serial.available()) 
@@ -954,6 +1003,9 @@ void loop()
   if(!measurementDone)
     return;
 
+  if(!postActionDone)
+    return;
+
   if(initRestart && simpleEspConnection.isSendBufferEmpty())
     ESP.restart();      
 
@@ -992,7 +1044,7 @@ void gotoSleep()
   else
   {
     sleepSecs = atoi(configuration["interval"]) - atoi(configuration["preparetime"]);
-    Serial.printf("%d\n", configuration["interval"].as<uint8_t>()); 
+//    Serial.printf("%d\n", configuration["interval"].as<uint8_t>()); 
   }
 
 //#ifdef DEBUG
