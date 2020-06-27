@@ -52,6 +52,7 @@ String ver, nam;
 ConfigData *configData;
 bool initRestart = false;
 bool postActionDone = false;
+bool processTimeActive = false;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -327,7 +328,26 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
-    setConfig(String((char *)message).substring(4));
+    JsonObject ap = dev->getActionParameter();
+    if(ap != NULL)
+    {
+      String pname = getValue(String((char *)message).substring(4), ':', 0);      
+      if(ap.containsKey(pname))
+      {
+        dev->setAction(String((char *)message).substring(4));
+        measurementDone = getMeasurementData();
+
+        processTimeActive = true;
+      }
+      else
+      {
+        setConfig(String((char *)message).substring(4));
+      }
+    }       
+    else
+    {
+      setConfig(String((char *)message).substring(4));
+    }
 
     pairingOngoing = false;    
   }
@@ -912,12 +932,16 @@ void loop()
     }
   }
 
-  if(!postActionDone && measurementDone && millis() >= processend)
+  if(processTimeActive && !postActionDone && measurementDone && millis() >= processend)
   {
 #ifdef DEBUG
       Serial.printf("Did wait %f seconds. Now I will start the postaction\n", atof(configuration["processtime"]));          
 #endif   
-    postActionDone = true;   
+    dev->setPostAction("");
+    measurementDone = getMeasurementData();
+
+    postActionDone = true; 
+    processTimeActive = false;  
   }
   
   while (Serial.available()) 
@@ -1003,7 +1027,7 @@ void loop()
   if(!measurementDone)
     return;
 
-  if(!postActionDone)
+  if(!postActionDone && processTimeActive)
     return;
 
   if(initRestart && simpleEspConnection.isSendBufferEmpty())

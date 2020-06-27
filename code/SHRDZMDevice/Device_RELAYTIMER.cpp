@@ -3,10 +3,13 @@
 Device_RELAYTIMER::Device_RELAYTIMER()
 {  
   actionParameter = docAction.to<JsonObject>();  
-  actionParameter["relay1"] = "ON,OFF";
-  actionParameter["relay2"] = "ON,OFF";
-  actionParameter["relay3"] = "";
-  actionParameter["relay4"] = "ON,OFF,SWITCH";
+  actionParameter["relay12"] = "ON,OFF,SWITCH";
+  actionParameter["relay02"] = "ON,OFF,SWITCH";
+  actionParameter["relay04"] = "ON,OFF,SWITCH";
+  actionParameter["relay05"] = "ON,OFF,SWITCH";
+
+  port = -1;
+  state = false;
 
   Serial.println("Action Parameter set");
 }
@@ -29,11 +32,52 @@ bool Device_RELAYTIMER::initialize()
   return true;
 }
 
+bool Device_RELAYTIMER::setAction(String action)
+{
+  String sPort = getValue(action, ':', 0);
+  if(sPort == "relay02")
+    port = 2;
+  else if(sPort == "relay04")
+    port = 4;
+  else if(sPort == "relay05")
+    port = 5;
+  else if(sPort == "relay12")
+    port = 12;
+
+  if(port != -1)
+  {
+    pinMode(port, OUTPUT);
+    Serial.printf("Set port %d to LOW:"+port);
+    
+    digitalWrite(port, LOW);
+    state = true;
+  }
+    
+  return true;
+}
+
+bool Device_RELAYTIMER::setPostAction(String action)
+{
+  Serial.println("in the setPostAction with parameter :"+action);
+
+  if(port != -1)
+  {
+    Serial.printf("Set port %d to HIGH:"+port);
+    digitalWrite(port, HIGH);
+    state = false;    
+  }
+
+  return true;
+}
+
 SensorData* Device_RELAYTIMER::readParameterTypes()
 {
-  SensorData *al = new SensorData(1);
+  SensorData *al = new SensorData(4);
 
-  al->di[0].nameI = "relay";
+  al->di[0].nameI = "relay02";
+  al->di[0].nameI = "relay04";
+  al->di[0].nameI = "relay05";
+  al->di[0].nameI = "relay12";
 
   return al;
 }
@@ -55,9 +99,38 @@ SensorData* Device_RELAYTIMER::readInitialSetupParameter()
 SensorData* Device_RELAYTIMER::readParameter()
 {  
   SensorData *al = new SensorData(1);
-  
-  al->di[0].nameI = "relay";
-  al->di[0].valueI = "ON";  
+
+  String sstate = state ? "ON" : "OFF";
+
+  if(port == 2)
+    al->di[0].nameI = "relay02";
+  else if(port == 4)
+    al->di[0].nameI = "relay04";
+  else if(port == 5)
+    al->di[0].nameI = "relay05";
+  else if(port == 12)
+    al->di[0].nameI = "relay12";
+
+  al->di[0].valueI = sstate;  
 
   return al;
+}
+
+String Device_RELAYTIMER::getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++)
+  {
+    if(data.charAt(i)==separator || i==maxIndex)
+    {
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }

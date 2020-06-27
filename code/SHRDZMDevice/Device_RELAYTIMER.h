@@ -13,12 +13,17 @@ class Device_RELAYTIMER : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool setAction(String action);
+    bool setPostAction(String action);
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
     
   protected:
-
+    String getValue(String data, char separator, int index);
+    int port;
+    bool state;
+    
   private:
   
 
