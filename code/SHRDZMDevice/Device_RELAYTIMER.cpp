@@ -11,7 +11,9 @@ Device_RELAYTIMER::Device_RELAYTIMER()
   port = -1;
   state = false;
 
-  Serial.println("Action Parameter set");
+  actionSet = false;
+  
+  et = millis() + 1000 * 5;
 }
 
 Device_RELAYTIMER::~Device_RELAYTIMER()
@@ -47,26 +49,46 @@ bool Device_RELAYTIMER::setAction(String action)
   if(port != -1)
   {
     pinMode(port, OUTPUT);
-    Serial.printf("Set port %d to LOW:"+port);
+    Serial.printf("Set port %d to LOW\n",port);
     
-    digitalWrite(port, LOW);
+    setPort(LOW);
+
     state = true;
   }
-    
+
+  actionSet = true;
+
   return true;
 }
 
-bool Device_RELAYTIMER::setPostAction(String action)
+
+void Device_RELAYTIMER::setPort(bool high)
 {
-  Serial.println("in the setPostAction with parameter :"+action);
+  digitalWrite(port, high);
+  state = !high;      
+}
+
+bool Device_RELAYTIMER::setPostAction()
+{
+//  Serial.println("in the setPostAction with parameter");
 
   if(port != -1)
   {
-    Serial.printf("Set port %d to HIGH:"+port);
-    digitalWrite(port, HIGH);
-    state = false;    
+    setPort(HIGH);
   }
 
+  return true;
+}
+
+bool Device_RELAYTIMER::loop()
+{
+/*  if(actionSet && millis() < et)
+    return false;
+
+  Serial.printf("loop done\n");
+  setPort(HIGH);
+  */
+  
   return true;
 }
 

@@ -53,6 +53,8 @@ ConfigData *configData;
 bool initRestart = false;
 bool postActionDone = false;
 bool processTimeActive = false;
+bool loopDone = false;
+bool actionSet = false;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -338,6 +340,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
         measurementDone = getMeasurementData();
 
         processTimeActive = true;
+        actionSet = true;
       }
       else
       {
@@ -917,6 +920,16 @@ void loop()
 {
   simpleEspConnection.loop();
 
+  if(dev != NULL && !loopDone && actionSet)
+  {
+    loopDone = dev->loop();
+  }
+
+  if(dev == NULL)
+  {
+    loopDone = true;
+  }
+
   if(!measurementDone && millis() >= prepareend)
   {
     measurementDone = getMeasurementData();
@@ -937,7 +950,7 @@ void loop()
 #ifdef DEBUG
       Serial.printf("Did wait %f seconds. Now I will start the postaction\n", atof(configuration["processtime"]));          
 #endif   
-    dev->setPostAction("");
+    dev->setPostAction();
     measurementDone = getMeasurementData();
 
     postActionDone = true; 
@@ -1028,6 +1041,9 @@ void loop()
     return;
 
   if(!postActionDone && processTimeActive)
+    return;
+
+  if(actionSet && !loopDone)
     return;
 
   if(initRestart && simpleEspConnection.isSendBufferEmpty())

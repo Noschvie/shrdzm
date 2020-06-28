@@ -50,9 +50,9 @@ class DeviceBase
     virtual bool setDeviceParameter(JsonObject obj);
     JsonObject getActionParameter();
     virtual bool setAction(String action){return false;};
-    virtual bool setPostAction(String action){return false;};
+    virtual bool setPostAction(){return false;};
     virtual void prepare(){};
-//    virtual bool initialize();
+    virtual bool loop(){return true;};
     virtual bool initialize(){return true;};
     virtual SensorData* readParameterTypes();
     virtual SensorData* readParameter();
