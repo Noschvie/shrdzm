@@ -55,6 +55,7 @@ bool postActionDone = false;
 bool processTimeActive = false;
 bool loopDone = false;
 bool actionSet = false;
+bool batterycheckDone = false;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -504,6 +505,13 @@ void setup()
     writeConfigAndReboot = true;
   }
 
+  if(!configuration.containsKey("batterycheck"))
+  {
+    configuration["batterycheck"] = "OFF";
+    writeConfigAndReboot = true;
+  }
+    
+
   if(writeConfigAndReboot)
   {
     writeConfig();    
@@ -656,6 +664,7 @@ void setConfig(String cmd)
       pname == "devicetype" || 
       pname == "preparetime" || 
       pname == "processtime" || 
+      pname == "batterycheck" || 
       pname == "gateway")
   {
     if(pname == "devicetype")
@@ -918,6 +927,19 @@ bool getMeasurementData()
 
 void loop() 
 {
+
+  if(!batterycheckDone)
+  {
+    batterycheckDone = configuration["batterycheck"] == "ON" ? false : true;
+    if(!batterycheckDone)
+    {      
+      String reply = "$D$battery:"+String(analogRead(A0));
+
+      simpleEspConnection.sendMessage((char *)reply.c_str());  
+      batterycheckDone = true;
+    }
+  }
+  
   simpleEspConnection.loop();
 
   if(dev != NULL && !loopDone && actionSet)
@@ -937,7 +959,8 @@ void loop()
     if(atof(configuration["processtime"]) > 0.0f)
     {
       processend = 1000 * atof(configuration["processtime"]) + millis();      
-      postActionDone = false;         
+      postActionDone = false;    
+      processTimeActive = true;     
     }
     else
     {
@@ -1041,6 +1064,9 @@ void loop()
     return;
 
   if(!postActionDone && processTimeActive)
+    return;
+
+  if(processTimeActive)
     return;
 
   if(actionSet && !loopDone)

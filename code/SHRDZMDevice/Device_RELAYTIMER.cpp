@@ -70,8 +70,6 @@ void Device_RELAYTIMER::setPort(bool high)
 
 bool Device_RELAYTIMER::setPostAction()
 {
-//  Serial.println("in the setPostAction with parameter");
-
   if(port != -1)
   {
     setPort(HIGH);
