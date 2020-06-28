@@ -45,6 +45,7 @@ if(
 }
 
 $localSHRDZMSensorBinary = "./bin/SHRDZMSensor.ino.generic.bin";
+$localSHRDZMDeviceBinary = "./bin/SHRDZMDevice.ino.generic.bin";
 $localSHRDZMGatewayBinary = "./bin/SHRDZMGateway.ino.generic.bin";
 $localSHRDZMGatewayMQTTBinary = "./bin/SHRDZMGatewayMQTT.ino.generic.bin";
 
@@ -63,12 +64,12 @@ $parts = count($versionparts);
 
 if($parts == 3)
 {
-	if($versionparts[0] == "SHRDZMSensor")
+	if($versionparts[0] == "SHRDZMSensor" || $versionparts[0] == "SHRDZMDevice")
 	{
-		loging2file(md5_file($localSHRDZMSensorBinary));
-		if($versionparts[2] != md5_file($localSHRDZMSensorBinary))
+		loging2file(md5_file($localSHRDZMDeviceBinary));
+		if($versionparts[2] != md5_file($localSHRDZMDeviceBinary))
 		{
-			sendFile($localSHRDZMSensorBinary);
+			sendFile($localSHRDZMDeviceBinary);
 			exit();
 		}
 		else

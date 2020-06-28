@@ -20,7 +20,7 @@ bool Device_MQ135::initialize()
   deviceParameter = doc.to<JsonObject>();
 
   deviceParameter["R1_Ohm"] = "4700";
-  deviceParameter["R2_Ohm"] = "10000";
+  deviceParameter["R2_Ohm"] = "22000";
   deviceParameter["ADC_Volt"] = "3.3";
 
   return true;
@@ -39,16 +39,22 @@ SensorData* Device_MQ135::readParameterTypes()
 
 SensorData* Device_MQ135::readInitialSetupParameter()
 {
-  SensorData *al = new SensorData(3);
+  SensorData *al = new SensorData(2);
 
-  al->di[0].nameI = "R1_Ohm";
-  al->di[0].valueI = "4700";
-  al->di[1].nameI = "R2_Ohm";
-  al->di[1].valueI = "10000";
-  al->di[2].nameI = "ADC_Volt";
-  al->di[2].valueI = "3.3";
+  al->di[0].nameI = "interval";
+  al->di[0].valueI = "300";
+  al->di[1].nameI = "preparetime";
+  al->di[1].valueI = "25";
 
   return al;
+}
+
+void Device_MQ135::prepare()
+{
+  // enable sensor
+  Serial.println("MQ135 Sensor Power enabled");
+
+  
 }
 
 SensorData* Device_MQ135::readParameter()

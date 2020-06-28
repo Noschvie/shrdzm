@@ -94,7 +94,7 @@ SHRDZMDevice_Set($@)
 		
 	if ($cmd eq '?' || $cmd =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
 	{	
-		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".SETS", ""). " devicetype:".ReadingsVal($name, ".SENSORS", "");
+		return "Unknown argument $cmd, choose one of "."upgrade:noArg ".ReadingsVal($name, ".ACTIONS", "")." ".ReadingsVal($name, ".SETS", ""). " devicetype:".ReadingsVal($name, ".SENSORS", "");
 	}
 
 	if($cmd eq "upgrade")
@@ -244,6 +244,29 @@ sub SHRDZMDevice_Parse ($$)
 			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
 		
 			readingsSingleUpdate($hash, ".SENSORS", $parameter[1], 0);
+			
+			return $hash->{NAME};		
+		}
+		elsif($items[1] eq "actions")
+		{
+			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!actions updated : $items[2]");
+
+			my $sl = ReadingsVal($hash->{NAME}, ".ACTIONS", "");
+			Log3($hash->{NAME}, 5, $hash->{NAME} . ".ACTIONS ReadingsVal = $sl");
+			my @existing = split(' ', $sl);
+			if ( !($parameter[1] ~~ @existing ))
+			{
+				if(!defined $parameter[2] || $parameter[2] eq "")
+				{
+					push(@existing, $parameter[1]);
+				}
+				else
+				{
+					push(@existing, $parameter[1].":".$parameter[2]);
+				}
+
+				readingsSingleUpdate($hash, ".ACTIONS", join(" ", @existing), 0);				
+			}		
 			
 			return $hash->{NAME};		
 		}

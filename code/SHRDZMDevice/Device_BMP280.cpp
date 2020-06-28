@@ -19,8 +19,6 @@ bool Device_BMP280::setDeviceParameter(JsonObject obj)
 
   uint8_t address = strtoul(deviceParameter["address"], NULL, 0);
 
-//  Serial.println(address);
-
   avail = bmp.begin(address);   
 
   if(!avail)
@@ -67,10 +65,10 @@ SensorData* Device_BMP280::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(2);
 
-  al->di[0].nameI = "address";
-  al->di[0].valueI = "0x76";
-  al->di[1].nameI = "sealevel";
-  al->di[1].valueI = "537";
+  al->di[0].nameI = "interval";
+  al->di[0].valueI = "120";
+  al->di[1].nameI = "preparetime";
+  al->di[1].valueI = "0";
 
   return al;
 }

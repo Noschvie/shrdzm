@@ -156,13 +156,13 @@ void OnSendError(uint8_t* ad)
 #endif  
 }
 
-void OnMessage(uint8_t* ad, const char* message)
+void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
 #ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String(message)+"' from "+simpleEspConnection.macToStr(ad));
+  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
 #endif
 
-  String m = message;
+  String m = (char *)message;
 
   if(m.substring(0,3) == "$D$")       // Data
   {
@@ -174,9 +174,13 @@ void OnMessage(uint8_t* ad, const char* message)
   }
   else if((m.substring(0,4) == "$SC$") || // Device Configuration
           (m.substring(0,4) == "$SP$") || // Sensor Configuration
+          (m.substring(0,4) == "$AP$") || // Action Configuration
           (m.substring(0,4) == "$SD$"))   // Parameter names
   {
     String prefix = (m.substring(0,4) == "$SC$" || m.substring(0,4) == "$SP$") ? "C" : "P";
+
+    if(m.substring(0,4) == "$AP$")
+      prefix = "A";
     
     String buffer = m.substring(4);
     int f = -1;
@@ -454,6 +458,8 @@ void updateFirmware(String parameter)
 
 void loop() 
 {
+  simpleEspConnection.loop();
+
   if(firmwareUpdate)
   {
     if ((WiFiMulti.run() == WL_CONNECTED)) 
