@@ -207,21 +207,24 @@ void sendSetup()
   }
 
   // Actionparameter
-  JsonObject ap = dev->getActionParameter();
-  if(ap != NULL)
+  if(dev != NULL)
   {
-    reply = "$AP$";
-
-    for (JsonPair kv : ap) 
+    JsonObject ap = dev->getActionParameter();
+    if(ap != NULL)
     {
-      reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+      reply = "$AP$";
+  
+      for (JsonPair kv : ap) 
+      {
+        reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+      }
+  
+      reply.remove(reply.length()-1);
+  
+      simpleEspConnection.sendMessage((char *)reply.c_str());    
     }
-
-    reply.remove(reply.length()-1);
-
-    simpleEspConnection.sendMessage((char *)reply.c_str());    
   }
-
+  
   String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
   simpleEspConnection.sendMessage((char *)s.c_str());
 
@@ -308,6 +311,8 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
+    Serial.printf("aske for settings:devicetypeset %s\n", deviceTypeSet ? "YES" : "NO");
+
     if(deviceTypeSet)
     {
       sendSetup();
@@ -331,6 +336,12 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
+    setConfig(String((char *)message).substring(4));
+
+    pairingOngoing = false;      
+/*    pairingOngoing = true;
+    Serial.println("nach 1");    
+
     JsonObject ap = dev->getActionParameter();
     if(ap != NULL)
     {
@@ -353,7 +364,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       setConfig(String((char *)message).substring(4));
     }
 
-    pairingOngoing = false;    
+    pairingOngoing = false;    */
   }
 
   //gatewayMessageDone = true;
@@ -564,7 +575,7 @@ void setup()
     {    
       pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
       digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
-  
+
       // setup the device
       if(configuration["devicetype"] == "DHT22")
       {
@@ -615,7 +626,8 @@ void setup()
       {
         dev = new Device_RELAYTIMER();
       }
-  
+
+
       if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
       {    
         sendSetup();
