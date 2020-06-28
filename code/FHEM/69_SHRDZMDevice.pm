@@ -249,10 +249,10 @@ sub SHRDZMDevice_Parse ($$)
 		}
 		elsif($items[1] eq "actions")
 		{
-			Log3($hash->{NAME}, 1, $hash->{NAME} . "!!!actions updated : $items[2]");
+			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!actions updated : $items[2]");
 
 			my $sl = ReadingsVal($hash->{NAME}, ".ACTIONS", "");
-			Log3($hash->{NAME}, 1, $hash->{NAME} . ".ACTIONS ReadingsVal = $sl");
+			Log3($hash->{NAME}, 5, $hash->{NAME} . ".ACTIONS ReadingsVal = $sl");
 			my @existing = split(' ', $sl);
 			if ( !($parameter[1] ~~ @existing ))
 			{
