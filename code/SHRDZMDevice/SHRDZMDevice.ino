@@ -339,32 +339,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     setConfig(String((char *)message).substring(4));
 
     pairingOngoing = false;      
-/*    pairingOngoing = true;
-    Serial.println("nach 1");    
-
-    JsonObject ap = dev->getActionParameter();
-    if(ap != NULL)
-    {
-      String pname = getValue(String((char *)message).substring(4), ':', 0);      
-      if(ap.containsKey(pname))
-      {
-        dev->setAction(String((char *)message).substring(4));
-        measurementDone = getMeasurementData();
-
-        processTimeActive = true;
-        actionSet = true;
-      }
-      else
-      {
-        setConfig(String((char *)message).substring(4));
-      }
-    }       
-    else
-    {
-      setConfig(String((char *)message).substring(4));
-    }
-
-    pairingOngoing = false;    */
   }
 
   //gatewayMessageDone = true;
@@ -447,6 +421,10 @@ void actualizeDeviceType()
   else if(configuration["devicetype"] == "DIGITAL")
   {
     dev = new Device_DIGITALGROUND();
+  }
+  else if(configuration["devicetype"] == "SDS011")
+  {
+    dev = new Device_SDS011();
   }
   else if(configuration["devicetype"] == "RELAYTIMER")
   {
@@ -618,6 +596,10 @@ void setup()
       {
         dev = new Device_DIGITAL();
       }
+      else if(configuration["devicetype"] == "SDS011")
+      {
+        dev = new Device_SDS011();
+      }
       else if(configuration["devicetype"] == "DIGITALGROUND")
       {
         dev = new Device_DIGITALGROUND();
@@ -627,6 +609,7 @@ void setup()
         dev = new Device_RELAYTIMER();
       }
 
+      dev->setDeviceParameter(configuration["device"]);
 
       if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
       {    
@@ -717,6 +700,7 @@ void setDeviceType(String deviceType)
      deviceType == "MQ135" ||
      deviceType == "ANALOG" ||
      deviceType == "DIGITAL" ||
+     deviceType == "SDS011" ||
      deviceType == "DIGITALGROUND" ||
      deviceType == "RELAYTIMER" ||
      deviceType == "WATER")
@@ -774,6 +758,10 @@ void setDeviceType(String deviceType)
     else if(deviceType == "DIGITAL")
     {
       dev = new Device_DIGITAL();
+    }
+    else if(deviceType == "SDS011")
+    {
+      dev = new Device_SDS011();
     }
     else if(deviceType == "DIGITALGROUND")
     {
@@ -906,7 +894,7 @@ bool getMeasurementData()
     {
       pairingOngoing = true;
       
-      dev->setDeviceParameter(configuration["device"]);
+//      dev->setDeviceParameter(configuration["device"]);
   
       SensorData* sd = dev->readParameter();
   
