@@ -64,7 +64,7 @@ SensorData* Device_SDS011::readParameterTypes()
 {
   SensorData *al = new SensorData(2);
 
-  al->di[0].nameI = "PM2.5";
+  al->di[0].nameI = "PM25";
   al->di[1].nameI = "PM10";
 
   return al;
@@ -151,7 +151,7 @@ SensorData* Device_SDS011::readParameter()
             PM2_5Val=((buf[2]<<8) + buf[1])/10.0;
             PM10Val=((buf[4]<<8) + buf[3])/10.0;
 
-            al->di[0].nameI = "PM2.5";
+            al->di[0].nameI = "PM25";
             al->di[0].valueI = String(PM2_5Val);  
             al->di[1].nameI = "PM10";
             al->di[1].valueI = String(PM10Val);  
