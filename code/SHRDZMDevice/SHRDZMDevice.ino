@@ -547,7 +547,9 @@ void setup()
   else
   {
     // check if preparation is needed
+    Serial.println( "vor preparetime");
     prepareend = 1000 * atoi(configuration["preparetime"]);
+    Serial.println( "nach preparetime");
     
     if(configuration.containsKey("gateway"))
     {    
@@ -609,16 +611,16 @@ void setup()
         dev = new Device_RELAYTIMER();
       }
 
-      dev->setDeviceParameter(configuration["device"]);
-
-      if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
-      {    
-        sendSetup();
-        storeLastVersionNumber();
-      }  
-
       if(dev != NULL)
       {
+        dev->setDeviceParameter(configuration["device"]);
+  
+        if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+        {    
+          sendSetup();
+          storeLastVersionNumber();
+        }  
+
         dev->prepare();
       }
     } 
