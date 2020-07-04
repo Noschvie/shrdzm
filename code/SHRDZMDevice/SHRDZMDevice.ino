@@ -56,6 +56,7 @@ bool processTimeActive = false;
 bool loopDone = false;
 bool actionSet = false;
 bool batterycheckDone = false;
+unsigned int postWait = 0;
 
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
@@ -339,32 +340,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     setConfig(String((char *)message).substring(4));
 
     pairingOngoing = false;      
-/*    pairingOngoing = true;
-    Serial.println("nach 1");    
-
-    JsonObject ap = dev->getActionParameter();
-    if(ap != NULL)
-    {
-      String pname = getValue(String((char *)message).substring(4), ':', 0);      
-      if(ap.containsKey(pname))
-      {
-        dev->setAction(String((char *)message).substring(4));
-        measurementDone = getMeasurementData();
-
-        processTimeActive = true;
-        actionSet = true;
-      }
-      else
-      {
-        setConfig(String((char *)message).substring(4));
-      }
-    }       
-    else
-    {
-      setConfig(String((char *)message).substring(4));
-    }
-
-    pairingOngoing = false;    */
   }
 
   //gatewayMessageDone = true;
@@ -447,6 +422,10 @@ void actualizeDeviceType()
   else if(configuration["devicetype"] == "DIGITAL")
   {
     dev = new Device_DIGITALGROUND();
+  }
+  else if(configuration["devicetype"] == "SDS011")
+  {
+    dev = new Device_SDS011();
   }
   else if(configuration["devicetype"] == "RELAYTIMER")
   {
@@ -569,7 +548,9 @@ void setup()
   else
   {
     // check if preparation is needed
+    Serial.println( "vor preparetime");
     prepareend = 1000 * atoi(configuration["preparetime"]);
+    Serial.println( "nach preparetime");
     
     if(configuration.containsKey("gateway"))
     {    
@@ -618,6 +599,10 @@ void setup()
       {
         dev = new Device_DIGITAL();
       }
+      else if(configuration["devicetype"] == "SDS011")
+      {
+        dev = new Device_SDS011();
+      }
       else if(configuration["devicetype"] == "DIGITALGROUND")
       {
         dev = new Device_DIGITALGROUND();
@@ -627,15 +612,16 @@ void setup()
         dev = new Device_RELAYTIMER();
       }
 
-
-      if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
-      {    
-        sendSetup();
-        storeLastVersionNumber();
-      }  
-
       if(dev != NULL)
       {
+        dev->setDeviceParameter(configuration["device"]);
+  
+        if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+        {    
+          sendSetup();
+          storeLastVersionNumber();
+        }  
+
         dev->prepare();
       }
     } 
@@ -717,6 +703,7 @@ void setDeviceType(String deviceType)
      deviceType == "MQ135" ||
      deviceType == "ANALOG" ||
      deviceType == "DIGITAL" ||
+     deviceType == "SDS011" ||
      deviceType == "DIGITALGROUND" ||
      deviceType == "RELAYTIMER" ||
      deviceType == "WATER")
@@ -774,6 +761,10 @@ void setDeviceType(String deviceType)
     else if(deviceType == "DIGITAL")
     {
       dev = new Device_DIGITAL();
+    }
+    else if(deviceType == "SDS011")
+    {
+      dev = new Device_SDS011();
     }
     else if(deviceType == "DIGITALGROUND")
     {
@@ -906,8 +897,6 @@ bool getMeasurementData()
     {
       pairingOngoing = true;
       
-      dev->setDeviceParameter(configuration["device"]);
-  
       SensorData* sd = dev->readParameter();
   
       if(sd != NULL)
@@ -935,6 +924,7 @@ bool getMeasurementData()
   }  
 
   measurementDone = true;
+  postWait = millis() + 100;
 }
 
 void loop() 
@@ -1084,6 +1074,7 @@ void loop()
   if(actionSet && !loopDone)
     return;
 
+
   if(initRestart && simpleEspConnection.isSendBufferEmpty())
     ESP.restart();      
 
@@ -1091,6 +1082,9 @@ void loop()
   if(gatewayMessageDone || millis() > MAXCONTROLWAIT+clockmillis)  
   {
     if(pairingOngoing || !simpleEspConnection.isSendBufferEmpty() || firmwareUpdate)
+      return;
+
+    if(postWait > millis())
       return;
     
     // everything is done and I can go to sleep
@@ -1122,7 +1116,6 @@ void gotoSleep()
   else
   {
     sleepSecs = atoi(configuration["interval"]) - atoi(configuration["preparetime"]);
-//    Serial.printf("%d\n", configuration["interval"].as<uint8_t>()); 
   }
 
 //#ifdef DEBUG
