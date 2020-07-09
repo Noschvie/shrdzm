@@ -930,6 +930,9 @@ bool getMeasurementData()
 void loop() 
 {
 
+  if(pairingOngoing)
+    return;
+
   if(!batterycheckDone)
   {
     batterycheckDone = configuration["batterycheck"] == "ON" ? false : true;
