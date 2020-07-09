@@ -80,12 +80,12 @@ bool Device_RELAYTIMER::setPostAction()
 
 bool Device_RELAYTIMER::loop()
 {
-/*  if(actionSet && millis() < et)
+  if(actionSet && millis() < et)
     return false;
 
   Serial.printf("loop done\n");
   setPort(HIGH);
-  */
+  
   
   return true;
 }

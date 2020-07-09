@@ -337,9 +337,29 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
-    setConfig(String((char *)message).substring(4));
+    JsonObject ap = dev->getActionParameter();
+    if(ap != NULL)
+    {
+      String pname = getValue(String((char *)message).substring(4), ':', 0);      
+      if(ap.containsKey(pname))
+      {
+        dev->setAction(String((char *)message).substring(4));
+        actionSet = true;
+        measurementDone = getMeasurementData();
 
-    pairingOngoing = false;      
+        processTimeActive = true;
+      }
+      else
+      {
+        setConfig(String((char *)message).substring(4));
+      }
+    }       
+    else
+    {
+      setConfig(String((char *)message).substring(4));
+    }
+
+    pairingOngoing = false;    
   }
 
   //gatewayMessageDone = true;
