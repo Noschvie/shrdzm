@@ -13,7 +13,7 @@ Device_RELAYTIMER::Device_RELAYTIMER()
 
   actionSet = false;
   
-  et = millis() + 1000 * 5;
+  et = millis() + 1000 * 10;
 }
 
 Device_RELAYTIMER::~Device_RELAYTIMER()

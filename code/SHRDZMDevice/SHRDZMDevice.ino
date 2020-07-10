@@ -1094,9 +1094,11 @@ void loop()
   if(processTimeActive)
     return;
 
-  if(actionSet && !loopDone)
+  if(actionSet && !loopDone)  
     return;
-
+  else
+    Serial.println("no action set and loop done");
+  
 
   if(initRestart && simpleEspConnection.isSendBufferEmpty())
     ESP.restart();      
