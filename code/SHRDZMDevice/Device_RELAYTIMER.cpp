@@ -70,10 +70,10 @@ void Device_RELAYTIMER::setPort(bool high)
 
 bool Device_RELAYTIMER::setPostAction()
 {
-  if(port != -1)
+/*  if(port != -1)
   {
     setPort(HIGH);
-  }
+  } */
 
   return true;
 }

@@ -158,6 +158,12 @@ void OnSendError(uint8_t* ad)
 
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
+  if(String((char *)message) == "$PING$")
+  {
+    OnConnected(ad, simpleEspConnection.macToStr(ad));
+    return;
+  }
+  
 #ifdef DEBUG  
   Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
 #endif
@@ -398,6 +404,8 @@ void setup()
   simpleEspConnection.onPairingFinished(&OnPairingFinished);    
   simpleEspConnection.onSendError(&OnSendError);  
   simpleEspConnection.onConnected(&OnConnected);  
+
+  setupObject.init(&simpleEspConnection);
 }
 
 void getConfig()

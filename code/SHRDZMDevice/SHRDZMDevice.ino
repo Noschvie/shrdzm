@@ -58,6 +58,8 @@ bool actionSet = false;
 bool batterycheckDone = false;
 unsigned int postWait = 0;
 
+int counter = 0;
+
 #if defined(ESP8266)
 ESP8266WiFiMulti WiFiMulti;
 #endif
@@ -298,6 +300,15 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 #endif    
     return;
   }
+  else if(String((char *)message) == "$PING$") // ping
+  {
+    simpleEspConnection.sendMessage("$PING$");
+      
+#ifdef DEBUG
+    Serial.println("Pinged...");
+#endif    
+    return;
+  }
   else if(String((char *)message).substring(0,3) == "$U$") // update firmware
   {
     firmwareUpdate = true;   
@@ -347,7 +358,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
         actionSet = true;
         measurementDone = getMeasurementData();
 
-        processTimeActive = true;
+//        processTimeActive = true;
       }
       else
       {
@@ -450,6 +461,10 @@ void actualizeDeviceType()
   else if(configuration["devicetype"] == "RELAYTIMER")
   {
     dev = new Device_RELAYTIMER();
+  }
+  else if(configuration["devicetype"] == "GW60")
+  {
+    dev = new Device_GW60();
   }
 
   if(dev != NULL)
@@ -631,6 +646,10 @@ void setup()
       {
         dev = new Device_RELAYTIMER();
       }
+      else if(configuration["devicetype"] == "GW60")
+      {
+        dev = new Device_GW60();
+      }
 
       if(dev != NULL)
       {
@@ -726,6 +745,7 @@ void setDeviceType(String deviceType)
      deviceType == "SDS011" ||
      deviceType == "DIGITALGROUND" ||
      deviceType == "RELAYTIMER" ||
+     deviceType == "GW60" ||
      deviceType == "WATER")
   {
     configuration["devicetype"] = deviceType;
@@ -793,6 +813,10 @@ void setDeviceType(String deviceType)
     else if(deviceType == "RELAYTIMER")
     {
       dev = new Device_RELAYTIMER();
+    }
+    else if(deviceType == "GW60")
+    {
+      dev = new Device_GW60();
     }
     else
     {
@@ -945,6 +969,8 @@ bool getMeasurementData()
 
   measurementDone = true;
   postWait = millis() + 100;
+
+  return true;
 }
 
 void loop() 
@@ -990,6 +1016,7 @@ void loop()
     else
     {
       postActionDone = true;         
+      processTimeActive = false;     
     }
   }
 
@@ -1096,9 +1123,6 @@ void loop()
 
   if(actionSet && !loopDone)  
     return;
-  else
-    Serial.println("no action set and loop done");
-  
 
   if(initRestart && simpleEspConnection.isSendBufferEmpty())
     ESP.restart();      
@@ -1113,7 +1137,8 @@ void loop()
       return;
     
     // everything is done and I can go to sleep
-    gotoSleep();
+    if(atoi(configuration["interval"]) > 0)
+      gotoSleep();
   }
 #endif    
 }
