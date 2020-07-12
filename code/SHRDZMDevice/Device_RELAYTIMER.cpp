@@ -12,8 +12,6 @@ Device_RELAYTIMER::Device_RELAYTIMER()
   state = false;
 
   actionSet = false;
-  
-  et = millis() + 1000 * 10;
 }
 
 Device_RELAYTIMER::~Device_RELAYTIMER()
@@ -52,6 +50,7 @@ bool Device_RELAYTIMER::setAction(String action)
     Serial.printf("Set port %d to LOW\n",port);
     
     setPort(LOW);
+    et = millis() + 1000 * 10;
 
     state = true;
   }
@@ -83,10 +82,9 @@ bool Device_RELAYTIMER::loop()
   if(actionSet && millis() < et)
     return false;
 
-  Serial.printf("loop done\n");
+//  Serial.printf("loop done\n");
   setPort(HIGH);
-  
-  
+    
   return true;
 }
 

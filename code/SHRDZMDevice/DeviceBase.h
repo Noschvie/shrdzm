@@ -53,6 +53,7 @@ class DeviceBase
     virtual bool setPostAction(){return false;};
     virtual void prepare(){};
     virtual bool loop(){return true;};
+    virtual bool isNewDataAvailable(){return false;};
     virtual bool initialize(){return true;};
     virtual SensorData* readParameterTypes();
     virtual SensorData* readParameter();

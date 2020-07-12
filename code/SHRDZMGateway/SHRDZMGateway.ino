@@ -483,7 +483,7 @@ void loop()
       ESPhttpUpdate.onError(update_error);  
 
       String versionStr = nam+" "+ver+" "+currVersion;
-      Serial.println("WLAN connected!");
+      Serial.println("WLAN connected! ");
 
       WiFiClient client;  
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    

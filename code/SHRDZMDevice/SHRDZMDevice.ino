@@ -275,6 +275,7 @@ bool updateFirmware(String message)
   host = host.substring(0,host.indexOf('/'));
   
   esp_now_deinit();
+  delay(100);
 
   WiFi.mode(WIFI_STA);
 
@@ -323,7 +324,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
-    Serial.printf("aske for settings:devicetypeset %s\n", deviceTypeSet ? "YES" : "NO");
+    Serial.printf("ask for settings:devicetypeset %s\n", deviceTypeSet ? "YES" : "NO");
 
     if(deviceTypeSet)
     {
@@ -348,22 +349,29 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     pairingOngoing = true;
 
-    JsonObject ap = dev->getActionParameter();
-    if(ap != NULL)
+    if(dev != NULL)
     {
-      String pname = getValue(String((char *)message).substring(4), ':', 0);      
-      if(ap.containsKey(pname))
+      JsonObject ap = dev->getActionParameter();
+      if(ap != NULL)
       {
-        dev->setAction(String((char *)message).substring(4));
-        actionSet = true;
-        measurementDone = getMeasurementData();
-
-//        processTimeActive = true;
+        String pname = getValue(String((char *)message).substring(4), ':', 0);      
+        if(ap.containsKey(pname))
+        {
+          dev->setAction(String((char *)message).substring(4));
+          actionSet = true;
+          measurementDone = getMeasurementData();
+  
+  //        processTimeActive = true;
+        }
+        else
+        {
+          setConfig(String((char *)message).substring(4));
+        }
       }
       else
       {
         setConfig(String((char *)message).substring(4));
-      }
+      }      
     }       
     else
     {
@@ -552,7 +560,9 @@ void setup()
   Serial.println( "'"+lastVersionNumber+"':'"+currVersion+"'");
 #endif
 
-  pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
+  if(configuration["sensorpowerpin"].as<uint8_t>() != 99)
+    pinMode(configuration["sensorpowerpin"].as<uint8_t>(), OUTPUT);
+    
   pinMode(configuration["pairingpin"].as<uint8_t>(), INPUT_PULLUP);
 
   simpleEspConnection.begin();
@@ -589,8 +599,11 @@ void setup()
     
     if(configuration.containsKey("gateway"))
     {    
-      pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);
-      digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
+      if(configuration["sensorpowerpin"].as<uint8_t>() != 99)
+      {
+        pinMode(configuration["sensorpowerpin"].as<uint8_t>(),OUTPUT);        
+        digitalWrite(configuration["sensorpowerpin"].as<uint8_t>(),HIGH);    
+      }
 
       // setup the device
       if(configuration["devicetype"] == "DHT22")
@@ -664,14 +677,6 @@ void setup()
         dev->prepare();
       }
     } 
-    
-    // for firmware upgrade
-#if defined(ESP8266)
-    ESPhttpUpdate.onStart(update_started);
-    ESPhttpUpdate.onEnd(update_finished);
-    ESPhttpUpdate.onProgress(update_progress);
-    ESPhttpUpdate.onError(update_error);
-#endif    
   }
   
   clockmillis = millis();
@@ -975,125 +980,32 @@ bool getMeasurementData()
 
 void loop() 
 {
-
-  if(pairingOngoing)
-    return;
-
-  if(!batterycheckDone)
-  {
-    batterycheckDone = configuration["batterycheck"] == "ON" ? false : true;
-    if(!batterycheckDone)
-    {      
-      String reply = "$D$battery:"+String(analogRead(A0));
-
-      simpleEspConnection.sendMessage((char *)reply.c_str());  
-      batterycheckDone = true;
-    }
-  }
-  
-  simpleEspConnection.loop();
-
-  if(dev != NULL && !loopDone && actionSet)
-  {
-    loopDone = dev->loop();
-  }
-
-  if(dev == NULL)
-  {
-    loopDone = true;
-  }
-
-  if(!measurementDone && millis() >= prepareend)
-  {
-    measurementDone = getMeasurementData();
-
-    if(atof(configuration["processtime"]) > 0.0f)
-    {
-      processend = 1000 * atof(configuration["processtime"]) + millis();      
-      postActionDone = false;    
-      processTimeActive = true;     
-    }
-    else
-    {
-      postActionDone = true;         
-      processTimeActive = false;     
-    }
-  }
-
-  if(processTimeActive && !postActionDone && measurementDone && millis() >= processend)
-  {
-#ifdef DEBUG
-      Serial.printf("Did wait %f seconds. Now I will start the postaction\n", atof(configuration["processtime"]));          
-#endif   
-    dev->setPostAction();
-    measurementDone = getMeasurementData();
-
-    postActionDone = true; 
-    processTimeActive = false;  
-  }
-  
-  while (Serial.available()) 
-  {
-    char inChar = (char)Serial.read();
-    if (inChar == '\n') 
-    {
-      Serial.println(inputString);
-
-      if(inputString == "startpair")
-      {
-        simpleEspConnection.startPairing(60);
-      }
-      else if(inputString.substring(0,14) == "setdevicetype ")
-      {
-        setDeviceType(inputString.substring(14));
-        
-        delay(100);
-        ESP.restart();
-      }    
-      else if(inputString == "endpair")
-      {
-        simpleEspConnection.endPairing();
-      }      
-      else if(inputString == "init")
-      {
-        initialization();
-      }      
-      else if(inputString == "info")
-      {
-        sendInfo();
-      }      
-      else if(inputString == "sendtest")
-      {
-         simpleEspConnection.sendMessage("This comes from the Client");
-      }
-      
-      inputString = "";
-    }
-    else
-    {
-      inputString += inChar;
-    }
-  }
-
 #if defined(ESP8266)
   if(firmwareUpdate)
   {    
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
-      firmwareUpdate = false;
+     // firmwareUpdate = false;
       
-      ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
+  //    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
+      // for firmware upgrade
+      ESPhttpUpdate.onStart(update_started);
+      ESPhttpUpdate.onEnd(update_finished);
+      ESPhttpUpdate.onProgress(update_progress);
+      ESPhttpUpdate.onError(update_error);
 
       String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
       Serial.println("WLAN connected!");
 
-      WiFiClient client;  
+      WiFiClient client; 
+  //    Serial.println("IP:"+ WiFi.localIP());
+      Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
       
       switch (ret) 
       {
         case HTTP_UPDATE_FAILED:
-          Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion%s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+          Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
           delay(100);
           ESP.restart();
           break;
@@ -1110,37 +1022,148 @@ void loop()
       }
     }
   }
+  else
+  {
 #endif
 
-  if(!measurementDone)
-    return;
-
-  if(!postActionDone && processTimeActive)
-    return;
-
-  if(processTimeActive)
-    return;
-
-  if(actionSet && !loopDone)  
-    return;
-
-  if(initRestart && simpleEspConnection.isSendBufferEmpty())
-    ESP.restart();      
-
-#ifndef DISABLEGOTOSLEEP    
-  if(gatewayMessageDone || millis() > MAXCONTROLWAIT+clockmillis)  
-  {
-    if(pairingOngoing || !simpleEspConnection.isSendBufferEmpty() || firmwareUpdate)
+    if(pairingOngoing)
       return;
-
-    if(postWait > millis())
-      return;
+  
+    if(!batterycheckDone)
+    {
+      batterycheckDone = configuration["batterycheck"] == "ON" ? false : true;
+      if(!batterycheckDone)
+      {      
+        String reply = "$D$battery:"+String(analogRead(A0));
+  
+        simpleEspConnection.sendMessage((char *)reply.c_str());  
+        batterycheckDone = true;
+      }
+    }
+  
+    if(!firmwareUpdate)
+      simpleEspConnection.loop();
+  
+  //  if(dev != NULL && !loopDone && actionSet)
+    if(dev != NULL)
+    {
+      if( !loopDone || atof(configuration["processtime"]) == 0.0f)
+      {
+        loopDone = dev->loop();
+        if(dev->isNewDataAvailable())
+        {
+          getMeasurementData();
+        }
+      }
+    }
+  
+    if(dev == NULL)
+    {
+      loopDone = true;
+    }
+  
+    if(!measurementDone && millis() >= prepareend)
+    {
+      measurementDone = getMeasurementData();
+  
+      if(atof(configuration["processtime"]) > 0.0f)
+      {
+        processend = 1000 * atof(configuration["processtime"]) + millis();      
+        postActionDone = false;    
+        processTimeActive = true;     
+      }
+      else
+      {
+        postActionDone = true;         
+        processTimeActive = false;     
+      }
+    }
+  
+    if(processTimeActive && !postActionDone && measurementDone && millis() >= processend)
+    {
+#ifdef DEBUG
+        Serial.printf("Did wait %f seconds. Now I will start the postaction\n", atof(configuration["processtime"]));          
+#endif   
+      dev->setPostAction();
+      measurementDone = getMeasurementData();
+  
+      postActionDone = true; 
+      processTimeActive = false;  
+    }
     
-    // everything is done and I can go to sleep
-    if(atoi(configuration["interval"]) > 0)
-      gotoSleep();
-  }
-#endif    
+    while (Serial.available()) 
+    {
+      char inChar = (char)Serial.read();
+      if (inChar == '\n') 
+      {
+        Serial.println(inputString);
+  
+        if(inputString == "startpair")
+        {
+          simpleEspConnection.startPairing(60);
+        }
+        else if(inputString.substring(0,14) == "setdevicetype ")
+        {
+          setDeviceType(inputString.substring(14));
+          
+          delay(100);
+          ESP.restart();
+        }    
+        else if(inputString == "endpair")
+        {
+          simpleEspConnection.endPairing();
+        }      
+        else if(inputString == "init")
+        {
+          initialization();
+        }      
+        else if(inputString == "info")
+        {
+          sendInfo();
+        }      
+        else if(inputString == "sendtest")
+        {
+           simpleEspConnection.sendMessage("This comes from the Client");
+        }
+        
+        inputString = "";
+      }
+      else
+      {
+        inputString += inChar;
+      }
+    }
+  
+    if(!measurementDone)
+      return;
+  
+    if(!postActionDone && processTimeActive)
+      return;
+  
+    if(processTimeActive)
+      return;
+  
+    if(actionSet && !loopDone)  
+      return;
+  
+    if(initRestart && simpleEspConnection.isSendBufferEmpty())
+      ESP.restart();      
+  
+#ifndef DISABLEGOTOSLEEP    
+    if(gatewayMessageDone || millis() > MAXCONTROLWAIT+clockmillis)  
+    {
+      if(pairingOngoing || !simpleEspConnection.isSendBufferEmpty() || firmwareUpdate)
+        return;
+  
+      if(postWait > millis())
+        return;
+      
+      // everything is done and I can go to sleep
+      if(atoi(configuration["interval"]) > 0)
+        gotoSleep();
+    }
+#endif   
+  } 
 }
 
 void gotoSleep() 
