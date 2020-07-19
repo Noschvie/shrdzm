@@ -274,12 +274,15 @@ bool updateFirmware(String message)
   url = host.substring(host.indexOf('/'));
   host = host.substring(0,host.indexOf('/'));
   
-  esp_now_deinit();
+//  esp_now_deinit();
+  simpleEspConnection.end();
+//  WiFi.disconnect(true);
   delay(100);
 
   WiFi.mode(WIFI_STA);
 
-  WiFiMulti.addAP(SSID.c_str(), password.c_str());  
+//  WiFiMulti.addAP(SSID.c_str(), password.c_str());  
+  WiFi.begin(SSID.c_str(), password.c_str());
 
   return true;
 #else
@@ -983,12 +986,14 @@ void loop()
 #if defined(ESP8266)
   if(firmwareUpdate)
   {    
-    if ((WiFiMulti.run() == WL_CONNECTED)) 
+//    if ((WiFiMulti.run() == WL_CONNECTED)) 
+    if ((WiFi.status() == WL_CONNECTED)) 
     {     
      // firmwareUpdate = false;
       
   //    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
       // for firmware upgrade
+	  // shrdzm.pintarweb.net fingerprint : 9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC 
       ESPhttpUpdate.onStart(update_started);
       ESPhttpUpdate.onEnd(update_finished);
       ESPhttpUpdate.onProgress(update_progress);
@@ -997,10 +1002,13 @@ void loop()
       String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
       Serial.println("WLAN connected!");
 
+      char* fingerprint = "9A 10 D8 D2 DF 8B C1 7C 36 B7 60 A2 F6 44 13 12 44 8B 91 FC";
+
       WiFiClient client; 
   //    Serial.println("IP:"+ WiFi.localIP());
       Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
       t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+//      t_httpUpdate_return ret = ESPhttpUpdate.update(host, 443, url, versionStr, "9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC");    
       
       switch (ret) 
       {
