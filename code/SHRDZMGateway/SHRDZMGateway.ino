@@ -267,6 +267,8 @@ void OnPaired(uint8_t *ga, String ad)
   Serial.print('\n');
   delay(100);  
 
+  setupObject.AddItem(ad, "$SC$configuration");        
+
   // get all possible parameter
   simpleEspConnection.sendMessage("$S$", ad);    
 }
