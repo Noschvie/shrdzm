@@ -15,16 +15,30 @@
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
 #include "StringSplitter.h"
+#include <SoftwareSerial.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266httpUpdate.h>
 
+#define TINY_GSM_MODEM_SIM800
+
+#include <TinyGsmClient.h>
+#include <PubSubClient.h>
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 DynamicJsonDocument configdoc(1024);
 JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
+
+SoftwareSerial SerialAT(14, 12); // RX, TX for SIM800
+TinyGsm modem(SerialAT);
+TinyGsmClient client(modem);
+PubSubClient mqtt(client);
+
+String MQTT_TOPIC;
+String nodeName;
+String localIP;
 String inputString;
 String clientAddress;
 String myAddress;
@@ -36,10 +50,77 @@ bool firmwareUpdate = false;
 String lastVersionNumber;
 String currVersion;
 String ver, nam;
+uint32_t lastReconnectAttempt = 0;
+String deviceName;
 
 ESP8266WiFiMulti WiFiMulti;
 
+const char apn[] = "WEPAPN";
+const char gprsUser[] = "webapn.at";
+const char gprsPass[] = "";
+
+const char* broker = "xxx";
+const int port = 8883;
+
+String subcribeTopicSet;
+String subcribeTopicConfig;
+
 SetupObject setupObject;
+
+void mqttCallback(char* topic, byte* payload, unsigned int len) 
+{
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.write(payload, len);
+  Serial.println();
+
+  ///// ..........
+}
+
+boolean mqttConnect() 
+{
+  Serial.print("Connecting to ");
+  Serial.print(broker);
+
+
+  // Or, if you want to authenticate MQTT:
+  boolean status = mqtt.connect("GsmClientName", "xxx", "xxx");
+
+  if (status == false) 
+  {
+    Serial.println(" fail");
+    return false;
+  }
+  
+  Serial.println(" success");
+  mqtt.publish("SIM800", "GsmClientTest started");
+
+  mqtt.subscribe(subcribeTopicSet.c_str());
+  mqtt.subscribe(subcribeTopicConfig.c_str());
+  
+  return mqtt.connected();
+}
+
+String macToStr(const uint8_t* mac)
+{
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
+}
+
+void setDeviceName()
+{
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+}
 
 // for firmware upgrade
 void update_started() 
@@ -347,6 +428,66 @@ void readLastVersionNumber()
   file.close();  
 }
 
+bool initializeSIM800()
+{
+  MQTT_TOPIC = "SHRDZM/"+deviceName;
+  nodeName = MQTT_TOPIC;
+
+  subcribeTopicSet = String(MQTT_TOPIC)+"/set";
+  subcribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+
+  Serial.println("Will start modem...please wait.... ");
+  SerialAT.begin(9600);
+  delay(6000);
+
+  modem.restart();
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem Info: ");
+  Serial.println(modemInfo);
+
+/*  if ( GSM_PIN && modem.getSimStatus() != 3 ) 
+  {
+    modem.simUnlock(GSM_PIN);
+  }*/
+
+
+  Serial.print("Waiting for network...");
+  if (!modem.waitForNetwork()) 
+  {
+    Serial.println(" fail");
+    return false;
+  }
+  
+  Serial.println(" success");
+
+  if (modem.isNetworkConnected()) 
+  {
+    Serial.println("Network connected");
+  }
+
+  Serial.print(F("Connecting to "));
+  Serial.print(apn);
+  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) 
+  {
+    Serial.println(" fail");
+    return false;
+  }
+
+  Serial.println(" success");
+
+  if (modem.isGprsConnected()) 
+  {
+    Serial.println("GPRS connected");
+  }
+
+  localIP = modem.getLocalIP();
+
+  mqtt.setServer(broker, port);
+  mqtt.setCallback(mqttCallback);
+
+  return true;
+}
+
 void setup() 
 {
   Serial.begin(9600);
@@ -364,6 +505,10 @@ void setup()
   nam = "SHRDZMGateway";  
 #endif
 
+  setDeviceName();
+
+  initializeSIM800();
+  
 
   SPIFFS.begin();
 
@@ -468,14 +613,42 @@ void updateFirmware(String parameter)
 
 void loop() 
 {
+  if (!mqtt.connected()) 
+  {
+    Serial.println("=== MQTT NOT CONNECTED ===");
+    // Reconnect every 10 seconds
+    uint32_t t = millis();
+    if (t - lastReconnectAttempt > 10000L) 
+    {
+      lastReconnectAttempt = t;
+      if (mqttConnect()) 
+      {
+        lastReconnectAttempt = 0;
+        
+        mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+        mqtt.publish((String(MQTT_TOPIC)+"/IP").c_str(), localIP.c_str());
+  
+  #ifdef VERSION
+        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
+  #else      
+        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
+  #endif
+  
+        mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
+      }
+    }
+    delay(100);
+    return;
+  }
+
+  mqtt.loop();
+  
   simpleEspConnection.loop();
 
   if(firmwareUpdate)
   {
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
- //     firmwareUpdate = false;
-      
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
 
       // for firmware upgrade
