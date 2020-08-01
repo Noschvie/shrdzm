@@ -14,6 +14,7 @@
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
+#include "MQTTBufferObject.h"
 #include "StringSplitter.h"
 #include <SoftwareSerial.h>
 
@@ -52,6 +53,7 @@ String currVersion;
 String ver, nam;
 uint32_t lastReconnectAttempt = 0;
 String deviceName;
+bool simEnabled = false;
 
 ESP8266WiFiMulti WiFiMulti;
 
@@ -62,18 +64,70 @@ const char gprsPass[] = "";
 const char* broker = "xxx";
 const int port = 8883;
 
-String subcribeTopicSet;
-String subcribeTopicConfig;
+String subscribeTopicSet;
+String subscribeTopicConfig;
 
 SetupObject setupObject;
+MQTTBufferObject mqttBufferObject;
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) 
 {
+  char* p = (char*)malloc(len+1);
+  memcpy(p,payload,len);
+  p[len] = '\0';
+  String cmd = String(p);
+  free(p);  
+
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("]: ");
   Serial.write(payload, len);
   Serial.println();
+
+  if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
+  {
+    mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+    delay(1);
+
+    ESP.reset();
+    delay(100);
+  }
+  else if(String(topic) == subscribeTopicConfig)
+  {
+#ifdef DEBUG   
+      Serial.println("Config with parameter : "+cmd);
+#endif
+
+      StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+      int itemCount = splitter->getItemCount();
+
+      if(itemCount == 2)
+      {
+        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
+      }
+      else if(itemCount == 3)
+      {
+        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
+      }
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
+  {
+      getConfig();
+  }
+/*  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,13) == "configuration")
+  {
+      StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+
+      String configurationText = String("$configuration "+splitter->getItemAtIndex(0));
+    
+      swSer.write(configurationText.c_str());
+      swSer.write('\n');    
+  }*/
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  {
+    simpleEspConnection.startPairing(30);
+  }
+
 
   ///// ..........
 }
@@ -94,11 +148,10 @@ boolean mqttConnect()
   }
   
   Serial.println(" success");
-  mqtt.publish("SIM800", "GsmClientTest started");
 
-  mqtt.subscribe(subcribeTopicSet.c_str());
-  mqtt.subscribe(subcribeTopicConfig.c_str());
-  
+  mqtt.subscribe(subscribeTopicSet.c_str());
+  mqtt.subscribe(subscribeTopicConfig.c_str());
+
   return mqtt.connected();
 }
 
@@ -255,9 +308,11 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
     Serial.write(s.c_str(), s.length());
-    delay(100);
     Serial.print('\n');
-    delay(100);  
+
+    // send via GSM    
+    if(simEnabled)
+      mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/sensor", m.substring(3));
   }
   else if((m.substring(0,4) == "$SC$") || // Device Configuration
           (m.substring(0,4) == "$SP$") || // Sensor Configuration
@@ -283,6 +338,13 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
           String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
           Serial.write(s.c_str(), s.length());
           Serial.print('\n');
+
+          if(simEnabled)
+          {
+            mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/config", 
+              buffer.substring(f+1, nf));          
+          }
+
           f = nf;
         }
         else
@@ -292,12 +354,52 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
       Serial.write(s.c_str(), s.length());
       Serial.print('\n');
+
+      // send via GSM    
+      if(simEnabled)
+      {    
+        if(prefix == "C")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/config", 
+            buffer.substring(buffer.lastIndexOf('|')+1));          
+        }
+        else if(prefix == "P")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/param", 
+            buffer.substring(buffer.lastIndexOf('|')+1));          
+        }
+        else if(prefix == "A")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/actions", 
+            buffer.substring(buffer.lastIndexOf('|')+1));          
+        }
+      }
     }
     else
     {
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
       Serial.write(s.c_str(), s.length());
       Serial.print('\n');
+
+      // send via GSM    
+      if(simEnabled)
+      {
+        if(prefix == "C")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/config", 
+            buffer);          
+        }
+        else if(prefix == "P")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/param", 
+            buffer);          
+        }
+        else if(prefix == "A")
+        {
+          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/actions", 
+            buffer);          
+        }
+      }
     }        
   }
   else if(m.substring(0,3) == "$V$")  // Version
@@ -305,18 +407,36 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     String s = "*000[V]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
     Serial.write(s.c_str(), s.length());
     Serial.print('\n');
+
+    if(simEnabled)
+    {
+      mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/version", 
+        m.substring(3));              
+    }
   }
   else if(m.substring(0,3) == "$X$")  // Supported devices
   {
     String s = "*000[X]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
     Serial.write(s.c_str(), s.length());
     Serial.print('\n');
+
+    if(simEnabled)
+    {
+      mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/sensors", 
+        m.substring(3));                  
+    }
   }
   else if(m.substring(0,3) == "$I$")  // Init due to new firmware
   {
     String s = "*000[I]$"+simpleEspConnection.macToStr(ad)+"$INIT";
     Serial.write(s.c_str(), s.length());
     Serial.print('\n');
+    
+    if(simEnabled)
+    {
+      mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/init", 
+        "INIT");                  
+    }
   }
   else
   {
@@ -339,7 +459,6 @@ void OnPaired(uint8_t *ga, String ad)
     JsonObject newDevice  = configurationDevices.createNestedObject(ad);
     
     writeConfig();
-
   }
   
   String s = "*000[P]$"+ad+"$paired:OK";
@@ -352,12 +471,16 @@ void OnPaired(uint8_t *ga, String ad)
 
   // get all possible parameter
   simpleEspConnection.sendMessage("$S$", ad);    
+
+  // send via GSM    
+  if(simEnabled)
+    mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
 }
 
 void OnConnected(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
-  Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+ // Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
   clientAddress = ad;
@@ -433,14 +556,13 @@ bool initializeSIM800()
   MQTT_TOPIC = "SHRDZM/"+deviceName;
   nodeName = MQTT_TOPIC;
 
-  subcribeTopicSet = String(MQTT_TOPIC)+"/set";
-  subcribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+  subscribeTopicSet = String(MQTT_TOPIC)+"/set";
+  subscribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
 
-  Serial.println("Will start modem...please wait.... ");
-  SerialAT.begin(9600);
-  delay(6000);
-
-  modem.restart();
+  if(!modem.isGprsConnected())
+  {
+    modem.init();
+  }
   String modemInfo = modem.getModemInfo();
   Serial.print("Modem Info: ");
   Serial.println(modemInfo);
@@ -467,10 +589,14 @@ bool initializeSIM800()
 
   Serial.print(F("Connecting to "));
   Serial.print(apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) 
+
+  if(!modem.isGprsConnected())
   {
-    Serial.println(" fail");
-    return false;
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) 
+    {
+      Serial.println(" fail");
+      return false;
+    }
   }
 
   Serial.println(" success");
@@ -488,8 +614,27 @@ bool initializeSIM800()
   return true;
 }
 
+bool checkSimMode()
+{
+  Serial.println("Will check modem...please wait.... ");
+  SerialAT.begin(19200);
+
+  if(!modem.isGprsConnected())
+  {
+    modem.init();
+  }
+
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem Info: ");
+  Serial.println(modemInfo);  
+
+  return modemInfo != "" ? true : false;
+}
+
 void setup() 
 {
+  bool writeConfigAndReboot = false;
+  
   Serial.begin(9600);
   Serial.println();
 
@@ -505,10 +650,7 @@ void setup()
   nam = "SHRDZMGateway";  
 #endif
 
-  setDeviceName();
-
-  initializeSIM800();
-  
+  setDeviceName();  
 
   SPIFFS.begin();
 
@@ -523,6 +665,22 @@ void setup()
   {    
     writeConfig();
   }   
+
+  simEnabled = checkSimMode();
+  
+
+/*  if(!configuration.containsKey("simmode"))
+  {
+    configuration["simmode"] = "false";
+    configuration["simmode"][""] = "false";
+    
+    writeConfigAndReboot = true;
+  }*/
+
+  // init sim
+  if(simEnabled)
+    initializeSIM800();
+
 
   if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
   {
@@ -606,16 +764,16 @@ void updateFirmware(String parameter)
     WiFi.mode(WIFI_STA);
   
     WiFiMulti.addAP(SSID.c_str(), password.c_str());    
-  
-    //Serial.println("upgrade started with SSID:"+SSID+" password:"+password+" host:"+host);
   }
 }
 
 void loop() 
 {
-  if (!mqtt.connected()) 
+  simpleEspConnection.loop();
+  
+  if (!mqtt.connected() && simEnabled) 
   {
-    Serial.println("=== MQTT NOT CONNECTED ===");
+  //  Serial.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     uint32_t t = millis();
     if (t - lastReconnectAttempt > 10000L) 
@@ -637,14 +795,20 @@ void loop()
         mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
       }
     }
-    delay(100);
-    return;
   }
-
-  mqtt.loop();
+  else if(simEnabled)
+  {
+    // send open mqtt messages
+    MQTTBufferObject::BufferItem *i = mqttBufferObject.GetNextItem();
+    if(i != NULL)
+    {
+      mqtt.publish(i->m_subject.c_str(), i->m_text.c_str());          
+      mqttBufferObject.RemoveItem(i);
+    }
+    
+    mqtt.loop();
+  }
   
-  simpleEspConnection.loop();
-
   if(firmwareUpdate)
   {
     if ((WiFiMulti.run() == WL_CONNECTED)) 
