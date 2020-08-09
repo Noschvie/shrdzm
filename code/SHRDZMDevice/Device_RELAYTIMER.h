@@ -13,6 +13,7 @@ class Device_RELAYTIMER : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable(){return true;};
     bool loop();
     bool setAction(String action);
     bool setPostAction();

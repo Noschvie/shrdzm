@@ -14,6 +14,7 @@ class Device_SDS011 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable();
     void prepare(); 
     SensorData* readParameterTypes();
     SensorData* readParameter();
@@ -26,6 +27,7 @@ class Device_SDS011 : public DeviceBase
     void wakeup();
 
   private:
+    bool dataAvailable;
   
 
 };

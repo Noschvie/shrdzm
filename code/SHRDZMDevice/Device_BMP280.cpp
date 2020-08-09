@@ -4,11 +4,18 @@ Device_BMP280::Device_BMP280()
 {  
   bmp_temp = bmp.getTemperatureSensor();
   bmp_pressure = bmp.getPressureSensor();  
+
+  dataAvailable = true;
 }
 
 Device_BMP280::~Device_BMP280()
 {
   Serial.println("BMP280 Instance deleted");
+}
+
+bool Device_BMP280::isNewDataAvailable()
+{
+  return dataAvailable;
 }
 
 bool Device_BMP280::setDeviceParameter(JsonObject obj)
@@ -27,11 +34,11 @@ bool Device_BMP280::setDeviceParameter(JsonObject obj)
   }
   else
   {
-//    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-//                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-//                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-//                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-//                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
   
 //    bmp_temp->printSensorDetails();    
   }
@@ -99,5 +106,9 @@ SensorData* Device_BMP280::readParameter()
   al->di[2].nameI = "normpressure";
   al->di[2].valueI = String(absolute_pressure);  
 
+  Serial.println(temp_event.temperature);
+
+  dataAvailable = false;
+  
   return al;
 }

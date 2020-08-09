@@ -16,6 +16,7 @@ class Device_BMP280 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable();
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -26,7 +27,8 @@ class Device_BMP280 : public DeviceBase
     Adafruit_Sensor *bmp_pressure;
 
   private:
-  
+    bool dataAvailable;
+
 
 };
 

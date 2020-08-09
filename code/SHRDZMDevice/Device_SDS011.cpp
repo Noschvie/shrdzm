@@ -28,11 +28,17 @@ static const byte SLEEPCMD[19] =
 Device_SDS011::Device_SDS011()
 {    
   done = false;
+  dataAvailable = true;  
 }
 
 Device_SDS011::~Device_SDS011()
 {
   Serial.println("SDS011 Instance deleted");
+}
+
+bool Device_SDS011::isNewDataAvailable()
+{
+  return dataAvailable;
 }
 
 bool Device_SDS011::setDeviceParameter(JsonObject obj)
@@ -173,6 +179,8 @@ SensorData* Device_SDS011::readParameter()
     if(millis() > w+1500)
       done = true;
   }
+
+  dataAvailable = false;
 
   gotoSleep();
   

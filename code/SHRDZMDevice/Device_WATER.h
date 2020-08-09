@@ -12,12 +12,13 @@ class Device_WATER : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable();
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
     
   protected:
-
+    bool dataAvailable;
 
   private:
 
