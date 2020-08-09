@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 01 June 2020
+  Modified 09 August 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -21,6 +21,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266httpUpdate.h>
+#include <ESP8266WebServer.h>
 
 #define TINY_GSM_MODEM_SIM800
 
@@ -36,6 +37,8 @@ SoftwareSerial SerialAT(14, 12); // RX, TX for SIM800
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 PubSubClient mqtt(client);
+
+ESP8266WebServer server(80);
 
 String MQTT_TOPIC;
 String nodeName;
@@ -54,21 +57,244 @@ String ver, nam;
 uint32_t lastReconnectAttempt = 0;
 String deviceName;
 bool simEnabled = false;
+bool accesspointmodeEnabled = false;
+int ap_pin = -1;
 
 ESP8266WiFiMulti WiFiMulti;
 
-const char apn[] = "WEPAPN";
-const char gprsUser[] = "webapn.at";
-const char gprsPass[] = "";
-
-const char* broker = "xxx";
-const int port = 8883;
 
 String subscribeTopicSet;
 String subscribeTopicConfig;
+String APName;
 
 SetupObject setupObject;
 MQTTBufferObject mqttBufferObject;
+
+// AP WebServer
+char* getWebsite(char* content)
+{  
+  int len = strlen(content);
+  
+  char *temp = (char *) malloc (1700+len);
+
+#ifdef DEBUG
+  Serial.println("Handle Root");
+#endif
+
+  snprintf(temp, 1700+len,  
+"<!DOCTYPE html>\
+<html>\
+<head>\
+<style>\
+body {\
+  font-family: Arial, Helvetica, sans-serif;\
+}\
+\
+ul \
+{\
+list-style-type: none;\
+  margin: 0;\
+  padding: 0;\
+  width: 150px;\
+  background-color: #f1f1f1;\
+  position: fixed;\
+  height: 100%;\
+  overflow: auto;\
+}\
+\
+li a {\
+  display: block;\
+  color: #000;\
+  padding: 8px 16px;\
+  text-decoration: none;\
+}\
+\
+li a.active {\
+  background-color: #4CAF50;\
+  color: white;\
+}\
+\
+li a:hover:not(.active) {\
+  background-color: #555;\
+  color: white;\
+}\
+.main {\
+  margin-left: 200px;\
+  margin-bottom: 30px;\
+}\
+</style>\
+<title>SHRDZMGateway - %s</title>\
+</head>\
+<body>\
+\
+<ul>\
+  <li>\
+    <a class='active' href='#home'>SHRDZMGateway<br/>\
+      <font size='2'>%s</font>\
+    </a></li>\
+  <li><a href='./general'>General</a></li>\
+  <li><a href='./settings'>Settings</a></li>\
+  <li><a href='./about'>About</a></li>\
+  <li><a href='./reboot'>Reboot</a></li>\
+  <br/>\
+  <li><a href='./deleteconfig'>Delete Config</a></li>\  
+  <br/><br/><br/>\
+  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
+  <br/><br/>\
+</ul>\
+\
+<div class='main'>\
+  %s\
+</div>\
+</body>\
+</html>\
+  ", deviceName.c_str(), deviceName.c_str(), content);
+
+  return temp;
+}
+
+void handleRoot() 
+{
+  char * temp = getWebsite("<h1>General</h1>General Information");
+
+  server.send(200, "text/html", temp);
+
+  free(temp);
+}
+
+void handleSettings()
+{
+  bool writeConfiguration = false;
+  
+  char content[2000];
+
+  if(server.args() != 0)
+  {
+    if(server.hasArg("sim800"))
+    {
+      if( server.arg("sim800") == "1")
+      {
+        configdoc["sim800"]["enabled"] = "true";
+      }
+      else
+      {
+        configdoc["sim800"]["enabled"] = "false";
+      }
+    }
+    if(server.hasArg("pin"))
+      configdoc["sim800"]["pin"] = server.arg("pin");      
+    if(server.hasArg("apn"))
+      configdoc["sim800"]["apn"] = server.arg("apn");      
+    if(server.hasArg("user"))
+      configdoc["sim800"]["user"] = server.arg("user");      
+    if(server.hasArg("password"))
+      configdoc["sim800"]["password"] = server.arg("password");      
+    if(server.hasArg("MQTTbroker"))
+      configdoc["sim800"]["MQTTbroker"] = server.arg("MQTTbroker");      
+    if(server.hasArg("MQTTport"))
+      configdoc["sim800"]["MQTTport"] = server.arg("MQTTport");      
+    if(server.hasArg("MQTTuser"))
+      configdoc["sim800"]["MQTTuser"] = server.arg("MQTTuser");      
+    if(server.hasArg("MQTTpassword"))
+      configdoc["sim800"]["MQTTpassword"] = server.arg("MQTTpassword");      
+
+    writeConfiguration = true;    
+  }
+  
+  snprintf(content, 2000,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br /></p>\
+      <form method='post'>\
+      <input type='checkbox' id='sim800' name='sim800' value='1' %s/>\
+      <input type='hidden' name='sim800' value='0' />\
+      <label for='sim800'>I have a SIM800 module attached</label><br />\
+      <br />\
+      <input type='number' id= 'pin' name='pin' placeholder='PIN' value='%s'>\
+      <label for='pin'>PIN</label><br />\
+      <br />\
+      <input type='text' id= 'apn' name='apn' placeholder='APN' value='%s'>\
+      <label for='apn'>APN</label><br />\
+      <br />\
+      <input type='text' id= 'user' name='user' placeholder='User' value='%s'>\
+      <label for='user'>User</label><br />\
+      <br />\
+      <input type='text' id= 'passwort' name='password' placeholder='Password' value='%s'>\
+      <label for='passwort'>Password</label><br />\
+      <br />\
+      <br />\
+      <input type='text' id= 'MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label><br />\
+      <br />\
+      <input type='text' id= 'MQTTport' name='MQTTport' placeholder='MQTT Port' value='%s'>\
+      <label for='MQTTbroker'>MQTT Port</label><br />\
+      <br />\
+      <input type='text' id= 'MQTTuser' name='MQTTuser' placeholder='MQTT User' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label><br />\
+      <br />\
+      <input type='text' id= 'MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' value='%s'>\
+      <label for='MQTTuser'>MQTT Password</label><br />\
+      <br /><br /> <input type='submit' value='Save Configuration!' /></form>\
+      ", configdoc["sim800"]["enabled"] == "true" ? "checked" : "",
+      configdoc["sim800"]["pin"].as<char*>(),
+      configdoc["sim800"]["apn"].as<char*>(),
+      configdoc["sim800"]["user"].as<char*>(),
+      configdoc["sim800"]["password"].as<char*>(),
+      configdoc["sim800"]["MQTTbroker"].as<char*>(),
+      configdoc["sim800"]["MQTTport"].as<char*>(),
+      configdoc["sim800"]["MQTTuser"].as<char*>(),
+      configdoc["sim800"]["MQTTpassword"].as<char*>());  
+
+  if(writeConfiguration)
+  {
+    writeConfig();
+  }
+  
+  char * temp = getWebsite(content);
+
+  server.send(200, "text/html", temp);
+
+  free(temp);
+}
+
+void handleReboot() 
+{
+  char temp[300];
+  
+  snprintf(temp, 300,
+  "<!DOCTYPE html>\
+  <html>\
+  <head>\
+  <meta http-equiv='refresh' content='20; url=/'>\
+  </head>\
+  <body>\
+  <h1>Please wait. Will reboot in 20 seconds...</h1>\
+  </body>\
+  </html>\
+  ");
+
+  server.send(200, "text/html", temp);
+
+  delay(2000);
+  
+  ESP.reset();  
+}
+
+void handleNotFound() 
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+
+  server.send(404, "text/plain", message);
+}
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) 
 {
@@ -135,11 +361,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int len)
 boolean mqttConnect() 
 {
   Serial.print("Connecting to ");
-  Serial.print(broker);
+  Serial.print(configdoc["sim800"]["MQTTbroker"].as<char*>());
 
 
   // Or, if you want to authenticate MQTT:
-  boolean status = mqtt.connect("GsmClientName", "xxx", "xxx");
+  boolean status = mqtt.connect(deviceName.c_str(), configdoc["sim800"]["MQTTuser"].as<char*>(), configdoc["sim800"]["MQTTpassword"].as<char*>());
 
   if (status == false) 
   {
@@ -567,11 +793,10 @@ bool initializeSIM800()
   Serial.print("Modem Info: ");
   Serial.println(modemInfo);
 
-/*  if ( GSM_PIN && modem.getSimStatus() != 3 ) 
+  if(configdoc["sim800"]["pin"] != "" && modem.getSimStatus() != 3)
   {
-    modem.simUnlock(GSM_PIN);
-  }*/
-
+    modem.simUnlock(configdoc["sim800"]["pin"]);
+  }
 
   Serial.print("Waiting for network...");
   if (!modem.waitForNetwork()) 
@@ -588,11 +813,11 @@ bool initializeSIM800()
   }
 
   Serial.print(F("Connecting to "));
-  Serial.print(apn);
+  Serial.print(configdoc["sim800"]["apn"].as<char*>());
 
   if(!modem.isGprsConnected())
   {
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) 
+    if (!modem.gprsConnect(configdoc["sim800"]["apn"].as<char*>(), configdoc["sim800"]["user"].as<char*>(), configdoc["sim800"]["password"].as<char*>())) 
     {
       Serial.println(" fail");
       return false;
@@ -608,7 +833,7 @@ bool initializeSIM800()
 
   localIP = modem.getLocalIP();
 
-  mqtt.setServer(broker, port);
+  mqtt.setServer(configdoc["sim800"]["MQTTbroker"].as<char*>(), atoi(configdoc["sim800"]["MQTTport"].as<char*>()));
   mqtt.setCallback(mqttCallback);
 
   return true;
@@ -650,6 +875,10 @@ void setup()
   nam = "SHRDZMGateway";  
 #endif
 
+#ifdef ACCESSPOINT_PIN
+  ap_pin = ACCESSPOINT_PIN;
+#endif  
+
   setDeviceName();  
 
   SPIFFS.begin();
@@ -658,7 +887,6 @@ void setup()
   currVersion = ESP.getSketchMD5();
 
 #ifdef DEBUG
-//  Serial.println("Will read config now... ");
   Serial.println("Last Version : "+lastVersionNumber+", Curr Version : "+currVersion);
 #endif        
   if(!readConfig())
@@ -666,21 +894,56 @@ void setup()
     writeConfig();
   }   
 
-  simEnabled = checkSimMode();
-  
-
-/*  if(!configuration.containsKey("simmode"))
+  if(!configdoc.containsKey("sim800"))
   {
-    configuration["simmode"] = "false";
-    configuration["simmode"][""] = "false";
+    configdoc["sim800"]["enabled"] = "false";
+    configdoc["sim800"]["pin"] = "";
+    configdoc["sim800"]["apn"] = "";
+    configdoc["sim800"]["user"] = "";
+    configdoc["sim800"]["password"] = "";    
     
-    writeConfigAndReboot = true;
-  }*/
+    configdoc["sim800"]["MQTTbroker"] = "test.mosquitto.org";    
+    configdoc["sim800"]["MQTTport"] = "1883";    
+    configdoc["sim800"]["MQTTuser"] = "";    
+    configdoc["sim800"]["MQTTpassword"] = "";    
 
-  // init sim
-  if(simEnabled)
-    initializeSIM800();
+    writeConfig();
+  }
 
+  if(ap_pin != -1)
+  {
+    pinMode(ap_pin, INPUT_PULLUP);  
+    if(digitalRead(ap_pin) == false)
+    {
+  #ifdef DEBUG
+      Serial.println("ACCESSPOINT Mode enabled...");
+  #endif        
+      accesspointmodeEnabled = true;
+
+      APName = "SHRDZM-GW-"+deviceName;
+      WiFi.hostname(APName.c_str());      
+
+      WiFi.softAP(APName);
+
+      server.on("/", handleRoot);
+      server.on("/general", handleRoot);
+      server.on("/settings", handleSettings);
+      server.on("/reboot", handleReboot);  
+      server.onNotFound(handleNotFound);
+      server.begin();
+    
+      return;
+    }
+  }
+
+  if(configdoc["sim800"]["enabled"] == "true")
+  {
+    simEnabled = checkSimMode();  
+  
+    // init sim
+    if(simEnabled)
+      initializeSIM800();
+  }
 
   if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
   {
@@ -769,11 +1032,16 @@ void updateFirmware(String parameter)
 
 void loop() 
 {
+  if(accesspointmodeEnabled)
+  {
+    server.handleClient();
+    return;
+  }
+  
   simpleEspConnection.loop();
   
   if (!mqtt.connected() && simEnabled) 
   {
-  //  Serial.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     uint32_t t = millis();
     if (t - lastReconnectAttempt > 10000L) 
