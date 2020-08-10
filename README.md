@@ -1,6 +1,6 @@
-# shrdzm
+# SHRDZM
 
-## shrdzm is intended to become an end-to-end integration platform.
+## SHRDZM is intended to become an end-to-end integration platform.
 It provides wiring digrams, source code and working examples.
 Also plug-ins for most commonly used home automation solutions will be collected.
 
