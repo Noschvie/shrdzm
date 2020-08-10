@@ -2,6 +2,7 @@
 
 Device_HTU21D::Device_HTU21D()
 {  
+  dataAvailable = true;  
 }
 
 Device_HTU21D::~Device_HTU21D()
@@ -54,6 +55,8 @@ SensorData* Device_HTU21D::readParameter()
   al->di[0].valueI = String(myHTU21D.readHumidity());  
   al->di[1].nameI = "temperature";
   al->di[1].valueI = String(myHTU21D.readTemperature());  
+
+  dataAvailable = false;  
 
   return al;
 }

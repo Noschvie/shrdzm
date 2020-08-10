@@ -13,7 +13,7 @@ class Device_DIGITAL : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
-    bool isNewDataAvailable(){return true;};
+    bool isNewDataAvailable(){return dataAvailable;};
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -21,6 +21,7 @@ class Device_DIGITAL : public DeviceBase
   protected:
 
   private:
+    bool dataAvailable;
   
 
 };

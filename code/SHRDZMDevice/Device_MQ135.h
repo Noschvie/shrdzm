@@ -14,7 +14,7 @@ class Device_MQ135 : public DeviceBase
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
     void prepare();
-    bool isNewDataAvailable(){return true;};
+    bool isNewDataAvailable(){return dataAvailable;};
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -22,6 +22,7 @@ class Device_MQ135 : public DeviceBase
   protected:
 
   private:
+    bool dataAvailable;
   
 
 };

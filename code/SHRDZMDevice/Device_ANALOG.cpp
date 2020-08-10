@@ -2,6 +2,7 @@
 
 Device_ANALOG::Device_ANALOG()
 {  
+  dataAvailable = true;  
 }
 
 Device_ANALOG::~Device_ANALOG()
@@ -49,6 +50,8 @@ SensorData* Device_ANALOG::readParameter()
   
   al->di[0].nameI = "analog";
   al->di[0].valueI = String(analogRead(A0));  
+
+  dataAvailable = false;
 
   return al;
 }

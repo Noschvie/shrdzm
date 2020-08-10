@@ -28,6 +28,7 @@ class Device_BMP280 : public DeviceBase
 
   private:
     bool dataAvailable;
+    bool sensorAvailable;
 
 
 };

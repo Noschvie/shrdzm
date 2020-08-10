@@ -51,11 +51,6 @@ SensorData* Device_WATER::readInitialSetupParameter()
   return al;
 }
 
-bool Device_WATER::isNewDataAvailable()
-{
-  return dataAvailable;
-}
-
 SensorData* Device_WATER::readParameter()
 {
   SensorData *al = new SensorData(1);

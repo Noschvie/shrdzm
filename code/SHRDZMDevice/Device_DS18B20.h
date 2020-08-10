@@ -15,7 +15,7 @@ class Device_DS18B20 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
-    bool isNewDataAvailable(){return true;};
+    bool isNewDataAvailable(){return dataAvailable;};
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -26,6 +26,7 @@ class Device_DS18B20 : public DeviceBase
 
   private:
     String getAddressString(DeviceAddress thermometerAddress);
+    bool dataAvailable;
 
 };
 

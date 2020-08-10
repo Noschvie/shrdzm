@@ -15,7 +15,7 @@ class Device_HTU21D : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
-    bool isNewDataAvailable(){return true;};
+    bool isNewDataAvailable(){return dataAvailable;};
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -24,6 +24,7 @@ class Device_HTU21D : public DeviceBase
     HTU21D myHTU21D;
 
   private:
+    bool dataAvailable;
   
 
 };

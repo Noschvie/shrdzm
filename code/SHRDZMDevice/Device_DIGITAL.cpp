@@ -2,6 +2,7 @@
 
 Device_DIGITAL::Device_DIGITAL()
 {  
+  dataAvailable = true;  
 }
 
 Device_DIGITAL::~Device_DIGITAL()
@@ -67,6 +68,8 @@ SensorData* Device_DIGITAL::readParameter()
     al->di[0].nameI = "state";
     al->di[0].valueI = "error";
   }
+
+  dataAvailable = false;
   
   return al;
 }

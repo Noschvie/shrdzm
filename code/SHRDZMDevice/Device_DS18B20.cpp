@@ -2,7 +2,7 @@
 
 Device_DS18B20::Device_DS18B20()
 {  
-  
+  dataAvailable = true;    
 }
 
 Device_DS18B20::~Device_DS18B20()
@@ -99,6 +99,8 @@ String Device_DS18B20::getAddressString(DeviceAddress thermometerAddress)
       a+= "0";
     a+= String(thermometerAddress[i], HEX);
   }
+
+  dataAvailable = false;  
 
   return a;
 }

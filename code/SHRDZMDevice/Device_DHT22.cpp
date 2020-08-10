@@ -2,7 +2,7 @@
 
 Device_DHT22::Device_DHT22()
 {  
-  
+  dataAvailable = true;    
 }
 
 Device_DHT22::~Device_DHT22()
@@ -61,6 +61,8 @@ SensorData* Device_DHT22::readParameter()
   
   al->di[1].nameI = "humidity";
   al->di[1].valueI = String(dht.getHumidity());
+
+  dataAvailable = false;
 
   return al;
 }

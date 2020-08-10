@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 20 Jul 2020
+  Modified 09 August 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -441,13 +441,13 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     configuration.set("devicetype", (char *)deviceType);
     
-    dev->initialize();
-
-    JsonObject dc = dev->getDeviceParameter();
-    configuration.setDeviceParameter(dc);
-
     if(firstInit)
     {
+      dev->initialize();
+
+      JsonObject dc = dev->getDeviceParameter();
+      configuration.setDeviceParameter(dc);
+
       SensorData *initParam = dev->readInitialSetupParameter();
   
       if(initParam)
