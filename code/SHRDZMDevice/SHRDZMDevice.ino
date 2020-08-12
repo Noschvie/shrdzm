@@ -27,6 +27,7 @@ bool initReboot = false;
 bool sendBufferFilled = false;
 bool isDeviceInitialized = false;
 bool pairingOngoing = false;
+bool finishSent = false;
 String SSID;
 String password;
 String host;
@@ -651,6 +652,13 @@ void loop()
   }  
   else
     loopDone = true;
+
+  if(loopDone && !sendBufferFilled && !finishSent)
+  {
+    // send finish to gateway
+    simpleEspConnection.sendMessage("$F$");  
+    finishSent = true;
+  }
 
   if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone)
   {

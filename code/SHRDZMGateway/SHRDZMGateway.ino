@@ -523,6 +523,12 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     OnConnected(ad, simpleEspConnection.macToStr(ad));
     return;
   }
+
+  if(String((char *)message) == "$F$") // client ask for shutdown signal
+  {
+    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+    return;
+  }
   
 #ifdef DEBUG  
   Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
@@ -725,7 +731,7 @@ void OnConnected(uint8_t *ga, String ad)
   }  
   else
   {
-    simpleEspConnection.sendMessage("$SLEEP$", ad);        
+//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
   }
 }
 
