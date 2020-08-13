@@ -34,6 +34,7 @@ String host;
 String url;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
+bool finalMeasurementDone = false;
 
 
 String getValue(String data, char separator, int index)
@@ -635,11 +636,13 @@ void loop()
     if(configuration.get("devicetype") != "UNKNOWN")
     {
       initDeviceType(configuration.get("devicetype"), false);
+      dev->prepare();
     }
     
     isDeviceInitialized = true;
   }
 
+  
   // get measurement data
   if(dev != NULL)
   {
@@ -653,14 +656,21 @@ void loop()
   else
     loopDone = true;
 
-  if(loopDone && !sendBufferFilled && !finishSent)
+  if(!finalMeasurementDone && millis() >= prepareend)
+  {
+    getMeasurementData();
+
+    finalMeasurementDone = true;
+  }
+
+  if(loopDone && !sendBufferFilled && !finishSent && finalMeasurementDone)
   {
     // send finish to gateway
     simpleEspConnection.sendMessage("$F$");  
     finishSent = true;
   }
 
-  if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone)
+  if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone & finalMeasurementDone && millis() >= prepareend)
   {
     canGoDown = true;
   }  

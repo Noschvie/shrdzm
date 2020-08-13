@@ -25,6 +25,8 @@ class Device_SDS011 : public DeviceBase
     SoftwareSerial swSer;
     void gotoSleep();
     void wakeup();
+    uint8_t calculateREPORTINGMODECheckSum();
+    void setActiveMode();
 
   private:
     bool dataAvailable;

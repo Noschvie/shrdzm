@@ -25,6 +25,40 @@ static const byte SLEEPCMD[19] =
   0xAB  // tail
 };
  
+static const byte REPORTINGMODE[19] = 
+{
+  0xAA, // head
+  0xB4, // command id
+  0x02, // data byte 1
+  0x01, // data byte 2 (set mode)
+  0x00, // data byte 3 (active)
+  0x00, // data byte 4
+  0x00, // data byte 5
+  0x00, // data byte 6
+  0x00, // data byte 7
+  0x00, // data byte 8
+  0x00, // data byte 9
+  0x00, // data byte 10
+  0x00, // data byte 11
+  0x00, // data byte 12
+  0x00, // data byte 13
+  0xFF, // data byte 14 (device id byte 1)
+  0xFF, // data byte 15 (device id byte 2)
+  0x01, // checksum
+  0xAB  // tail
+};
+
+uint8_t Device_SDS011::calculateREPORTINGMODECheckSum()
+{
+  uint16_t checksum = 0;
+  for (int i = 2; i <= 16; i++)
+  {
+    checksum += REPORTINGMODE[i];
+  }
+  checksum &= 0xFF;
+  return checksum;
+}
+
 Device_SDS011::Device_SDS011()
 {    
   done = false;
@@ -38,7 +72,8 @@ Device_SDS011::~Device_SDS011()
 
 bool Device_SDS011::isNewDataAvailable()
 {
-  return dataAvailable;
+  return false;
+//  return dataAvailable;
 }
 
 bool Device_SDS011::setDeviceParameter(JsonObject obj)
@@ -54,6 +89,8 @@ bool Device_SDS011::setDeviceParameter(JsonObject obj)
 void Device_SDS011::prepare()
 {
   wakeup(); 
+  delay(100);
+  setActiveMode();
 }
 
 bool Device_SDS011::initialize()
@@ -88,8 +125,32 @@ SensorData* Device_SDS011::readInitialSetupParameter()
   return al;
 }
 
+void Device_SDS011::setActiveMode() 
+{   
+  Serial.println("checksum : "+String(calculateREPORTINGMODECheckSum()));
+  
+  for (uint8_t i = 0; i < 19; i++) 
+  {
+/*    if(i == 17)
+    {
+      swSer.write(calculateREPORTINGMODECheckSum());
+    }
+    else    */
+      swSer.write(REPORTINGMODE[i]);
+  }
+  swSer.flush();
+  while (swSer.available() > 0) 
+  {
+    Serial.print(swSer.read());
+  }  
+
+  Serial.println();
+}
+
 void Device_SDS011::wakeup() 
 {
+  Serial.println("will wake up...");
+  
   for (uint8_t i = 0; i < 19; i++) 
   {
     if (i == 4 || i == 17) 
@@ -105,8 +166,10 @@ void Device_SDS011::wakeup()
   swSer.flush();
   while (swSer.available() > 0) 
   {
-    swSer.read();
+    Serial.print(swSer.read());
   }
+
+  Serial.println();
 }
 
 void Device_SDS011::gotoSleep()
