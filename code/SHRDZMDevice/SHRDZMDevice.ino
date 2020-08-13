@@ -661,6 +661,7 @@ void loop()
     getMeasurementData();
 
     finalMeasurementDone = true;
+    clockmillis = millis();
   }
 
   if(loopDone && !sendBufferFilled && !finishSent && finalMeasurementDone)

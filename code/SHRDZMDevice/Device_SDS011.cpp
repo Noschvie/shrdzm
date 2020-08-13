@@ -48,12 +48,46 @@ static const byte REPORTINGMODE[19] =
   0xAB  // tail
 };
 
+static const byte WORKINGPERIOD[19] = 
+{
+  0xAA, // head
+  0xB4, // command id
+  0x08, // data byte 1
+  0x01, // data byte 2 (set mode)
+  0x00, // data byte 3 (active)
+  0x00, // data byte 4
+  0x00, // data byte 5
+  0x00, // data byte 6
+  0x00, // data byte 7
+  0x00, // data byte 8
+  0x00, // data byte 9
+  0x00, // data byte 10
+  0x00, // data byte 11
+  0x00, // data byte 12
+  0x00, // data byte 13
+  0xFF, // data byte 14 (device id byte 1)
+  0xFF, // data byte 15 (device id byte 2)
+  0x01, // checksum
+  0xAB  // tail
+};
+
 uint8_t Device_SDS011::calculateREPORTINGMODECheckSum()
 {
   uint16_t checksum = 0;
   for (int i = 2; i <= 16; i++)
   {
     checksum += REPORTINGMODE[i];
+  }
+  checksum &= 0xFF;
+  return checksum;
+}
+
+uint8_t Device_SDS011::calculateWORKINGPERIODCheckSum()
+{
+  uint16_t checksum = 0;
+  for (int i = 2; i <= 16; i++)
+  {
+    checksum += WORKINGPERIOD[i];
   }
   checksum &= 0xFF;
   return checksum;
@@ -89,8 +123,11 @@ bool Device_SDS011::setDeviceParameter(JsonObject obj)
 void Device_SDS011::prepare()
 {
   wakeup(); 
-  delay(100);
+  delay(200);
   setActiveMode();
+  delay(200);
+  setWorkingPeriod();
+  delay(300);
 }
 
 bool Device_SDS011::initialize()
@@ -127,15 +164,15 @@ SensorData* Device_SDS011::readInitialSetupParameter()
 
 void Device_SDS011::setActiveMode() 
 {   
-  Serial.println("checksum : "+String(calculateREPORTINGMODECheckSum()));
+  Serial.println("setActiveMode checksum : "+String(calculateREPORTINGMODECheckSum()));
   
   for (uint8_t i = 0; i < 19; i++) 
   {
-/*    if(i == 17)
+    if(i == 17)
     {
       swSer.write(calculateREPORTINGMODECheckSum());
     }
-    else    */
+    else    
       swSer.write(REPORTINGMODE[i]);
   }
   swSer.flush();
@@ -146,6 +183,29 @@ void Device_SDS011::setActiveMode()
 
   Serial.println();
 }
+
+void Device_SDS011::setWorkingPeriod() 
+{   
+  Serial.println("setWorkingPeriod checksum : "+String(calculateWORKINGPERIODCheckSum()));
+  
+  for (uint8_t i = 0; i < 19; i++) 
+  {
+    if(i == 17)
+    {
+      swSer.write(calculateWORKINGPERIODCheckSum());
+    }
+    else    
+      swSer.write(WORKINGPERIOD[i]);
+  }
+  swSer.flush();
+  while (swSer.available() > 0) 
+  {
+    Serial.print(swSer.read());
+  }  
+
+  Serial.println();
+}
+
 
 void Device_SDS011::wakeup() 
 {

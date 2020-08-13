@@ -26,7 +26,9 @@ class Device_SDS011 : public DeviceBase
     void gotoSleep();
     void wakeup();
     uint8_t calculateREPORTINGMODECheckSum();
+    uint8_t calculateWORKINGPERIODCheckSum();
     void setActiveMode();
+    void setWorkingPeriod();
 
   private:
     bool dataAvailable;
