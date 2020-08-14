@@ -35,6 +35,8 @@ String url;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
 bool finalMeasurementDone = false;
+bool setNewDeviceType = false;
+String newDeviceType = "";
 
 
 String getValue(String data, char separator, int index)
@@ -188,7 +190,9 @@ void setConfig(String cmd)
   {
     if(pname == "devicetype")
     {
-      initDeviceType(pvalue.c_str(), true);
+      newDeviceType = pvalue;
+      setNewDeviceType = true;
+//      initDeviceType(pvalue.c_str(), true);
     }
     else
     {
@@ -230,7 +234,9 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
   else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
   {
-    initDeviceType(String((char *)message).substring(5).c_str(), true);
+//    initDeviceType(String((char *)message).substring(5).c_str(), true);
+    newDeviceType = String((char *)message).substring(5);
+    setNewDeviceType = true;
     
     configuration.store();        
     sendSetup();
@@ -377,6 +383,8 @@ void initDeviceType(const char *deviceType, bool firstInit)
 {
   delete dev;
 
+  DLN("initDeviceType");
+
   if(strcmp(deviceType, "DHT22") == 0)
   {
     dev = new Device_DHT22();
@@ -444,10 +452,11 @@ void initDeviceType(const char *deviceType, bool firstInit)
     configuration.set("devicetype", (char *)deviceType);
     
     if(firstInit)
-    {
+    {     
       dev->initialize();
-
+      
       JsonObject dc = dev->getDeviceParameter();
+
       configuration.setDeviceParameter(dc);
 
       SensorData *initParam = dev->readInitialSetupParameter();
@@ -464,8 +473,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
         
         delete initParam;
       }      
+
+      initReboot = true;
     }
-    
+
     dev->setDeviceParameter(configuration.getDeviceParameter());    
   }
 }
@@ -675,6 +686,19 @@ void loop()
   {
     canGoDown = true;
   }  
+
+  if(setNewDeviceType && finalMeasurementDone)
+  {
+    initDeviceType(newDeviceType.c_str(), true);
+    setNewDeviceType = false;
+    newDeviceType = "";
+
+    configuration.store();        
+    DLN("vor sendSetup");
+    sendSetup();    
+    DLN("nach sendSetup");
+  }
+
 
   if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty())
   {
