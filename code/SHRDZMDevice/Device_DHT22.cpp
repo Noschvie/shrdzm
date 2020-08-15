@@ -2,7 +2,7 @@
 
 Device_DHT22::Device_DHT22()
 {  
-  dataAvailable = true;    
+  dataAvailable = false;    
 }
 
 Device_DHT22::~Device_DHT22()

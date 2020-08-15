@@ -544,9 +544,6 @@ Serial.begin(9600); Serial.println();
   String currVersion = ESP.getSketchMD5();
 
   DLN("'"+lastVersionNumber+"':'"+currVersion+"'");
-
-  if(atoi(configuration.get("sensorpowerpin")) != 99)
-    pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
     
   pinMode(atoi(configuration.get("pairingpin")), INPUT_PULLUP);
 
@@ -575,6 +572,13 @@ Serial.begin(9600); Serial.println();
   }
   else
   {
+    // enable sensor power if configured
+    if(atoi(configuration.get("sensorpowerpin")) != 99)
+    {
+      pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
+      digitalWrite(atoi(configuration.get("sensorpowerpin")),HIGH);          
+    }
+    
     // check if preparation is needed
     prepareend = 1000 * atoi(configuration.get("preparetime"));
 

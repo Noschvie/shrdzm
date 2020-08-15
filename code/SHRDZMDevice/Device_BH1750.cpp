@@ -12,7 +12,7 @@ Device_BH1750::~Device_BH1750()
 
 bool Device_BH1750::isNewDataAvailable()
 {
-  return dataAvailable;
+  return false;
 }
 
 bool Device_BH1750::setDeviceParameter(JsonObject obj)
