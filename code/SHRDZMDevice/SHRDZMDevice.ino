@@ -647,7 +647,8 @@ void loop()
     if(configuration.get("devicetype") != "UNKNOWN")
     {
       initDeviceType(configuration.get("devicetype"), false);
-      dev->prepare();
+      if(dev != NULL)
+        dev->prepare();
     }
     
     isDeviceInitialized = true;

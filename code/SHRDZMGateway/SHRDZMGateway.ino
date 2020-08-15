@@ -365,8 +365,8 @@ boolean mqttConnect()
 
 
   // Or, if you want to authenticate MQTT:
-  mqtt.setSocketTimeout(30);
-  mqtt.setKeepAlive(10);
+  //mqtt.setSocketTimeout(30);
+  //mqtt.setKeepAlive(10);
   boolean status = mqtt.connect(deviceName.c_str(), configdoc["sim800"]["MQTTuser"].as<char*>(), configdoc["sim800"]["MQTTpassword"].as<char*>());
 
   if (status == false) 
