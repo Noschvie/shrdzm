@@ -2,7 +2,7 @@
 
 Device_MQ135::Device_MQ135()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_MQ135::~Device_MQ135()

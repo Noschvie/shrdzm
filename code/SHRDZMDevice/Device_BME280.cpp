@@ -2,7 +2,7 @@
 
 Device_BME280::Device_BME280()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_BME280::~Device_BME280()

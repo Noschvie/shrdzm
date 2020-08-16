@@ -2,7 +2,7 @@
 
 Device_ANALOG::Device_ANALOG()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_ANALOG::~Device_ANALOG()

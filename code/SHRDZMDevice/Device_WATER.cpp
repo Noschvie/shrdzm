@@ -2,7 +2,7 @@
 
 Device_WATER::Device_WATER()
 {  
-  dataAvailable = true;
+  dataAvailable = false;
 }
 
 Device_WATER::~Device_WATER()

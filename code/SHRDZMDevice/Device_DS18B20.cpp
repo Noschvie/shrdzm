@@ -2,7 +2,7 @@
 
 Device_DS18B20::Device_DS18B20()
 {  
-  dataAvailable = true;    
+  dataAvailable = false;    
 }
 
 Device_DS18B20::~Device_DS18B20()

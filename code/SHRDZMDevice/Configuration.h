@@ -19,6 +19,7 @@ class Configuration
     void set(char *name, char *value);
     void setDeviceParameter(char *name, char *value);
     void setDeviceParameter(JsonObject dc);
+    bool migrateToNewConfigurationStyle();
     const char *get(char *name);
     String readLastVersionNumber();
     void storeVersionNumber();

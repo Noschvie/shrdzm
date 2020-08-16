@@ -2,7 +2,7 @@
 
 Device_HTU21D::Device_HTU21D()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_HTU21D::~Device_HTU21D()

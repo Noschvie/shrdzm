@@ -21,7 +21,7 @@ bool Configuration::initialize()
   g_configdoc["sensorpowerpin"] = String(s);
 
   s = PAIRING_PIN;
-  g_configdoc["pairingpin"] = String(s);
+  g_configdoc["pairingpin"] = String(s).c_str();
 
   g_configdoc["devicetype"] = "UNKNOWN";
 
@@ -41,6 +41,37 @@ bool Configuration::store()
   configFile.close();
     
   return true;
+}
+
+bool Configuration::migrateToNewConfigurationStyle()
+{
+  if(g_configdoc.containsKey("configuration"))
+  {
+    if(g_configdoc["configuration"].containsKey("interval"))
+      g_configdoc["interval"] = g_configdoc["configuration"]["interval"];
+    if(g_configdoc["configuration"].containsKey("sensorpowerpin"))
+      g_configdoc["sensorpowerpin"] = g_configdoc["configuration"]["sensorpowerpin"];
+    if(g_configdoc["configuration"].containsKey("pairingpin"))
+      g_configdoc["pairingpin"] = g_configdoc["configuration"]["pairingpin"];
+    if(g_configdoc["configuration"].containsKey("gateway"))
+      g_configdoc["gateway"] = g_configdoc["configuration"]["gateway"];
+    if(g_configdoc["configuration"].containsKey("devicetype"))
+      g_configdoc["devicetype"] = g_configdoc["configuration"]["devicetype"];
+    if(g_configdoc["configuration"].containsKey("preparetime"))
+      g_configdoc["preparetime"] = g_configdoc["configuration"]["preparetime"];
+    if(g_configdoc["configuration"].containsKey("processtime"))
+      g_configdoc["processtime"] = g_configdoc["configuration"]["processtime"];
+    if(g_configdoc["configuration"].containsKey("batterycheck"))
+      g_configdoc["batterycheck"] = g_configdoc["configuration"]["batterycheck"];
+    if(g_configdoc["configuration"].containsKey("device"))
+      g_configdoc["device"] = g_configdoc["configuration"]["device"];
+
+    g_configdoc.remove("configuration");
+
+    return true;
+  }
+
+  return false;
 }
 
 bool Configuration::load()
@@ -103,7 +134,10 @@ void Configuration::setDeviceParameter(JsonObject dc)
  
 const char* Configuration::get(char *name)
 {
-  return g_configdoc[name];  
+  if(g_configdoc.containsKey(name))
+    return g_configdoc[name];  
+  else
+    return NULL;
 }
 
 JsonObject Configuration::getDeviceParameter()

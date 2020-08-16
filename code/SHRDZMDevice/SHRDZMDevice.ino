@@ -383,8 +383,6 @@ void initDeviceType(const char *deviceType, bool firstInit)
 {
   delete dev;
 
-  DLN("initDeviceType");
-
   if(strcmp(deviceType, "DHT22") == 0)
   {
     dev = new Device_DHT22();
@@ -512,6 +510,14 @@ Serial.begin(9600); Serial.println();
   {
     configuration.initialize();
   }
+
+  if(configuration.migrateToNewConfigurationStyle())
+  {
+    configuration.store();    
+
+    delay(100);    
+    ESP.restart();      
+  }
   
   if(!configuration.containsKey("preparetime"))
   {
@@ -544,8 +550,23 @@ Serial.begin(9600); Serial.println();
   String currVersion = ESP.getSketchMD5();
 
   DLN("'"+lastVersionNumber+"':'"+currVersion+"'");
+
+  if(configuration.get("pairingpin") != NULL)
+  {    
+    pinMode(atoi(configuration.get("pairingpin")), INPUT_PULLUP);    
+  }
+  else
+  {
+    int s = 13;
+#ifdef PAIRING_PIN    
+    s = PAIRING_PIN;
+#endif
+    configuration.set("pairingpin", (char *)(String(s).c_str()));
+    configuration.store();    
     
-  pinMode(atoi(configuration.get("pairingpin")), INPUT_PULLUP);
+    delay(100);    
+    ESP.restart();      
+  }
 
   simpleEspConnection.begin();
 
