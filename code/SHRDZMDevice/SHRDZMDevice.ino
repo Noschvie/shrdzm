@@ -428,6 +428,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     dev = new Device_SDS011();
   }
+  else if(strcmp(deviceType, "SDS011_BMP280") == 0)
+  {
+    dev = new Device_SDS011_BMP280();
+  }  
   else if(strcmp(deviceType, "DIGITALGROUND") == 0)
   {
     dev = new Device_DIGITALGROUND();
