@@ -21,7 +21,7 @@ bool Configuration::initialize()
   g_configdoc["sensorpowerpin"] = String(s);
 
   s = PAIRING_PIN;
-  g_configdoc["pairingpin"] = String(s).c_str();
+  g_configdoc["pairingpin"] = String(s);
 
   g_configdoc["devicetype"] = "UNKNOWN";
 

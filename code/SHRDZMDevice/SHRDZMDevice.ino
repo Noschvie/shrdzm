@@ -22,6 +22,7 @@ bool firmwareUpdate = false;
 bool avoidSleeping = false;
 bool batterycheckDone = false;
 bool canGoDown = false;
+bool forceSleep = false;
 bool loopDone = false;
 bool initReboot = false;
 bool sendBufferFilled = false;
@@ -219,6 +220,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     canGoDown = true;
     DLN("FORCE SLEEP MODE");
+    forceSleep= true;
     return;
   }
   
@@ -606,6 +608,7 @@ Serial.begin(9600); Serial.println();
     
     // check if preparation is needed
     prepareend = 1000 * atoi(configuration.get("preparetime"));
+    DV(prepareend);
 
     if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
     {    
@@ -730,7 +733,7 @@ void loop()
   }
 
 
-  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty())
+  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty() && finalMeasurementDone)
   {
     if(initReboot)
     {
