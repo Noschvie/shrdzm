@@ -27,16 +27,21 @@ class Device_SDS011_BMP280 : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
+    Adafruit_BMP280 bmp;
+    Adafruit_Sensor *bmp_temp;
+    Adafruit_Sensor *bmp_pressure;
+
     bool done;
     SoftwareSerial swSer;
     void gotoSleep();
     void wakeup();
     void setActiveMode();
     void setWorkingPeriod();
+    
 
   private:
     bool dataAvailable;
-  
+    bool sensorAvailable;  
 
 };
 
