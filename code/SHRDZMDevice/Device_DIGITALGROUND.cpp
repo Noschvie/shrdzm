@@ -2,7 +2,7 @@
 
 Device_DIGITALGROUND::Device_DIGITALGROUND()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_DIGITALGROUND::~Device_DIGITALGROUND()

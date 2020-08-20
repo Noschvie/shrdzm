@@ -13,7 +13,7 @@ class Device_RELAYTIMER : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
-    bool isNewDataAvailable(){return true;};
+    bool isNewDataAvailable(){return dataAvailable;};
     bool loop();
     bool setAction(String action);
     bool setPostAction();
@@ -28,6 +28,7 @@ class Device_RELAYTIMER : public DeviceBase
     bool state;
     unsigned long et;
     bool actionSet;
+    bool dataAvailable;
     
   private:
   

@@ -2,7 +2,7 @@
 
 Device_DIGITAL::Device_DIGITAL()
 {  
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_DIGITAL::~Device_DIGITAL()

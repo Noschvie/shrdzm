@@ -29,12 +29,15 @@ bool sendBufferFilled = false;
 bool isDeviceInitialized = false;
 bool pairingOngoing = false;
 bool finishSent = false;
+bool processendSet = false;
+bool processendReached = false;
 String SSID;
 String password;
 String host;
 String url;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
+unsigned long processend = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
@@ -434,6 +437,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     dev = new Device_SDS011_BMP280();
   }  
+  else if(strcmp(deviceType, "SDS011_BME280") == 0)
+  {
+    dev = new Device_SDS011_BME280();
+  }  
   else if(strcmp(deviceType, "DIGITALGROUND") == 0)
   {
     dev = new Device_DIGITALGROUND();
@@ -700,6 +707,20 @@ void loop()
   else
     loopDone = true;
 
+  if(millis() >= prepareend && !processendSet)
+  {
+    if(atof(configuration.get("processtime")) > 0.0f)
+    {
+      processend = 1000 * atof(configuration.get("processtime")) + millis();      
+    }
+    else
+    {
+      processend = 0;
+    }    
+    
+    processendSet = true;
+  }
+
   if(!finalMeasurementDone && millis() >= prepareend)
   {
     getMeasurementData();
@@ -717,8 +738,11 @@ void loop()
 
   if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone & finalMeasurementDone && millis() >= prepareend)
   {
-    canGoDown = true;
+      canGoDown = true;
   }  
+
+  if(millis() > processend)
+    processendReached = true;
 
   if(setNewDeviceType && finalMeasurementDone)
   {
@@ -733,7 +757,7 @@ void loop()
   }
 
 
-  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty() && finalMeasurementDone)
+  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty() && finalMeasurementDone && processendReached)
   {
     if(initReboot)
     {

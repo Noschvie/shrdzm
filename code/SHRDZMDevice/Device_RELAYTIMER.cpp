@@ -11,6 +11,8 @@ Device_RELAYTIMER::Device_RELAYTIMER()
   port = -1;
   state = false;
 
+  dataAvailable = false;
+
   actionSet = false;
 }
 
@@ -93,9 +95,9 @@ SensorData* Device_RELAYTIMER::readParameterTypes()
   SensorData *al = new SensorData(4);
 
   al->di[0].nameI = "relay02";
-  al->di[0].nameI = "relay04";
-  al->di[0].nameI = "relay05";
-  al->di[0].nameI = "relay12";
+  al->di[1].nameI = "relay04";
+  al->di[2].nameI = "relay05";
+  al->di[3].nameI = "relay12";
 
   return al;
 }

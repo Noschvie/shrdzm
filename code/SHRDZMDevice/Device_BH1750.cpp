@@ -17,6 +17,7 @@ bool Device_BH1750::isNewDataAvailable()
 
 bool Device_BH1750::setDeviceParameter(JsonObject obj)
 {
+  
   DeviceBase::setDeviceParameter(obj);
 
   bool avail = false;
