@@ -553,10 +553,18 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
           (m.substring(0,4) == "$AP$") || // Action Configuration
           (m.substring(0,4) == "$SD$"))   // Parameter names
   {
+    String mqttPrefix;
     String prefix = (m.substring(0,4) == "$SC$" || m.substring(0,4) == "$SP$") ? "C" : "P";
-
     if(m.substring(0,4) == "$AP$")
       prefix = "A";
+
+    if(prefix == "C")
+      mqttPrefix = "/config";
+    else if(prefix == "P")
+      mqttPrefix = "/param";
+    else if(prefix == "A")
+      mqttPrefix = "/actions";      
+
     
     String buffer = m.substring(4);
     int f = -1;
@@ -575,7 +583,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
           if(simEnabled)
           {
-            mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/config", 
+            mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+mqttPrefix, 
               buffer.substring(f+1, nf));          
           }
 
@@ -592,21 +600,8 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       // send via GSM    
       if(simEnabled)
       {    
-        if(prefix == "C")
-        {
-          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/config", 
-            buffer.substring(buffer.lastIndexOf('|')+1));          
-        }
-        else if(prefix == "P")
-        {
-          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/param", 
-            buffer.substring(buffer.lastIndexOf('|')+1));          
-        }
-        else if(prefix == "A")
-        {
-          mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+"/actions", 
-            buffer.substring(buffer.lastIndexOf('|')+1));          
-        }
+        mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+simpleEspConnection.macToStr(ad)+mqttPrefix, 
+          buffer.substring(buffer.lastIndexOf('|')+1));          
       }
     }
     else

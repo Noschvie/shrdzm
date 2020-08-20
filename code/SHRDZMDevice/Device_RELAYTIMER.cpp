@@ -3,10 +3,10 @@
 Device_RELAYTIMER::Device_RELAYTIMER()
 {  
   actionParameter = docAction.to<JsonObject>();  
-  actionParameter["relay12"] = "ON,OFF,SWITCH";
-  actionParameter["relay02"] = "ON,OFF,SWITCH";
-  actionParameter["relay04"] = "ON,OFF,SWITCH";
-  actionParameter["relay05"] = "ON,OFF,SWITCH";
+  actionParameter["relay12"] = "TRIGGER";
+  actionParameter["relay02"] = "TRIGGER";
+  actionParameter["relay04"] = "TRIGGER";
+  actionParameter["relay05"] = "TRIGGER";
 
   port = -1;
   state = false;
@@ -51,7 +51,7 @@ bool Device_RELAYTIMER::setAction(String action)
     pinMode(port, OUTPUT);
     Serial.printf("Set port %d to LOW\n",port);
     
-    setPort(LOW);
+    setPort(HIGH);
     et = millis() + 1000 * 10;
 
     state = true;
@@ -71,10 +71,10 @@ void Device_RELAYTIMER::setPort(bool high)
 
 bool Device_RELAYTIMER::setPostAction()
 {
-/*  if(port != -1)
+  if(port != -1)
   {
-    setPort(HIGH);
-  } */
+    setPort(LOW);
+  } 
 
   return true;
 }
@@ -85,7 +85,7 @@ bool Device_RELAYTIMER::loop()
     return false;
 
 //  Serial.printf("loop done\n");
-  setPort(HIGH);
+//  setPort(HIGH);
     
   return true;
 }
@@ -118,6 +118,9 @@ SensorData* Device_RELAYTIMER::readInitialSetupParameter()
 
 SensorData* Device_RELAYTIMER::readParameter()
 {  
+  if(port == -1)
+    return NULL;
+    
   SensorData *al = new SensorData(1);
 
   String sstate = state ? "ON" : "OFF";
