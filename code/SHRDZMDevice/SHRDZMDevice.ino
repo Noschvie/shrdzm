@@ -741,8 +741,17 @@ void loop()
       canGoDown = true;
   }  
 
-  if(millis() > processend)
+  if(!processendReached && millis() > processend)
+  {
+    dev->setPostAction();
+
+    if(dev->isNewDataAvailable())
+    {    
+      getMeasurementData();
+    }
+    
     processendReached = true;
+  }
 
   if(setNewDeviceType && finalMeasurementDone)
   {

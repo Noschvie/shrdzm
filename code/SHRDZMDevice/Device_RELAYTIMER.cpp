@@ -53,11 +53,10 @@ bool Device_RELAYTIMER::setAction(String action)
     
     setPort(HIGH);
     et = millis() + 1000 * 10;
-
-    state = true;
   }
 
   actionSet = true;
+  dataAvailable = true;
 
   return true;
 }
@@ -66,7 +65,7 @@ bool Device_RELAYTIMER::setAction(String action)
 void Device_RELAYTIMER::setPort(bool high)
 {
   digitalWrite(port, high);
-  state = !high;      
+  state = high;      
 }
 
 bool Device_RELAYTIMER::setPostAction()
@@ -75,6 +74,8 @@ bool Device_RELAYTIMER::setPostAction()
   {
     setPort(LOW);
   } 
+
+  dataAvailable = true;
 
   return true;
 }
@@ -135,6 +136,8 @@ SensorData* Device_RELAYTIMER::readParameter()
     al->di[0].nameI = "relay12";
 
   al->di[0].valueI = sstate;  
+
+  dataAvailable = false;
 
   return al;
 }
