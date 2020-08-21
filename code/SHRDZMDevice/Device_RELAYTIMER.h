@@ -14,6 +14,7 @@ class Device_RELAYTIMER : public DeviceBase
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
     bool isNewDataAvailable(){return dataAvailable;};
+    bool hasProcessEarlyEnded();
     bool loop();
     bool setAction(String action);
     bool setPostAction();
@@ -27,8 +28,10 @@ class Device_RELAYTIMER : public DeviceBase
     int port;
     bool state;
     unsigned long et;
+    unsigned long minWaitTime;
     bool actionSet;
     bool dataAvailable;
+    bool processFinished;
     
   private:
   

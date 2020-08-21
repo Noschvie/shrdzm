@@ -698,7 +698,6 @@ void loop()
   if(dev != NULL)
   {
     loopDone = dev->loop();
-    
     if(dev->isNewDataAvailable())
     {
       getMeasurementData();
@@ -719,6 +718,12 @@ void loop()
     }    
     
     processendSet = true;
+  }
+
+  if(processendSet && !processendReached)
+  {
+    if(dev != NULL)
+      processendReached = dev->hasProcessEarlyEnded();
   }
 
   if(!finalMeasurementDone && millis() >= prepareend)
