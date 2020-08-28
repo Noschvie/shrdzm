@@ -64,6 +64,9 @@ String getValue(String data, char separator, int index)
 
 void sendSetup()
 {
+  if(!configuration.containsKey("gateway"))
+    return;
+  
   simpleEspConnection.sendMessage((char *)"$I$");
   
   configuration.sendSetup(&simpleEspConnection);
@@ -233,7 +236,10 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
   else if(String((char *)message) == "$PING$") // ping
   {
-    simpleEspConnection.sendMessage("$PING$");
+    if(configuration.containsKey("gateway"))
+    {
+      simpleEspConnection.sendMessage("$PING$");
+    }
       
     return;
   }
@@ -654,13 +660,11 @@ void getMeasurementData()
       }
     }
   }  
-
-//  postWait = millis() + 100;
 }
 
 void loop() 
 {
-  if(!firmwareUpdate)
+  if(!firmwareUpdate && configuration.containsKey("gateway"))
     sendBufferFilled = simpleEspConnection.loop();
 
   if(pairingOngoing)
@@ -669,7 +673,7 @@ void loop()
   if(firmwareUpdate)
     upgradeFirmware();
 
-  if(!batterycheckDone)
+  if(!batterycheckDone && configuration.containsKey("gateway"))
   {
     batterycheckDone = configuration.get("batterycheck") == "ON" ? false : true;
     if(!batterycheckDone)
@@ -692,7 +696,6 @@ void loop()
     
     isDeviceInitialized = true;
   }
-
   
   // get measurement data
   if(dev != NULL)
@@ -734,11 +737,15 @@ void loop()
     clockmillis = millis();
   }
 
-  if(loopDone && !sendBufferFilled && !finishSent && finalMeasurementDone)
+  if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {
     // send finish to gateway
-    simpleEspConnection.sendMessage("$F$");  
-    finishSent = true;
+    if(configuration.containsKey("gateway"))
+    {
+      simpleEspConnection.sendMessage("$F$");  
+      DLN("Finished process sent");
+      finishSent = true;
+    }    
   }
 
   if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone & finalMeasurementDone && millis() >= prepareend)
@@ -748,11 +755,14 @@ void loop()
 
   if(!processendReached && millis() > processend)
   {
-    dev->setPostAction();
-
-    if(dev->isNewDataAvailable())
-    {    
-      getMeasurementData();
+    if(dev != NULL)
+    {
+      dev->setPostAction();
+  
+      if(dev->isNewDataAvailable())
+      {    
+        getMeasurementData();
+      }
     }
     
     processendReached = true;

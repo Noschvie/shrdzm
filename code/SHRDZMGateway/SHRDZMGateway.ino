@@ -3,7 +3,7 @@
 
   Created 05 Mai 2020
   By Erich O. Pintar
-  Modified 09 August 2020
+  Modified 28 August 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -90,6 +90,16 @@ body {\
   font-family: Arial, Helvetica, sans-serif;\
 }\
 \
+hr\
+{ \
+  display: block;\
+  margin-top: 0.5em;\
+  margin-bottom: 0.5em;\
+  margin-left: auto;\
+  margin-right: auto;\
+  border-style: inset;\
+  border-width: 1px;\
+}\
 ul \
 {\
 list-style-type: none;\
@@ -166,10 +176,20 @@ void handleSettings()
 {
   bool writeConfiguration = false;
   
-  char content[2000];
+  char content[2600];
 
   if(server.args() != 0)
   {
+    if(server.hasArg("ssid"))
+      configdoc["wlan"]["ssid"] = server.arg("ssid");  
+    else
+      configdoc["wlan"]["ssid"] = "";  
+        
+    if(server.hasArg("ssidpassword"))
+      configdoc["wlan"]["password"] = server.arg("ssidpassword");      
+    else
+      configdoc["wlan"]["password"] = "";      
+    
     if(server.hasArg("sim800"))
     {
       if( server.arg("sim800") == "1")
@@ -181,6 +201,11 @@ void handleSettings()
         configdoc["sim800"]["enabled"] = "false";
       }
     }
+    else
+    {
+      configdoc["sim800"]["enabled"] = "false";
+    }
+
     if(server.hasArg("pin"))
       configdoc["sim800"]["pin"] = server.arg("pin");      
     if(server.hasArg("apn"))
@@ -201,39 +226,63 @@ void handleSettings()
     writeConfiguration = true;    
   }
   
-  snprintf(content, 2000,  
-      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br /></p>\
+  snprintf(content, 2600,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings only needed if OTA is used.</p>\
+      <br/><br/>\
       <form method='post'>\
+      <input type='text' id= 'ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <label for='ssid'>SSID</label><br/>\
+      <br/>\
+      <input type='password' id= 'ssidpassword' name='ssidpassword' placeholder='Password' size='50' value='%s'>\
+      <label for='ssidpassword'>Password</label><br/>\
+      <input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      <br/>\
+      <hr/>\
+      </p>\
       <input type='checkbox' id='sim800' name='sim800' value='1' %s/>\
       <input type='hidden' name='sim800' value='0' />\
-      <label for='sim800'>I have a SIM800 module attached</label><br />\
-      <br />\
-      <input type='number' id= 'pin' name='pin' placeholder='PIN' value='%s'>\
-      <label for='pin'>PIN</label><br />\
-      <br />\
-      <input type='text' id= 'apn' name='apn' placeholder='APN' value='%s'>\
-      <label for='apn'>APN</label><br />\
-      <br />\
-      <input type='text' id= 'user' name='user' placeholder='User' value='%s'>\
-      <label for='user'>User</label><br />\
-      <br />\
-      <input type='text' id= 'passwort' name='password' placeholder='Password' value='%s'>\
-      <label for='passwort'>Password</label><br />\
-      <br />\
-      <br />\
-      <input type='text' id= 'MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' value='%s'>\
-      <label for='MQTTbroker'>MQTT Broker</label><br />\
-      <br />\
-      <input type='text' id= 'MQTTport' name='MQTTport' placeholder='MQTT Port' value='%s'>\
-      <label for='MQTTbroker'>MQTT Port</label><br />\
-      <br />\
-      <input type='text' id= 'MQTTuser' name='MQTTuser' placeholder='MQTT User' value='%s'>\
-      <label for='MQTTuser'>MQTT User</label><br />\
-      <br />\
-      <input type='text' id= 'MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' value='%s'>\
-      <label for='MQTTuser'>MQTT Password</label><br />\
-      <br /><br /> <input type='submit' value='Save Configuration!' /></form>\
-      ", configdoc["sim800"]["enabled"] == "true" ? "checked" : "",
+      <label for='sim800'>I have a SIM800 module attached</label><br/>\
+      <br/>\
+      <input type='number' id= 'pin' name='pin' placeholder='PIN' size='50' value='%s'>\
+      <label for='pin'>PIN</label><br/>\
+      <br/>\
+      <input type='text' id= 'apn' name='apn' placeholder='APN' size='50' value='%s'>\
+      <label for='apn'>APN</label><br/>\
+      <br/>\
+      <input type='text' id= 'user' name='user' placeholder='User' size='50' value='%s'>\
+      <label for='user'>User</label><br/>\
+      <br/>\
+      <input type='text' id= 'passwort' name='password' placeholder='Password' size='50' value='%s'>\
+      <label for='passwort'>Password</label><br/>\
+      <br/>\
+      <br/>\
+      <input type='text' id= 'MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label><br/>\
+      <br/>\
+      <input type='text' id= 'MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Port</label><br/>\
+      <br/>\
+      <input type='text' id= 'MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label><br/>\
+      <br/>\
+      <input type='text' id= 'MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT Password</label><br/>\
+      <br/><br /> <input type='submit' value='Save Configuration!' />\
+      <script>\
+      function showWLANPassword() {\
+        var x = document.getElementById('ssidpassword');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\ 
+      </form>\
+      ", configdoc["wlan"]["ssid"].as<char*>(),
+      configdoc["wlan"]["password"].as<char*>(),
+      configdoc["sim800"]["enabled"] == "true" ? "checked" : "",
       configdoc["sim800"]["pin"].as<char*>(),
       configdoc["sim800"]["apn"].as<char*>(),
       configdoc["sim800"]["user"].as<char*>(),
@@ -897,6 +946,12 @@ void setup()
     writeConfig();
   }   
 
+  if(!configdoc.containsKey("wlan"))
+  {
+    configdoc["wlan"]["ssid"] = "";
+    configdoc["wlan"]["password"] = "";    
+  }
+  
   if(!configdoc.containsKey("sim800"))
   {
     configdoc["sim800"]["enabled"] = "false";
