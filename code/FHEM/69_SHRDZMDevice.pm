@@ -106,12 +106,12 @@ SHRDZMDevice_Set($@)
 
 	if($cmd eq "upgrade")
 	{
-		if($hash->{IODev}{Protocol} eq 'serial')
-		{
-			return "Device ".
-			$hash->{NAME}.
-			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
-		}
+#		if($hash->{IODev}{Protocol} eq 'serial')
+#		{
+#			return "Device ".
+#			$hash->{NAME}.
+#			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
+#		}
 		
 		Log3($hash->{NAME}, 5, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
 		

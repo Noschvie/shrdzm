@@ -75,13 +75,14 @@ char* getWebsite(char* content)
 {  
   int len = strlen(content);
   
-  char *temp = (char *) malloc (1700+len);
+  char *temp = (char *) malloc (1400+len);
 
 #ifdef DEBUG
   Serial.println("Handle Root");
+  Serial.println("Content len = "+String(len));
 #endif
 
-  snprintf(temp, 1700+len,  
+  snprintf(temp, 1400+len,  
 "<!DOCTYPE html>\
 <html>\
 <head>\
@@ -231,10 +232,10 @@ void handleSettings()
       <p>WLAN Settings only needed if OTA is used.</p>\
       <br/><br/>\
       <form method='post'>\
-      <input type='text' id= 'ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
       <label for='ssid'>SSID</label><br/>\
       <br/>\
-      <input type='password' id= 'ssidpassword' name='ssidpassword' placeholder='Password' size='50' value='%s'>\
+      <input type='password' id='ssidpassword' name='ssidpassword' placeholder='Password' size='50' value='%s'>\
       <label for='ssidpassword'>Password</label><br/>\
       <input type='checkbox' onclick='showWLANPassword()'>Show Password\
       <br/>\
@@ -244,29 +245,29 @@ void handleSettings()
       <input type='hidden' name='sim800' value='0' />\
       <label for='sim800'>I have a SIM800 module attached</label><br/>\
       <br/>\
-      <input type='number' id= 'pin' name='pin' placeholder='PIN' size='50' value='%s'>\
+      <input type='number' id='pin' name='pin' placeholder='PIN' size='50' value='%s'>\
       <label for='pin'>PIN</label><br/>\
       <br/>\
-      <input type='text' id= 'apn' name='apn' placeholder='APN' size='50' value='%s'>\
+      <input type='text' id='apn' name='apn' placeholder='APN' size='50' value='%s'>\
       <label for='apn'>APN</label><br/>\
       <br/>\
-      <input type='text' id= 'user' name='user' placeholder='User' size='50' value='%s'>\
+      <input type='text' id='user' name='user' placeholder='User' size='50' value='%s'>\
       <label for='user'>User</label><br/>\
       <br/>\
-      <input type='text' id= 'passwort' name='password' placeholder='Password' size='50' value='%s'>\
+      <input type='text' id='passwort' name='password' placeholder='Password' size='50' value='%s'>\
       <label for='passwort'>Password</label><br/>\
       <br/>\
       <br/>\
-      <input type='text' id= 'MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
       <label for='MQTTbroker'>MQTT Broker</label><br/>\
       <br/>\
-      <input type='text' id= 'MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
       <label for='MQTTbroker'>MQTT Port</label><br/>\
       <br/>\
-      <input type='text' id= 'MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
       <label for='MQTTuser'>MQTT User</label><br/>\
       <br/>\
-      <input type='text' id= 'MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
       <label for='MQTTuser'>MQTT Password</label><br/>\
       <br/><br /> <input type='submit' value='Save Configuration!' />\
       <script>\
@@ -298,6 +299,10 @@ void handleSettings()
   }
   
   char * temp = getWebsite(content);
+
+#ifdef DEBUG
+  Serial.println("temp len="+String(strlen(temp)));
+#endif
 
   server.send(200, "text/html", temp);
 
@@ -376,13 +381,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int len)
       StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
       int itemCount = splitter->getItemCount();
 
+      // GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
+
       if(itemCount == 2)
       {
         setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
       }
       else if(itemCount == 3)
       {
-        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
+        if(splitter->getItemAtIndex(0) == "GATEWAY" && splitter->getItemAtIndex(1) == "upgrade")
+        {
+          mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");          
+          updateFirmware(splitter->getItemAtIndex(2));
+        }
+        else        
+          setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
       }
   }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
@@ -1048,11 +1061,44 @@ void updateFirmware(String parameter)
   StringSplitter *splitter = new StringSplitter(parameter, '|', 4);
   int itemCount = splitter->getItemCount();
 
-  if(itemCount == 3)
+  bool allDataToWorkAvailable = true;
+
+#ifdef DEBUG
+  Serial.println("updateFirmware : Item count = "+String(itemCount));
+#endif                    
+
+  if(itemCount == 3)  // all data from MQTT
   {
     SSID = splitter->getItemAtIndex(0);
     password = splitter->getItemAtIndex(1);
     host = splitter->getItemAtIndex(2);
+  }
+  else if(itemCount == 1) // serial, now we need to check whether SSID and password is in the configuration settings
+  {
+    host = parameter;
+    
+    if(configdoc["wlan"]["ssid"] != "")
+      SSID = configdoc["wlan"]["ssid"].as<char*>();
+    else
+      allDataToWorkAvailable = false;
+      
+    if(configdoc["wlan"]["password"] != "")
+      password = configdoc["wlan"]["password"].as<char*>();
+    else
+      allDataToWorkAvailable = false;    
+  }
+  else
+    allDataToWorkAvailable = false;    
+  
+  if(!allDataToWorkAvailable)
+  {
+    // TODO : send error message
+#ifdef DEBUG
+    Serial.println("updateFirmware not possible!");
+#endif                    
+    
+    return;
+  }
 
     if(host.substring(0,7) != "http://")
     {
@@ -1079,13 +1125,16 @@ void updateFirmware(String parameter)
 
     firmwareUpdate = true;
 
+#ifdef DEBUG
+    Serial.println("firmwareUpdate enabled for SSID="+SSID+", Password="+password);
+#endif                    
+
     esp_now_deinit();
     delay(100);
   
     WiFi.mode(WIFI_STA);
   
     WiFiMulti.addAP(SSID.c_str(), password.c_str());    
-  }
 }
 
 void loop() 
@@ -1136,7 +1185,7 @@ void loop()
   }
   
   if(firmwareUpdate)
-  {
+  {    
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
@@ -1243,6 +1292,9 @@ void loop()
           if(itemCount == 2)
           {
             // SSID, password, host
+#ifdef DEBUG
+            Serial.println("starting updateFirmware...");
+#endif                    
             updateFirmware(splitter->getItemAtIndex(1));
           }        
         }
