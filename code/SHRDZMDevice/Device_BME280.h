@@ -16,12 +16,14 @@ class Device_BME280 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable();
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
     
   protected:
     Adafruit_BME280 bme;
+    bool dataAvailable;
 
   private:
   

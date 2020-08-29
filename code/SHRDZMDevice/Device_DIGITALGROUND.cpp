@@ -2,6 +2,7 @@
 
 Device_DIGITALGROUND::Device_DIGITALGROUND()
 {  
+  dataAvailable = false;  
 }
 
 Device_DIGITALGROUND::~Device_DIGITALGROUND()
@@ -67,6 +68,8 @@ SensorData* Device_DIGITALGROUND::readParameter()
     al->di[0].nameI = "state";
     al->di[0].valueI = "error";
   }
+
+  dataAvailable = false;
   
   return al;
 }

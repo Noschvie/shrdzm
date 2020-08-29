@@ -2,7 +2,7 @@
 
 Device_BH1750::Device_BH1750()
 {  
-  
+  dataAvailable = true;  
 }
 
 Device_BH1750::~Device_BH1750()
@@ -10,8 +10,14 @@ Device_BH1750::~Device_BH1750()
   Serial.println("BH1750 Instance deleted");
 }
 
+bool Device_BH1750::isNewDataAvailable()
+{
+  return false;
+}
+
 bool Device_BH1750::setDeviceParameter(JsonObject obj)
 {
+  
   DeviceBase::setDeviceParameter(obj);
 
   bool avail = false;
@@ -63,6 +69,8 @@ SensorData* Device_BH1750::readParameter()
   
   al->di[0].nameI = "illuminance";
   al->di[0].valueI = String(BH1750.getLux());  
+
+  dataAvailable = false;
 
   return al;
 }

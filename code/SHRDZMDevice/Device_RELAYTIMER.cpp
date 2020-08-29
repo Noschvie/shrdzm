@@ -3,17 +3,19 @@
 Device_RELAYTIMER::Device_RELAYTIMER()
 {  
   actionParameter = docAction.to<JsonObject>();  
-  actionParameter["relay12"] = "ON,OFF,SWITCH";
-  actionParameter["relay02"] = "ON,OFF,SWITCH";
-  actionParameter["relay04"] = "ON,OFF,SWITCH";
-  actionParameter["relay05"] = "ON,OFF,SWITCH";
+  actionParameter["relay12"] = "TRIGGER";
+  actionParameter["relay02"] = "TRIGGER";
+  actionParameter["relay04"] = "TRIGGER";
+  actionParameter["relay05"] = "TRIGGER";
 
   port = -1;
   state = false;
 
+  dataAvailable = false;
+  minWaitTime = millis()+500;
+  processFinished = false;
+
   actionSet = false;
-  
-  et = millis() + 1000 * 5;
 }
 
 Device_RELAYTIMER::~Device_RELAYTIMER()
@@ -51,12 +53,12 @@ bool Device_RELAYTIMER::setAction(String action)
     pinMode(port, OUTPUT);
     Serial.printf("Set port %d to LOW\n",port);
     
-    setPort(LOW);
-
-    state = true;
+    setPort(HIGH);
+    et = millis() + 1000 * 10;
   }
 
   actionSet = true;
+  dataAvailable = true;
 
   return true;
 }
@@ -65,39 +67,55 @@ bool Device_RELAYTIMER::setAction(String action)
 void Device_RELAYTIMER::setPort(bool high)
 {
   digitalWrite(port, high);
-  state = !high;      
+  state = high;      
 }
 
 bool Device_RELAYTIMER::setPostAction()
 {
   if(port != -1)
   {
-    setPort(HIGH);
-  }
+    setPort(LOW);
+  } 
+
+  dataAvailable = true;
+  processFinished = true;
 
   return true;
 }
 
 bool Device_RELAYTIMER::loop()
 {
-/*  if(actionSet && millis() < et)
+  if(actionSet && millis() < et)
     return false;
 
-  Serial.printf("loop done\n");
-  setPort(HIGH);
-  */
-  
+//  Serial.printf("loop done\n");
+//  setPort(HIGH);
+    
   return true;
+}
+
+bool Device_RELAYTIMER::hasProcessEarlyEnded()
+{
+  return false;
+
+  if(port == -1 && millis() > minWaitTime)
+  {
+    processFinished = true;   
+    dataAvailable = true; 
+    return true;
+  }
+
 }
 
 SensorData* Device_RELAYTIMER::readParameterTypes()
 {
-  SensorData *al = new SensorData(4);
+  SensorData *al = new SensorData(5);
 
   al->di[0].nameI = "relay02";
-  al->di[0].nameI = "relay04";
-  al->di[0].nameI = "relay05";
-  al->di[0].nameI = "relay12";
+  al->di[1].nameI = "relay04";
+  al->di[2].nameI = "relay05";
+  al->di[3].nameI = "relay12";
+  al->di[4].nameI = "lastuptime";
 
   return al;
 }
@@ -118,7 +136,23 @@ SensorData* Device_RELAYTIMER::readInitialSetupParameter()
 
 SensorData* Device_RELAYTIMER::readParameter()
 {  
-  SensorData *al = new SensorData(1);
+  if(port == -1 && processFinished && dataAvailable)
+  {
+    SensorData *al = new SensorData(1);
+
+    al->di[0].nameI = "lastuptime";
+    al->di[0].valueI = String(millis());  
+
+    dataAvailable = false;
+    return al;
+  }
+  
+  if(port == -1)
+    return NULL;
+
+  Serial.println("Port = "+String(port));
+  
+  SensorData *al = new SensorData(processFinished ? 2 : 1);
 
   String sstate = state ? "ON" : "OFF";
 
@@ -132,6 +166,14 @@ SensorData* Device_RELAYTIMER::readParameter()
     al->di[0].nameI = "relay12";
 
   al->di[0].valueI = sstate;  
+
+  if(processFinished)
+  {
+    al->di[1].nameI = "lastuptime";
+    al->di[1].valueI = String(millis());  
+  }
+
+  dataAvailable = false;
 
   return al;
 }

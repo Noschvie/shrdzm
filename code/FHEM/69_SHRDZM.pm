@@ -126,11 +126,13 @@ sub Define()
 		Log3($hash->{NAME}, 5, "NEW serial device : " . $args[3]);
 		$hash->{Protocol}= "serial";
 		$hash->{DeviceName}= $args[3];
+		CommandAttr(undef,"$name upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
 		my $ret = undef;
 		
 		DevIo_CloseDev($hash) if(DevIo_IsOpen($hash)); 
 		
 		$ret = DevIo_OpenDev($hash, 0, undef);
+		
 		return $ret;
 	}
 	else
@@ -380,11 +382,11 @@ sub Undefine($$)
 sub Set($$$@) 
 {
     my ($hash, $name, $command, @values) = @_;
-	my $update = "";
+	my $update = "upgradeGateway:noArg ";
 
 	if($hash->{Protocol} eq "MQTT")
 	{
-		$update = "upgradeGateway:noArg upgradeGatewayMQTT:noArg ";
+		$update .= "upgradeGatewayMQTT:noArg ";
 	}
 
 	if ($command eq '?' || $command =~ m/^(blink|intervals|(off-|on-)(for-timer|till)|toggle)/)
@@ -395,11 +397,16 @@ sub Set($$$@)
 
 	Log3($hash->{NAME}, 5, "cmnd = " . $command);
 
-	if($hash->{Protocol} =~ "serial")
+	if($hash->{Protocol} eq "serial")
 	{
-		if($command =~ "pair")
+		if($command eq "pair")
 		{
 			DevIo_SimpleWrite($hash, "\$pair\n", 2);
+		}
+		elsif ($command eq "upgradeGateway")
+		{			
+			Log3($hash->{NAME}, 0, "serial send : "."\$upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php")."\n");
+			DevIo_SimpleWrite($hash, "\$upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php")."\n", 2);
 		}
 	}
 	else
@@ -422,7 +429,7 @@ sub Set($$$@)
 		{
 			# GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
 
-			my $sendcommand = "GATEWAY upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php");;
+			my $sendcommand = "GATEWAY upgrade ".AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php");
 			my $topic = $hash->{FULL_TOPIC} . "config/set";	
 		
 			$msgid = send_publish($hash->{IODev}, topic => $topic, message => $sendcommand, qos => $qos, retain => $retain);

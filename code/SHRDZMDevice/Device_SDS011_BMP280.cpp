@@ -1,4 +1,4 @@
-#include "Device_SDS011.h"
+#include "Device_SDS011_BMP280.h"
 
 #define LEN 9
 
@@ -24,8 +24,6 @@ static const byte SLEEPCMD[19] =
   0x05, // checksum
   0xAB  // tail
 };
-<<<<<<< HEAD
-=======
  
 static const byte REPORTINGMODE[19] = 
 {
@@ -69,100 +67,101 @@ static const byte WORKINGPERIOD[19] =
   0x00, // data byte 13
   0xFF, // data byte 14 (device id byte 1)
   0xFF, // data byte 15 (device id byte 2)
-  0x01, // checksum
+  0x07, // checksum
   0xAB  // tail
 };
 
-uint8_t Device_SDS011::calculateREPORTINGMODECheckSum()
-{
-  uint16_t checksum = 0;
-  for (int i = 2; i <= 16; i++)
-  {
-    checksum += REPORTINGMODE[i];
-  }
-  checksum &= 0xFF;
-  return checksum;
-}
-
-uint8_t Device_SDS011::calculateWORKINGPERIODCheckSum()
-{
-  uint16_t checksum = 0;
-  for (int i = 2; i <= 16; i++)
-  {
-    checksum += WORKINGPERIOD[i];
-  }
-  checksum &= 0xFF;
-  return checksum;
-}
->>>>>>> dev
-
-Device_SDS011::Device_SDS011()
+Device_SDS011_BMP280::Device_SDS011_BMP280()
 {    
+  bmp_temp = bmp.getTemperatureSensor();
+  bmp_pressure = bmp.getPressureSensor();  
+
+  sensorAvailable = false;
+  dataAvailable = false;  
+  
   done = false;
-<<<<<<< HEAD
-=======
-  dataAvailable = true;  
->>>>>>> dev
 }
 
-Device_SDS011::~Device_SDS011()
+Device_SDS011_BMP280::~Device_SDS011_BMP280()
 {
-  Serial.println("SDS011 Instance deleted");
+  Serial.println("SDS011_BMP280 Instance deleted");
 }
 
-<<<<<<< HEAD
-=======
-bool Device_SDS011::isNewDataAvailable()
+bool Device_SDS011_BMP280::isNewDataAvailable()
 {
-  return false;
-//  return dataAvailable;
+  return dataAvailable;
 }
 
->>>>>>> dev
-bool Device_SDS011::setDeviceParameter(JsonObject obj)
+bool Device_SDS011_BMP280::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
+  bool avail = false;
+
+  uint8_t address = strtoul(deviceParameter["address"], NULL, 0);
+  avail = bmp.begin(address);   
+
 
   if(deviceParameter.containsKey("RX") && deviceParameter.containsKey("TX"))
   { 
     swSer.begin(9600, SWSERIAL_8N1, atoi(deviceParameter["RX"]), atoi(deviceParameter["TX"]), false);    
   }
+
+  if(!avail)
+  {
+    Serial.println("Sensor not found!"); 
+    sensorAvailable = false;    
+  }
+  else
+  {
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+  
+    sensorAvailable = true;    
+  }
+
+  return true;
 }
 
-void Device_SDS011::prepare()
+void Device_SDS011_BMP280::prepare()
 {
   wakeup(); 
-<<<<<<< HEAD
-=======
   delay(200);
   setActiveMode();
   delay(200);
   setWorkingPeriod();
   delay(300);
->>>>>>> dev
 }
 
-bool Device_SDS011::initialize()
+bool Device_SDS011_BMP280::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
   deviceParameter["RX"] = "12";
   deviceParameter["TX"] = "2";
+  deviceParameter["address"] = "0x76";
+  deviceParameter["sealevel"] = "537";
 
   return true;
 }
 
-SensorData* Device_SDS011::readParameterTypes()
+SensorData* Device_SDS011_BMP280::readParameterTypes()
 {
-  SensorData *al = new SensorData(2);
+  SensorData *al = new SensorData(6);
 
   al->di[0].nameI = "PM25";
   al->di[1].nameI = "PM10";
+  al->di[2].nameI = "temperature";
+  al->di[3].nameI = "normpressure";
+  al->di[4].nameI = "stationpressure";
+  al->di[5].nameI = "error";
 
   return al;
 }
 
-SensorData* Device_SDS011::readInitialSetupParameter()
+SensorData* Device_SDS011_BMP280::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(2);
 
@@ -174,22 +173,11 @@ SensorData* Device_SDS011::readInitialSetupParameter()
   return al;
 }
 
-<<<<<<< HEAD
-void Device_SDS011::wakeup() 
-{
-=======
-void Device_SDS011::setActiveMode() 
+void Device_SDS011_BMP280::setActiveMode() 
 {   
-  Serial.println("setActiveMode checksum : "+String(calculateREPORTINGMODECheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
-    if(i == 17)
-    {
-      swSer.write(calculateREPORTINGMODECheckSum());
-    }
-    else    
-      swSer.write(REPORTINGMODE[i]);
+    swSer.write(REPORTINGMODE[i]);
   }
   swSer.flush();
   while (swSer.available() > 0) 
@@ -200,18 +188,11 @@ void Device_SDS011::setActiveMode()
   Serial.println();
 }
 
-void Device_SDS011::setWorkingPeriod() 
+void Device_SDS011_BMP280::setWorkingPeriod() 
 {   
-  Serial.println("setWorkingPeriod checksum : "+String(calculateWORKINGPERIODCheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
-    if(i == 17)
-    {
-      swSer.write(calculateWORKINGPERIODCheckSum());
-    }
-    else    
-      swSer.write(WORKINGPERIOD[i]);
+    swSer.write(WORKINGPERIOD[i]);
   }
   swSer.flush();
   while (swSer.available() > 0) 
@@ -223,11 +204,10 @@ void Device_SDS011::setWorkingPeriod()
 }
 
 
-void Device_SDS011::wakeup() 
+void Device_SDS011_BMP280::wakeup() 
 {
   Serial.println("will wake up...");
   
->>>>>>> dev
   for (uint8_t i = 0; i < 19; i++) 
   {
     if (i == 4 || i == 17) 
@@ -243,18 +223,13 @@ void Device_SDS011::wakeup()
   swSer.flush();
   while (swSer.available() > 0) 
   {
-<<<<<<< HEAD
-    swSer.read();
-  }
-=======
     Serial.print(swSer.read());
   }
 
   Serial.println();
->>>>>>> dev
 }
 
-void Device_SDS011::gotoSleep()
+void Device_SDS011_BMP280::gotoSleep()
 {
   Serial.println("gotoSleep");
   
@@ -269,11 +244,11 @@ void Device_SDS011::gotoSleep()
   }  
 }
 
-SensorData* Device_SDS011::readParameter()
+SensorData* Device_SDS011_BMP280::readParameter()
 {  
   unsigned long w = millis();
   
-  SensorData *al = new SensorData(2);
+  SensorData *al = new SensorData(6);
 
   int i;
   unsigned char checksum;
@@ -307,14 +282,6 @@ SensorData* Device_SDS011::readParameter()
             al->di[1].nameI = "PM10";
             al->di[1].valueI = String(PM10Val);  
 
-/*            Serial.print("PM2.5: ");
-            Serial.print(PM2_5Val);
-            Serial.println(" ug/m3");
-            Serial.print("PM10 : ");
-            Serial.print(PM10Val);
-            Serial.println(" ug/m3");
-            Serial.println(); */
-
             done = true;
           }
         }
@@ -325,11 +292,48 @@ SensorData* Device_SDS011::readParameter()
       done = true;
   }
 
-<<<<<<< HEAD
-=======
   dataAvailable = false;
 
->>>>>>> dev
+  // BMP280
+  if(sensorAvailable)
+  {
+    sensors_event_t temp_event, pressure_event;
+  
+    bmp_temp->getEvent(&temp_event);
+    bmp_pressure->getEvent(&pressure_event);
+  
+    // Barometrische Höhenformel:
+    // Luftdruck auf Meereshöhe = Barometeranzeige / (1-Temperaturgradient*Höhe/Temperatur auf Meereshöhe in Kelvin)^(0,03416/Temperaturgradient)
+    float kelvin = 273.15 + temp_event.temperature;
+    int sealevel = atoi(deviceParameter["sealevel"].as<String>().c_str());
+    float factor = (float)(pow(1-0.0065*sealevel/kelvin, 5.255));
+    
+    float absolute_pressure = 0;
+    
+    absolute_pressure = pressure_event.pressure/factor;
+    
+    al->di[2].nameI = "temperature";
+    al->di[2].valueI = String(temp_event.temperature);  
+    al->di[3].nameI = "stationpressure";
+    al->di[3].valueI = String(pressure_event.pressure);  
+    al->di[4].nameI = "normpressure";
+    al->di[4].valueI = String(absolute_pressure);  
+    al->di[5].nameI = "error";
+    al->di[5].valueI = "NO";  
+  }
+  else
+  {
+    al->di[2].nameI = "temperature";
+    al->di[2].valueI = "0.0";  
+    al->di[3].nameI = "stationpressure";
+    al->di[3].valueI = "0.0";  
+    al->di[4].nameI = "normpressure";
+    al->di[4].valueI = "0.0";  
+    al->di[5].nameI = "error";
+    al->di[5].valueI = "Sensor not working";      
+  }
+  
+
   gotoSleep();
   
   return al;

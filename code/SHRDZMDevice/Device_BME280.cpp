@@ -2,11 +2,17 @@
 
 Device_BME280::Device_BME280()
 {  
+  dataAvailable = false;  
 }
 
 Device_BME280::~Device_BME280()
 {
   Serial.println("BME280 Instance deleted");
+}
+
+bool Device_BME280::isNewDataAvailable()
+{
+  return dataAvailable;
 }
 
 bool Device_BME280::setDeviceParameter(JsonObject obj)
@@ -89,6 +95,8 @@ SensorData* Device_BME280::readParameter()
   al->di[2].valueI = String(pressure);  
   al->di[3].nameI = "normpressure";
   al->di[3].valueI = String(absolute_pressure);  
+
+  dataAvailable = false;
 
   return al;
 }

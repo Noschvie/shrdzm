@@ -14,6 +14,7 @@ class Device_DHT22 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable(){return dataAvailable;};
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -22,6 +23,7 @@ class Device_DHT22 : public DeviceBase
     DHTesp dht;
 
   private:
+    bool dataAvailable;
   
 
 };

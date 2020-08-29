@@ -75,9 +75,16 @@ SHRDZMDevice_Get($$@)
 		
 		my $ret = IOWrite($hash, $hash->{DEF} . " configuration");	
 
-		return "Device ".
-		$hash->{NAME}.
-		" will be refreshed next time when it is up. Please be patient...";
+		if(AttrVal($hash->{NAME}, "interval", 0) > 0)
+		{
+			return "Device ".
+			$hash->{NAME}.
+			" will be refreshed next time when it is up. Please be patient...";
+		}
+		else
+		{
+			return undef;
+		}
 	}
 	else
 	{
@@ -99,28 +106,42 @@ SHRDZMDevice_Set($@)
 
 	if($cmd eq "upgrade")
 	{
-		if($hash->{IODev}{Protocol} eq 'serial')
-		{
-			return "Device ".
-			$hash->{NAME}.
-			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
-		}
+#		if($hash->{IODev}{Protocol} eq 'serial')
+#		{
+#			return "Device ".
+#			$hash->{NAME}.
+#			" is not possible to upgrade via OTA because it is connected with a serial gateway.";		
+#		}
 		
 		Log3($hash->{NAME}, 5, $hash->{NAME} . " Upgrade choosen " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));
 		
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
-		
-		return "Device ".
-		$hash->{NAME}.
-		" will be upgraded next time when it is up. Please be patient...";		
+				
+		if(AttrVal($hash->{NAME}, "interval", 0) > 0)
+		{
+			return "Device ".
+			$hash->{NAME}.
+			" will be upgraded next time when it is up. Please be patient...";		
+		}
+		else
+		{
+			return undef;
+		}
 	}
 	else
 	{
 		Log3($hash->{NAME}, 5, $hash->{NAME} . " !!!! ".join(" ", @args));
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
 		
-		return $cmd.		
-		" will be changed next time when Device ".$hash->{NAME}." is up. Please be patient...";		
+		if(AttrVal($hash->{NAME}, "interval", 0) > 0)
+		{
+			return $cmd.		
+			" will be changed next time when Device ".$hash->{NAME}." is up. Please be patient...";		
+		}
+		else
+		{
+			return undef;
+		}
 	}
 		
 	return undef;
@@ -179,17 +200,19 @@ sub SHRDZMDevice_Parse ($$)
 
 	if(my $hash = $modules{SHRDZMDevice}{defptr}{$address})
 	{
-		Log3($hash->{NAME}, 5, $hash->{NAME} . "parse message : $message");
+		Log3($hash->{NAME}, 5, $hash->{NAME} . " parse message : $message");
 
 
 		my @parameter = split(":", $items[2]);
 		
-		if($items[1] =~ "value")
+		if($items[1] eq "value")
 		{	
 			RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
 
 			readingsBeginUpdate($hash);
-			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);			
+#			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);	
+			my @value = split(":", $message);
+			readingsBulkUpdate($hash, $parameter[0], $value[1], 1);			
 			my $oldOnlineState = ReadingsVal($hash->{NAME}, "online", 0);
 			if($oldOnlineState =~ 0)
 			{
@@ -206,7 +229,7 @@ sub SHRDZMDevice_Parse ($$)
 		
 			return $hash->{NAME};
 		}
-		elsif($items[1] =~ "paired")
+		elsif($items[1] eq "paired")
 		{
 			Log3 $hash->{NAME}, 5, "RePairing of ".$hash->{NAME}." to ".$io_hash->{NAME}." with  = ".$message;
 
@@ -215,13 +238,13 @@ sub SHRDZMDevice_Parse ($$)
 			
 			return $hash->{NAME};		
 		}
-		elsif($items[1] =~ "version")
+		elsif($items[1] eq "version")
 		{
 			$hash->{VERSION} = $parameter[1];
 
 			return $hash->{NAME};		
 		}
-		elsif($items[1] =~ "init")
+		elsif($items[1] eq "init")
 		{
 			# delete all readings
 			my @cList = keys %{$hash->{READINGS}};
@@ -239,7 +262,7 @@ sub SHRDZMDevice_Parse ($$)
 
 			return $hash->{NAME};		
 		}
-		elsif($items[1] =~ "sensors")
+		elsif($items[1] eq "sensors")
 		{			
 			Log3($hash->{NAME}, 5, $hash->{NAME} . "!!!sensors updated : $parameter[1]");
 		
@@ -270,7 +293,7 @@ sub SHRDZMDevice_Parse ($$)
 			
 			return $hash->{NAME};		
 		}
-		elsif($items[1] =~ "config")
+		elsif($items[1] eq "config")
 		{
 			if(!($parameter[0] =~ "devicetype"))
 			{
@@ -300,7 +323,7 @@ sub SHRDZMDevice_Parse ($$)
 
 			return $hash->{NAME};
 		}	
-		elsif($items[1] =~ "version")
+		elsif($items[1] eq "version")
 		{
 			$hash->{VERSION} = $message;
 

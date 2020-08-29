@@ -4,11 +4,19 @@ Device_BMP280::Device_BMP280()
 {  
   bmp_temp = bmp.getTemperatureSensor();
   bmp_pressure = bmp.getPressureSensor();  
+
+  dataAvailable = true;
+  sensorAvailable = false;
 }
 
 Device_BMP280::~Device_BMP280()
 {
   Serial.println("BMP280 Instance deleted");
+}
+
+bool Device_BMP280::isNewDataAvailable()
+{
+  return dataAvailable;
 }
 
 bool Device_BMP280::setDeviceParameter(JsonObject obj)
@@ -24,17 +32,20 @@ bool Device_BMP280::setDeviceParameter(JsonObject obj)
   if(!avail)
   {
     Serial.println("Sensor not found!"); 
+    sensorAvailable = false;    
   }
   else
   {
-//    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-//                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-//                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-//                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-//                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
   
-//    bmp_temp->printSensorDetails();    
+    sensorAvailable = true;    
   }
+
+  return avail;
 }
 
 bool Device_BMP280::initialize()
@@ -52,11 +63,12 @@ bool Device_BMP280::initialize()
 
 SensorData* Device_BMP280::readParameterTypes()
 {
-  SensorData *al = new SensorData(3);
+  SensorData *al = new SensorData(4);
 
   al->di[0].nameI = "temperature";
   al->di[1].nameI = "normpressure";
   al->di[2].nameI = "stationpressure";
+  al->di[3].nameI = "error";
 
   return al;
 }
@@ -74,30 +86,48 @@ SensorData* Device_BMP280::readInitialSetupParameter()
 }
 
 SensorData* Device_BMP280::readParameter()
-{
-  sensors_event_t temp_event, pressure_event;
-
-  bmp_temp->getEvent(&temp_event);
-  bmp_pressure->getEvent(&pressure_event);
-
-  // Barometrische Höhenformel:
-  // Luftdruck auf Meereshöhe = Barometeranzeige / (1-Temperaturgradient*Höhe/Temperatur auf Meereshöhe in Kelvin)^(0,03416/Temperaturgradient)
-  float kelvin = 273.15 + temp_event.temperature;
-  int sealevel = atoi(deviceParameter["sealevel"].as<String>().c_str());
-  float factor = (float)(pow(1-0.0065*sealevel/kelvin, 5.255));
+{  
+  SensorData *al = new SensorData(4);
   
-  float absolute_pressure = 0;
+  if(sensorAvailable)
+  {
+    sensors_event_t temp_event, pressure_event;
   
-  absolute_pressure = pressure_event.pressure/factor;
+    bmp_temp->getEvent(&temp_event);
+    bmp_pressure->getEvent(&pressure_event);
   
-  SensorData *al = new SensorData(3);
+    // Barometrische Höhenformel:
+    // Luftdruck auf Meereshöhe = Barometeranzeige / (1-Temperaturgradient*Höhe/Temperatur auf Meereshöhe in Kelvin)^(0,03416/Temperaturgradient)
+    float kelvin = 273.15 + temp_event.temperature;
+    int sealevel = atoi(deviceParameter["sealevel"].as<String>().c_str());
+    float factor = (float)(pow(1-0.0065*sealevel/kelvin, 5.255));
+    
+    float absolute_pressure = 0;
+    
+    absolute_pressure = pressure_event.pressure/factor;
+    
+    al->di[0].nameI = "temperature";
+    al->di[0].valueI = String(temp_event.temperature);  
+    al->di[1].nameI = "stationpressure";
+    al->di[1].valueI = String(pressure_event.pressure);  
+    al->di[2].nameI = "normpressure";
+    al->di[2].valueI = String(absolute_pressure);  
+    al->di[3].nameI = "error";
+    al->di[3].valueI = "NO";  
+  }
+  else
+  {
+    al->di[0].nameI = "temperature";
+    al->di[0].valueI = "0.0";  
+    al->di[1].nameI = "stationpressure";
+    al->di[1].valueI = "0.0";  
+    al->di[2].nameI = "normpressure";
+    al->di[2].valueI = "0.0";  
+    al->di[3].nameI = "error";
+    al->di[3].valueI = "Sensor not working";      
+  }
   
-  al->di[0].nameI = "temperature";
-  al->di[0].valueI = String(temp_event.temperature);  
-  al->di[1].nameI = "stationpressure";
-  al->di[1].valueI = String(pressure_event.pressure);  
-  al->di[2].nameI = "normpressure";
-  al->di[2].valueI = String(absolute_pressure);  
-
+  dataAvailable = false;
+  
   return al;
 }

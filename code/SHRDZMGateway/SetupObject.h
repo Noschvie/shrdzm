@@ -1,6 +1,11 @@
 class SetupObject
 {
   public:
+  SetupObject()
+  {
+    m_simpleEspConnection = NULL;
+  }
+  
   class SetupItem
   {
     public:
@@ -23,8 +28,16 @@ class SetupObject
     };
   };
 
+  protected:
+  SimpleEspNowConnection *m_simpleEspConnection;
+
   public:
   SetupItem *items[20];
+
+  void init(SimpleEspNowConnection *simpleEspConnection)
+  {
+    m_simpleEspConnection = simpleEspConnection;
+  }
   
   void AddItem( String deviceName, String parameterName, String parameterValue )
   {
@@ -36,8 +49,13 @@ class SetupObject
         break;
       }
     }
+
+    if(m_simpleEspConnection != NULL)
+    {
+      m_simpleEspConnection->sendMessage("$PING$", deviceName);  
+    }
   };
-  
+
   void AddItem( String deviceName, String command )
   {
     for(int i = 0; i<20; i++)
@@ -48,6 +66,11 @@ class SetupObject
         break;
       }
     }
+
+    if(m_simpleEspConnection != NULL)
+    {
+      m_simpleEspConnection->sendMessage("$PING$", deviceName);  
+    }    
   };
   
   void AddInitItem( String deviceName )

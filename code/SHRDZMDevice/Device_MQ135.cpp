@@ -2,6 +2,7 @@
 
 Device_MQ135::Device_MQ135()
 {  
+  dataAvailable = false;  
 }
 
 Device_MQ135::~Device_MQ135()
@@ -76,6 +77,8 @@ SensorData* Device_MQ135::readParameter()
   al->di[1].valueI = String(gas);  
   al->di[2].nameI = "sensoroutputvoltage";
   al->di[2].valueI = String(volt,3);  
+
+  dataAvailable = false;  
 
   return al;
 }

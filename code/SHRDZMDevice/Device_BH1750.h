@@ -15,6 +15,7 @@ class Device_BH1750 : public DeviceBase
     
     bool setDeviceParameter(JsonObject obj);
     bool initialize();    
+    bool isNewDataAvailable();
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
@@ -23,6 +24,7 @@ class Device_BH1750 : public DeviceBase
     hp_BH1750 BH1750;
 
   private:
+    bool dataAvailable;
   
 
 };

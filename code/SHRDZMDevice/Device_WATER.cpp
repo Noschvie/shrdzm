@@ -2,7 +2,7 @@
 
 Device_WATER::Device_WATER()
 {  
-  
+  dataAvailable = false;
 }
 
 Device_WATER::~Device_WATER()
@@ -57,6 +57,8 @@ SensorData* Device_WATER::readParameter()
 
   al->di[0].nameI = "water";
   al->di[0].valueI = digitalRead(deviceParameter["pin"].as<uint8_t>()) == 1 ? "YES" : "NO";
+
+  dataAvailable = false;
     
   return al;
 }
