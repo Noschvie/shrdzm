@@ -675,10 +675,12 @@ void loop()
 
   if(!batterycheckDone && configuration.containsKey("gateway"))
   {
-    batterycheckDone = configuration.get("batterycheck") == "ON" ? false : true;
+    batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
     {      
       String reply = "$D$battery:"+String(analogRead(A0));
+
+      DLN("battery : "+reply);
 
       simpleEspConnection.sendMessage((char *)reply.c_str());  
       batterycheckDone = true;
@@ -726,7 +728,10 @@ void loop()
   if(processendSet && !processendReached)
   {
     if(dev != NULL)
+    {
       processendReached = dev->hasProcessEarlyEnded();
+      DLN("Process early finshed.");
+    }
   }
 
   if(!finalMeasurementDone && millis() >= prepareend)
@@ -734,6 +739,7 @@ void loop()
     getMeasurementData();
 
     finalMeasurementDone = true;
+    DV(finalMeasurementDone);
     clockmillis = millis();
   }
 
