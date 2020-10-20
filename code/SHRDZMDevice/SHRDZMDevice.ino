@@ -439,6 +439,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     dev = new Device_SDS011();
   }
+  else if(strcmp(deviceType, "IM350") == 0)
+  {
+    dev = new Device_IM350();
+  }
   else if(strcmp(deviceType, "SDS011_BMP280") == 0)
   {
     dev = new Device_SDS011_BMP280();
