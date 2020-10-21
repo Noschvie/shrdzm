@@ -61,9 +61,7 @@ SensorData* Device_IM350::readInitialSetupParameter()
 }
 
 SensorData* Device_IM350::readParameter()
-{  
-  unsigned long w = millis();
-  
+{    
   SensorData *al = new SensorData(1);
   bool foundStart = false;
   unsigned char incomingByte = 0;
@@ -71,6 +69,7 @@ SensorData* Device_IM350::readParameter()
   char hexCode[4];
 
   hexCode [3] = 0;
+  unsigned long w = millis();
 
   while(!done)
   {
@@ -80,7 +79,9 @@ SensorData* Device_IM350::readParameter()
       if (incomingByte == 0x7E) 
       {
         if(!foundStart)
+        {
           foundStart = true;
+        }
         else
           done = true;
       }
@@ -92,7 +93,7 @@ SensorData* Device_IM350::readParameter()
       }
     }
 
-    if(millis() > w+1500)
+    if(millis() > w+500)
       done = true;
   }
 
