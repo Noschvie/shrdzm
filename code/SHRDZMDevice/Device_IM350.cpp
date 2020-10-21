@@ -4,7 +4,7 @@
 Device_IM350::Device_IM350()
 {    
   done = false;
-  dataAvailable = true;  
+  dataAvailable = false;  
 }
 
 Device_IM350::~Device_IM350()
@@ -24,7 +24,7 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
 
   if(deviceParameter.containsKey("RX"))
   { 
-    swSer.begin(115200, SWSERIAL_8N1, atoi(deviceParameter["RX"]), 99, false);    
+    swSer.begin(115200, SWSERIAL_8N1, atoi(deviceParameter["RX"]), 99, true);    
   }
 }
 
@@ -83,7 +83,10 @@ SensorData* Device_IM350::readParameter()
           foundStart = true;
         else
           done = true;
+      }
 
+      if(foundStart)
+      {
         sprintf(hexCode, "%02X ", incomingByte);
         code += String(hexCode);
       }
