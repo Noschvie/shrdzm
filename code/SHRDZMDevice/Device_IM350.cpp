@@ -72,6 +72,8 @@ SensorData* Device_IM350::readParameter()
   const int waitTime = 1100;
   unsigned char incomingByte = 0;
   String code;
+  bool dataWaitDone = false;
+  bool dataError = false;
   
   // cleanup serial interface
   while(swSer.available() > 0)
@@ -83,6 +85,31 @@ SensorData* Device_IM350::readParameter()
   digitalWrite(atoi(deviceParameter["requestpin"]), HIGH);  
 
   unsigned long requestMillis = millis();
+  while(!dataWaitDone)
+  {
+    if(swSer.available() > 0)
+      dataWaitDone = true;
+    else
+    {
+      if(millis()-requestMillis >= waitTime)
+      {
+        dataWaitDone = true;
+        dataError = true;
+      }
+    }
+  }
+
+  if(dataError)
+  {
+    al->di[0].nameI = "lasterror";
+    al->di[0].valueI = "no data read";  
+
+    return al;  
+  }
+
+//  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);  
+
+  requestMillis = millis();  
   while(!done)
   {
     if (swSer.available() > 0)
@@ -91,14 +118,12 @@ SensorData* Device_IM350::readParameter()
       if(incomingByte < 16)
         code += "0";
         
-      code += String(incomingByte, HEX) + " ";      
+      code += String(incomingByte, HEX);      
     }
-    if(millis()-requestMillis >= waitTime)
+    if(millis()-requestMillis >= 500)
       done = true;
   }
 
-  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
-    
   if(code != "")
   {
     al->di[0].nameI = "encoded";
@@ -106,7 +131,7 @@ SensorData* Device_IM350::readParameter()
   }
   else
   {
-    al->di[0].nameI = "error";
+    al->di[0].nameI = "lasterror";
     al->di[0].valueI = "no data read";  
   }
 
