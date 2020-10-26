@@ -42,7 +42,6 @@ bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
 
-
 String getValue(String data, char separator, int index)
 {
   int found = 0;
@@ -801,7 +800,10 @@ void loop()
       return;
     }
     if(atoi(configuration.get("interval")) > 0)
+    {
+      // send uptime
       gotoSleep();    
+    }
   }
 }
 

@@ -120,7 +120,7 @@ SensorData* Device_IM350::readParameter()
         
       code += String(incomingByte, HEX);      
     }
-    if(millis()-requestMillis >= 500)
+    if(millis()-requestMillis >= 200)
       done = true;
   }
 
