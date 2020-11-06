@@ -1,10 +1,14 @@
 #include "Device_IM350.h"
 
+const int messageLength = 123;
+const byte firstByte = 0x7E; 
+const byte lastByte = 0x7E; 
+const int waitTime = 1100;
 
 Device_IM350::Device_IM350()
 {    
   done = false;
-  dataAvailable = false;  
+  dataAvailable = false;   
 }
 
 Device_IM350::~Device_IM350()
@@ -14,7 +18,6 @@ Device_IM350::~Device_IM350()
 
 bool Device_IM350::isNewDataAvailable()
 {
- // return true;
   return dataAvailable;
 }
 
@@ -22,10 +25,6 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
 
-  if(deviceParameter.containsKey("RX"))
-  { 
-    swSer.begin(115200, SWSERIAL_8N1, atoi(deviceParameter["RX"]), 99, true);    
-  }
   if(deviceParameter.containsKey("requestpin"))
   {
     pinMode(atoi(deviceParameter["requestpin"]), OUTPUT);
@@ -41,7 +40,6 @@ bool Device_IM350::initialize()
 {
   // create an object
   deviceParameter = doc.to<JsonObject>();
-  deviceParameter["RX"] = "4";
   deviceParameter["requestpin"] = "5";
 
   return true;
@@ -74,54 +72,39 @@ SensorData* Device_IM350::readParameter()
   String code;
   bool dataWaitDone = false;
   bool dataError = false;
+  byte message[messageLength];
+  char hexCode[3];
+
+  hexCode[2] = 0;
   
-  // cleanup serial interface
-  while(swSer.available() > 0)
+  Serial.end();
+//  U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); // Inverse RX
+  Serial.begin(115200);
+//  U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); // Inverse RX
+
+  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
+    
+  while(Serial.available() > 0)
   {
-    byte trash = swSer.read();
+    byte trash = Serial.read();
   }
 
   // enable request
-  digitalWrite(atoi(deviceParameter["requestpin"]), HIGH);  
-
+  digitalWrite(atoi(deviceParameter["requestpin"]), HIGH); 
+   
   unsigned long requestMillis = millis();
-  while(!dataWaitDone)
+  while(Serial.available() < messageLength && millis()-requestMillis <= waitTime){}
+  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
+
+  for(int i = 0; i<messageLength; i++)
   {
-    if(swSer.available() > 0)
-      dataWaitDone = true;
-    else
-    {
-      if(millis()-requestMillis >= waitTime)
-      {
-        dataWaitDone = true;
-        dataError = true;
-      }
-    }
+    message[i] = Serial.read();
   }
 
-  if(dataError)
+  for(int i = 0; i<messageLength; i++)
   {
-    al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "no data read";  
-
-    return al;  
-  }
-
-//  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);  
-
-  requestMillis = millis();  
-  while(!done)
-  {
-    if (swSer.available() > 0)
-    {
-      incomingByte = swSer.read();
-      if(incomingByte < 16)
-        code += "0";
-        
-      code += String(incomingByte, HEX);      
-    }
-    if(millis()-requestMillis >= 200)
-      done = true;
+    sprintf(hexCode, "%02X", message[i]);
+    code += String(hexCode);    
   }
 
   if(code != "")
@@ -137,54 +120,3 @@ SensorData* Device_IM350::readParameter()
 
   return al;  
 }
-/*SensorData* Device_IM350::readParameter()
-{    
-  SensorData *al = new SensorData(1);
-  bool foundStart = false;
-  unsigned char incomingByte = 0;
-  String code;
-  char hexCode[4];
-
-  hexCode [3] = 0;
-  unsigned long w = millis();
-
-  while(!done)
-  {
-    if (swSer.available() > 0) 
-    {
-      incomingByte = swSer.read();
-      if (incomingByte == 0x7E) 
-      {
-        if(!foundStart)
-        {
-          foundStart = true;
-        }
-        else
-          done = true;
-      }
-
-      if(foundStart)
-      {
-        sprintf(hexCode, "%02X ", incomingByte);
-        code += String(hexCode);
-      }
-    }
-
-    if(millis() > w+500)
-      done = true;
-  }
-
-  dataAvailable = false;
-
-  if(code != "")
-  {
-    al->di[0].nameI = "encoded";
-    al->di[0].valueI = code;  
-  }
-  else
-  {
-    al->di[0].nameI = "error";
-    al->di[0].valueI = "no data read";  
-  }
-  return al;
-}*/

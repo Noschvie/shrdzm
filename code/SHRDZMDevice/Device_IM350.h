@@ -2,9 +2,6 @@
 #define Device_IM350_H
 
 #include "DeviceBase.h"
-#include <SoftwareSerial.h>
-
-// Sensors
 
 class Device_IM350 : public DeviceBase
 {   
@@ -22,12 +19,10 @@ class Device_IM350 : public DeviceBase
     
   protected:
     bool done;
-    SoftwareSerial swSer;
 
   private:
     bool dataAvailable;
-  
-
+      
 };
 
 #endif
