@@ -350,6 +350,17 @@ void handleNotFound()
   server.send(404, "text/plain", message);
 }
 
+void reportDeviceStateInfo(String device, String deviceStateInfo)
+{
+  String s = "*000[D]$"+device+"$DEVICESTATEINFO:"+deviceStateInfo;
+  Serial.write(s.c_str(), s.length());
+  Serial.print('\n');
+
+  // send via GSM    
+  if(simEnabled)
+    mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/"+device+"/sensor", "$DEVICESTATEINFO:"+deviceStateInfo);  
+}
+
 void mqttCallback(char* topic, byte* payload, unsigned int len) 
 {
   char* p = (char*)malloc(len+1);
@@ -786,7 +797,9 @@ void OnConnected(uint8_t *ga, String ad)
     
     simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
-    setupObject.RemoveItem(si);              
+    setupObject.RemoveItem(si);
+
+    reportDeviceStateInfo(ad, "Sent setup");
   }  
   else
   {

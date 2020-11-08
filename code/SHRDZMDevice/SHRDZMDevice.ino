@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 09 August 2020
+  Modified 31 August 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -41,7 +41,6 @@ unsigned long processend = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
-
 
 String getValue(String data, char separator, int index)
 {
@@ -439,6 +438,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     dev = new Device_SDS011();
   }
+  else if(strcmp(deviceType, "IM350") == 0)
+  {
+    dev = new Device_IM350();
+  }
   else if(strcmp(deviceType, "SDS011_BMP280") == 0)
   {
     dev = new Device_SDS011_BMP280();
@@ -675,10 +678,12 @@ void loop()
 
   if(!batterycheckDone && configuration.containsKey("gateway"))
   {
-    batterycheckDone = configuration.get("batterycheck") == "ON" ? false : true;
+    batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
     {      
       String reply = "$D$battery:"+String(analogRead(A0));
+
+      DLN("battery : "+reply);
 
       simpleEspConnection.sendMessage((char *)reply.c_str());  
       batterycheckDone = true;
@@ -726,7 +731,10 @@ void loop()
   if(processendSet && !processendReached)
   {
     if(dev != NULL)
+    {
       processendReached = dev->hasProcessEarlyEnded();
+      DLN("Process early finshed.");
+    }
   }
 
   if(!finalMeasurementDone && millis() >= prepareend)
@@ -734,6 +742,7 @@ void loop()
     getMeasurementData();
 
     finalMeasurementDone = true;
+    DV(finalMeasurementDone);
     clockmillis = millis();
   }
 
@@ -791,7 +800,10 @@ void loop()
       return;
     }
     if(atoi(configuration.get("interval")) > 0)
+    {
+      // send uptime
       gotoSleep();    
+    }
   }
 }
 

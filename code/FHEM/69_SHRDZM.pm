@@ -182,7 +182,7 @@ sub Write ($$)
 {
 	my ( $hash, @arguments) = @_;
 
-	if($hash->{Protocol} =~ "serial")
+	if($hash->{Protocol} eq "serial")
 	{
 		DevIo_SimpleWrite($hash, "\$set ".join(" ", @arguments)."\n", 2);
 	}

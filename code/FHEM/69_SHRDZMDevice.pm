@@ -117,7 +117,7 @@ SHRDZMDevice_Set($@)
 		
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . AttrVal($hash->{NAME}, "upgradePath", "http\://shrdzm.pintarweb.net/upgrade.php"));		
 				
-		if(AttrVal($hash->{NAME}, "interval", 0) > 0)
+		if(ReadingsVal($hash->{NAME}, "interval", 0) > 0)
 		{
 			return "Device ".
 			$hash->{NAME}.
@@ -130,11 +130,15 @@ SHRDZMDevice_Set($@)
 	}
 	else
 	{
-		Log3($hash->{NAME}, 5, $hash->{NAME} . " !!!! ".join(" ", @args));
+		Log3($hash->{NAME}, 5, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
 		my $ret = IOWrite($hash, $hash->{DEF} . " " . $cmd . " " . join(" ", @args));
+
+		Log3($hash->{NAME}, 5, "Interval : ".ReadingsVal($hash->{NAME}, "interval", 0));
 		
-		if(AttrVal($hash->{NAME}, "interval", 0) > 0)
+		if(ReadingsVal($hash->{NAME}, "interval", 0) > 0)
 		{
+			Log3($hash->{NAME}, 0, "will send when next time up");
+
 			return $cmd.		
 			" will be changed next time when Device ".$hash->{NAME}." is up. Please be patient...";		
 		}
