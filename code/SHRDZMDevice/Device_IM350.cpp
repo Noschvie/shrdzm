@@ -30,6 +30,8 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
     pinMode(atoi(deviceParameter["requestpin"]), OUTPUT);
     digitalWrite(atoi(deviceParameter["requestpin"]), LOW);  
   }
+
+  return true;
 }
 
 void Device_IM350::prepare()
@@ -61,11 +63,11 @@ SensorData* Device_IM350::readInitialSetupParameter()
   al->di[0].nameI = "interval";
   al->di[0].valueI = "120";
 
-  return al;
+  return al; 
 }
 
 SensorData* Device_IM350::readParameter()
-{
+{  
   SensorData *al = new SensorData(1);
   const int waitTime = 1100;
   unsigned char incomingByte = 0;
@@ -77,7 +79,8 @@ SensorData* Device_IM350::readParameter()
 
   hexCode[2] = 0;
   
-  Serial.end();
+//  Serial.end();
+  Serial.flush();
 //  U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); // Inverse RX
   Serial.begin(115200);
 //  U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); // Inverse RX
@@ -117,6 +120,9 @@ SensorData* Device_IM350::readParameter()
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "no data read";  
   }
+
+  Serial.flush();
+  Serial.begin(9600);
 
   return al;  
 }

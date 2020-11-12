@@ -30,6 +30,9 @@ bool Configuration::initialize()
 
 bool Configuration::store()
 {
+  Serial.println("Strore configuration...");
+  serializeJson(g_configdoc, Serial);
+
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
   if (!configFile) 
   {
@@ -118,6 +121,8 @@ bool Configuration::containsDeviceKey(char *name)
 
 void Configuration::set(char *name, char *value)
 {
+  Serial.println("Configuration set :'"+String(name)+"'-'"+String(value)+"'");  
+  
   g_configdoc[name] = value;
 }
 
@@ -125,7 +130,6 @@ void Configuration::setDeviceParameter(char *name, char *value)
 {
   g_configdoc["device"][name] = value;
 }
-
 
 void Configuration::setDeviceParameter(JsonObject dc)
 {
