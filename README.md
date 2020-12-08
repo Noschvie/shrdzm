@@ -1,4 +1,4 @@
-# SHRDZM
+![SHRDZM](https://github.com/saghonfly/shrdzm/blob/dev/hardware/logo.png)   
 
 ## SHRDZM is intended to become an end-to-end integration platform.
 It provides wiring digrams, source code and working examples.
