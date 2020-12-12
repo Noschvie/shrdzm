@@ -49,9 +49,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="1123.9992"
-     inkscape:cy="521.62059"
+     inkscape:zoom="0.22367339"
+     inkscape:cx="262.01859"
+     inkscape:cy="213.82131"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -63,16 +63,8 @@
      inkscape:window-maximized="1"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:snap-bbox="false">
-    <sodipodi:guide
-       position="204.07718,-91.326233"
-       orientation="0,-1"
-       id="guide1144" />
-    <sodipodi:guide
-       position="195.13364,-50.269836"
-       orientation="1,0"
-       id="guide1146" />
-  </sodipodi:namedview>
+     inkscape:snap-bbox="false"
+     inkscape:snap-midpoints="true" />
   <metadata
      id="metadata108">
     <rdf:RDF>
@@ -81,7 +73,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -110,12 +102,9 @@
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 67.35192,118.77674 12.648078,12.64808 V 81.424928 L 55,56.42498 71.056457,40.368524 94.999999,64.312066 V 46.424985 L 71.056457,22.481439 37.112916,56.42498 67.35192,86.663898 Z"
        id="path1121" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke-width:0.264583"
-       id="rect1127"
-       width="259.51871"
-       height="17.887081"
-       x="107.70962"
-       y="46.424973" />
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       d="M 107.70961,46.424971 237.46897,22.48144 367.17681,46.424971 V 64.312057 L 237.46897,40.194351 107.70961,64.312057 Z"
+       id="path878" />
   </g>
 </svg>
