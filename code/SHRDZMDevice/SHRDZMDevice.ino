@@ -527,14 +527,24 @@ Serial.begin(9600); Serial.println();
     DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
     SPIFFS.format();
   }
+  else
+  {
+    DLN("SPIFFS accessed...");
+  }
 
+  DLN("configuration loading...");    
   if(!configuration.load())
   {
+    DLN("configuration.initialize...");    
     configuration.initialize();
   }
 
+  DLN("Configuration loaded...");    
+
   if(configuration.migrateToNewConfigurationStyle())
   {
+    DLN("Migration to new config style needed. Will reboot now...");    
+
     configuration.store();    
 
     delay(100);    
@@ -576,6 +586,7 @@ Serial.begin(9600); Serial.println();
   if(configuration.get("pairingpin") != NULL)
   {    
     pinMode(atoi(configuration.get("pairingpin")), INPUT_PULLUP);    
+    DLN("PairingPin = "+String(configuration.get("pairingpin")));    
   }
   else
   {
