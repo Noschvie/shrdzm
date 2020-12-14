@@ -128,7 +128,11 @@ void Configuration::set(char *name, char *value)
 
 void Configuration::setDeviceParameter(char *name, char *value)
 {
-  g_configdoc["device"][name] = value;
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["device"][name] = v;
 }
 
 void Configuration::setDeviceParameter(JsonObject dc)
