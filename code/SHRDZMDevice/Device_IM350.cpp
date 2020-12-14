@@ -42,22 +42,22 @@ bool Device_IM350::isNewDataAvailable()
 }
 
 bool Device_IM350::setDeviceParameter(JsonObject obj)
-{
-  if(deviceParameter.containsKey("requestpin"))
+{ 
+  if(obj.containsKey("requestpin"))
   {
-    pinMode(atoi(deviceParameter["requestpin"]), OUTPUT);
-    digitalWrite(atoi(deviceParameter["requestpin"]), LOW);  
+    pinMode(atoi(obj["requestpin"]), OUTPUT);
+    digitalWrite(atoi(obj["requestpin"]), LOW);   
   }
-  if(deviceParameter.containsKey("cipherkey"))
+  if(obj.containsKey("cipherkey"))
   {
-    String codeBuffer(deviceParameter["cipherkey"].as<char*>());
+    String codeBuffer(obj["cipherkey"].as<char*>());
     codeBuffer.replace( " ", "" );
     
     if(codeBuffer.length() == 32)
     {
         memcpy(m_cipherkey, codeBuffer.c_str(), 32);
 
-        deviceParameter["cipherkey"] = codeBuffer;
+        obj["cipherkey"] = codeBuffer;
     }
     else
       return false;
@@ -110,6 +110,8 @@ SensorData* Device_IM350::readInitialSetupParameter()
 SensorData* Device_IM350::readParameter()
 {  
   SensorData *al;
+
+  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
   
   if(deviceParameter["cipherkey"] != "00000000000000000000000000000000")
   {
@@ -129,11 +131,9 @@ SensorData* Device_IM350::readParameter()
   char hexCode[3];
 
   hexCode[2] = 0;
-
+  
   Serial.flush();
   Serial.begin(115200);
-
-  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
     
   while(Serial.available() > 0)
   {
