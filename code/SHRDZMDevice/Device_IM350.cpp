@@ -173,22 +173,22 @@ SensorData* Device_IM350::readParameter()
   {
     if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
     {    
-      al->di[1].nameI = "reading_p_in";
+      al->di[1].nameI = "counter_reading_p_in";
       al->di[1].valueI = String(getCounter_reading_p_in());  
 
-      al->di[2].nameI = "reading_p_out";
+      al->di[2].nameI = "counter_reading_p_out";
       al->di[2].valueI = String(getCounter_reading_p_out());  
 
-      al->di[3].nameI = "reading_q_in";
+      al->di[3].nameI = "counter_reading_q_in";
       al->di[3].valueI = String(getCounter_reading_q_in());  
     
-      al->di[4].nameI = "reading_q_out";
+      al->di[4].nameI = "counter_reading_q_out";
       al->di[4].valueI = String(getCounter_reading_q_out());  
 
-      al->di[5].nameI = "power_usage_in";
+      al->di[5].nameI = "counter_power_usage_in";
       al->di[5].valueI = String(getCurrent_power_usage_in());  
 
-      al->di[6].nameI = "power_usage_out";
+      al->di[6].nameI = "counter_power_usage_out";
       al->di[6].valueI = String(getCurrent_power_usage_out());  
     }
   }
