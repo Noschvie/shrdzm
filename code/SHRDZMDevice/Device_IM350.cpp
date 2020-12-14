@@ -169,8 +169,6 @@ SensorData* Device_IM350::readParameter()
     al->di[0].valueI = "no data read";  
   }
 
-  code = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200000BB837B198C6DDF916F2DEC213385819906E3A4F9C068005A9CB2E3943F36A4C5BC40A4B153C5C5DAB74C61D4828471BCE699290073032C072CD341BCFEB0E37C213758BF055637BAD598C309E56A48AEFA34B102644C2771D214D26967D97E";
-
   if(deviceParameter["cipherkey"] != "00000000000000000000000000000000")
   {
     if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
@@ -1365,18 +1363,6 @@ void Device_IM350::Data::set(byte *value, int count)
   m_pOutput = (byte *)malloc(m_dataSize);
   
   memcpy(m_pData, value, count);
-  
-    // input
-/*    Serial.println("encrypted-set = ");
-    char buffer[3];
-    buffer[2] = 0;
-    for(int i = 0; i<m_dataSize; i++) 
-    {
-      sprintf (buffer, "0x%02X,%d", m_pData[i],m_pData[i]);
-      Serial.print(buffer);
-      Serial.print(" ");
-    }
-    Serial.println(); */
 }
 
 void Device_IM350::Data::get(byte *target, int count)
