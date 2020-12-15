@@ -15,10 +15,15 @@ class Configuration
     bool initialize();
     bool containsKey(char *name);
     bool containsDeviceKey(char *name);
+    bool containsWlanKey(char *name);
     JsonObject getDeviceParameter();
+    JsonObject getWlanParameter();
+    const char *getWlanParameter(const char *parameterName);
     void set(char *name, char *value);
-    void setDeviceParameter(char *name, char *value);
-    void setDeviceParameter(JsonObject dc);
+    void setDeviceParameter(const char *name, const char *value);
+    void setWlanParameter(const char *name, const char *value);
+    void setDeviceParameter(JsonObject dc);    
+    void setWlanParameter(JsonObject dc);
     bool migrateToNewConfigurationStyle();
     const char *get(char *name);
     String readLastVersionNumber();

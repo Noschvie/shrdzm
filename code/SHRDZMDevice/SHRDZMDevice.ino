@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 31 August 2020
+  Modified 15 December 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -31,6 +31,7 @@ bool pairingOngoing = false;
 bool finishSent = false;
 bool processendSet = false;
 bool processendReached = false;
+bool configurationMode = false;
 String SSID;
 String password;
 String host;
@@ -41,6 +42,270 @@ unsigned long processend = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
+String deviceName;
+Ticker configurationBlinker;
+ESP8266WebServer *server;
+
+/// Configuration Webserver
+char* getWebsite(char* content)
+{  
+  int len = strlen(content);
+  
+  char *temp = (char *) malloc (1400+len);
+
+#ifdef DEBUG
+  Serial.println("Handle Root");
+  Serial.println("Content len = "+String(len));
+#endif
+
+  snprintf(temp, 1400+len,  
+"<!DOCTYPE html>\
+<html>\
+<head>\
+<style>\
+body {\
+  font-family: Arial, Helvetica, sans-serif;\
+}\
+\
+hr\
+{ \
+  display: block;\
+  margin-top: 0.5em;\
+  margin-bottom: 0.5em;\
+  margin-left: auto;\
+  margin-right: auto;\
+  border-style: inset;\
+  border-width: 1px;\
+}\
+ul \
+{\
+list-style-type: none;\
+  margin: 0;\
+  padding: 0;\
+  width: 150px;\
+  background-color: #f1f1f1;\
+  position: fixed;\
+  height: 100%;\
+  overflow: auto;\
+}\
+\
+li a {\
+  display: block;\
+  color: #000;\
+  padding: 8px 16px;\
+  text-decoration: none;\
+}\
+\
+li a.active {\
+  background-color: #4CAF50;\
+  color: white;\
+}\
+\
+li a:hover:not(.active) {\
+  background-color: #555;\
+  color: white;\
+}\
+.main {\
+  margin-left: 200px;\
+  margin-bottom: 30px;\
+}\
+</style>\
+<title>SHRDZMGateway - %s</title>\
+</head>\
+<body>\
+\
+<ul>\
+  <li>\
+    <a class='active' href='#home'>SHRDZMDevice<br/>\
+      <font size='2'>%s</font>\
+    </a></li>\
+  <li><a href='./general'>General</a></li>\
+  <li><a href='./settings'>Settings</a></li>\
+  <li><a href='./about'>About</a></li>\
+  <li><a href='./reboot'>Reboot</a></li>\
+  <br/>\
+  <li><a href='./deleteconfig'>Delete Config</a></li>\  
+  <br/><br/><br/>\
+  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
+  <br/><br/>\
+</ul>\
+\
+<div class='main'>\
+  %s\
+</div>\
+</body>\
+</html>\
+  ", deviceName.c_str(), deviceName.c_str(), content);
+
+  return temp;
+}
+
+void handleRoot() 
+{
+  char * temp = getWebsite("<h1>General</h1>General Information");
+
+  server->send(200, "text/html", temp);
+
+  free(temp); 
+}
+
+void handleNotFound() 
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server->uri();
+  message += "\nMethod: ";
+  message += (server->method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server->args();
+  message += "\n";
+
+  for (uint8_t i = 0; i < server->args(); i++) {
+    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
+  }
+
+  server->send(404, "text/plain", message);
+}
+
+void handleReboot() 
+{
+  char temp[300];
+  
+  snprintf(temp, 300,
+  "<!DOCTYPE html>\
+  <html>\
+  <head>\
+  <meta http-equiv='refresh' content='20; url=/'>\
+  </head>\
+  <body>\
+  <h1>Please wait. Will reboot in 20 seconds...</h1>\
+  </body>\
+  </html>\
+  ");
+
+  server->send(200, "text/html", temp);
+
+  delay(2000);
+  
+  ESP.reset();  
+}
+
+void handleSettings()
+{
+  bool writeConfiguration = false;
+
+  char content[2600];
+
+  if(server->args() != 0)
+  {
+    if( server->arg("enabled") == "1")
+      configuration.setWlanParameter("enabled", "true");
+    else
+      configuration.setWlanParameter("enabled", "false");
+
+    if(server->hasArg("ssid"))
+      configuration.setWlanParameter("ssid", server->arg("ssid").c_str());
+    else
+      configuration.setWlanParameter("ssid", "");
+        
+    if(server->hasArg("password"))
+      configuration.setWlanParameter("password", server->arg("password").c_str());
+    else
+      configuration.setWlanParameter("password", "");    
+    if(server->hasArg("MQTTbroker"))
+      configuration.setWlanParameter("MQTTbroker", server->arg("MQTTbroker").c_str());
+    if(server->hasArg("MQTTport"))
+      configuration.setWlanParameter("MQTTport", server->arg("MQTTport").c_str());
+    if(server->hasArg("MQTTuser"))
+      configuration.setWlanParameter("MQTTuser", server->arg("MQTTuser").c_str());
+    if(server->hasArg("MQTTpassword"))
+      configuration.setWlanParameter("MQTTpassword", server->arg("MQTTpassword").c_str());
+
+    writeConfiguration = true;    
+  }
+  
+  snprintf(content, 2600,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings if Device acts as it's own gateway.</p>\
+      </p>\
+      <br/><br/>\
+      <form method='post'>\
+      <input type='checkbox' id='enabled' name='enabled' value='1' %s/>\
+      <input type='hidden' name='enabled' value='0' />\
+      <label for='enabled'>Device should act as it's own gateway</label><br/>\
+      <br/>\
+      <hr/>\
+      <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <label for='ssid'>SSID</label><br/>\
+      <br/>\
+      <input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
+      <label for='password'>Password</label><br/>\
+      <input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      <br/>\
+      <input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Port</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT Password</label><br/>\
+      <br/><br /> <input type='submit' value='Save Configuration!' />\
+      <script>\
+      function showWLANPassword() {\
+        var x = document.getElementById('password');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\ 
+      </form>\
+      "
+      ,
+      configuration.getWlanParameter("enabled") == "true" ? "checked" : "",
+      configuration.getWlanParameter("ssid"),
+      configuration.getWlanParameter("password"),
+      configuration.getWlanParameter("MQTTbroker"),
+      configuration.getWlanParameter("MQTTport"),
+      configuration.getWlanParameter("MQTTuser"),
+      configuration.getWlanParameter("MQTTpassword") 
+  );  
+
+  if(writeConfiguration)
+  {
+    configuration.store();
+  }
+
+  char * temp = getWebsite(content);
+
+  server->send(200, "text/html", temp);
+
+  free(temp); 
+}
+
+///////////////////////////
+
+String macToStr(const uint8_t* mac)
+{
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
+}
+
+void changeConfigurationBlinker()
+{
+#ifdef LEDPIN
+  digitalWrite(LEDPIN, !(digitalRead(LEDPIN)));
+#endif
+}
 
 String getValue(String data, char separator, int index)
 {
@@ -154,8 +419,6 @@ bool updateFirmware(String message)
   host = host.substring(0,host.indexOf('/'));
 
   DLN("before simpleEspConnection.end");
-//  simpleEspConnection.end();
-//  delay(100);
   DLN("after simpleEspConnection.end");
   WiFi.disconnect(true);
   
@@ -198,7 +461,6 @@ void setConfig(String cmd)
     {
       newDeviceType = pvalue;
       setNewDeviceType = true;
-//      initDeviceType(pvalue.c_str(), true);
     }
     else
     {
@@ -244,7 +506,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
   else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
   {
-//    initDeviceType(String((char *)message).substring(5).c_str(), true);
     newDeviceType = String((char *)message).substring(5);
     setNewDeviceType = true;
     
@@ -350,7 +611,6 @@ void upgradeFirmware()
   
   if ((WiFi.status() == WL_CONNECTED)) 
   {     
-  // shrdzm.pintarweb.net fingerprint : 9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC 
     ESPhttpUpdate.onStart(update_started);
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
@@ -359,14 +619,9 @@ void upgradeFirmware()
     String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
     DLN("WLAN connected!");
   
-    // char* fingerprint = "9A 10 D8 D2 DF 8B C1 7C 36 B7 60 A2 F6 44 13 12 44 8B 91 FC";
-  
     WiFiClient client; 
     Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
     t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
-//    t_httpUpdate_return ret = ESPhttpUpdate.update(client, host, 80, url, versionStr);    
-
-  //      t_httpUpdate_return ret = ESPhttpUpdate.update(host, 443, url, versionStr, "9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC");    
     
     switch (ret) 
     {
@@ -596,7 +851,7 @@ Serial.begin(9600); Serial.println();
 #endif
     configuration.set("pairingpin", (char *)(String(s).c_str()));
     configuration.store();    
-    
+
     delay(100);    
     ESP.restart();      
   }
@@ -678,11 +933,54 @@ void getMeasurementData()
 
 void loop() 
 {
+  if(configurationMode)
+  {
+    server->handleClient();
+
+    return;  
+  }
+  
   if(!firmwareUpdate && configuration.containsKey("gateway"))
     sendBufferFilled = simpleEspConnection.loop();
 
   if(pairingOngoing)
+  {
+    if(millis() > 2000)
+    {
+      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+      {
+        DLN("Entering configuration mode...");
+        simpleEspConnection.endPairing();
+
+        pairingOngoing = false;
+        configurationMode = true;
+        simpleEspConnection.end();
+
+        uint8_t pmac[6];
+        WiFi.macAddress(pmac);
+        deviceName = macToStr(pmac);
+      
+        deviceName.replace(":", "");
+        deviceName.toUpperCase();
+
+        String APName = "SHRDZM-"+deviceName;
+        WiFi.hostname(APName.c_str());        
+        WiFi.softAP(APName);     
+        
+        server = new ESP8266WebServer(80);
+
+        server->on("/", handleRoot);
+        server->on("/reboot", handleReboot);
+        server->on("/settings", handleSettings);
+        server->onNotFound(handleNotFound);
+        server->begin();
+        
+
+        configurationBlinker.attach(0.2, changeConfigurationBlinker);
+      }
+    }
     return;
+  }
 
   if(firmwareUpdate)
     upgradeFirmware();

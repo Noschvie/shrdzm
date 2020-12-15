@@ -33,7 +33,10 @@ bool Configuration::store()
   Serial.println("Strore configuration...");
   serializeJson(g_configdoc, Serial);
 
+  Serial.println();
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+  Serial.println("file opened...");
+  
   if (!configFile) 
   {
     Serial.println("failed to open config file for writing");
@@ -48,6 +51,8 @@ bool Configuration::store()
 
 bool Configuration::migrateToNewConfigurationStyle()
 {
+  bool update = false;
+  
   if(g_configdoc.containsKey("configuration"))
   {
     if(g_configdoc["configuration"].containsKey("interval"))
@@ -71,10 +76,46 @@ bool Configuration::migrateToNewConfigurationStyle()
 
     g_configdoc.remove("configuration");
 
-    return true;
+    update = true;
   }
 
-  return false;
+  if(!containsWlanKey("enabled"))
+  {
+    setWlanParameter("enabled", "false");
+    update = true;
+  }
+  if(!containsWlanKey("ssid"))
+  {
+    setWlanParameter("ssid", "");
+    update = true;
+  }
+  if(!containsWlanKey("password"))
+  {
+    setWlanParameter("password", "");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTbroker"))
+  {
+    setWlanParameter("MQTTbroker", "test.mosquitto.org");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTport"))
+  {
+    setWlanParameter("MQTTport", "1883");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTuser"))
+  {
+    setWlanParameter("MQTTuser", "");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTpassword"))
+  {
+    setWlanParameter("MQTTpassword", "");
+    update = true;
+  }
+
+  return update;
 }
 
 bool Configuration::load()
@@ -119,6 +160,11 @@ bool Configuration::containsDeviceKey(char *name)
   return g_configdoc["device"].containsKey(name);
 }
 
+bool Configuration::containsWlanKey(char *name)
+{
+  return g_configdoc["wlan"].containsKey(name);
+}
+
 void Configuration::set(char *name, char *value)
 {
   Serial.println("Configuration set :'"+String(name)+"'-'"+String(value)+"'");  
@@ -126,7 +172,7 @@ void Configuration::set(char *name, char *value)
   g_configdoc[name] = value;
 }
 
-void Configuration::setDeviceParameter(char *name, char *value)
+void Configuration::setDeviceParameter(const char *name, const char *value)
 {
   String v(value);
 
@@ -135,9 +181,23 @@ void Configuration::setDeviceParameter(char *name, char *value)
   g_configdoc["device"][name] = v;
 }
 
+void Configuration::setWlanParameter(const char *name, const char *value)
+{
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["wlan"][name] = v;
+}
+
 void Configuration::setDeviceParameter(JsonObject dc)
 {
   g_configdoc["device"] = dc;
+}
+ 
+void Configuration::setWlanParameter(JsonObject dc)
+{
+  g_configdoc["wlan"] = dc;
 }
  
 const char* Configuration::get(char *name)
@@ -151,6 +211,16 @@ const char* Configuration::get(char *name)
 JsonObject Configuration::getDeviceParameter()
 {
   return g_configdoc["device"];
+}
+
+JsonObject Configuration::getWlanParameter()
+{
+  return g_configdoc["wlan"];
+}
+
+const char* Configuration::getWlanParameter(const char *parameterName)
+{
+  return g_configdoc["wlan"][parameterName];
 }
 
 String Configuration::readLastVersionNumber()
