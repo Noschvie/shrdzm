@@ -43,7 +43,9 @@ bool Configuration::store()
     return false;
   }
 
+  Serial.println("serializing...");
   serializeJson(g_configdoc, configFile);
+  Serial.println("serialized...");
   configFile.close();
     
   return true;
