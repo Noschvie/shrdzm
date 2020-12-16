@@ -246,6 +246,46 @@ String Configuration::readLastVersionNumber()
   return lastVersionNumber;
 }
 
+String Configuration::readLastRebootInfo()
+{
+  String lastRebootInfo = "";
+  
+  if (!(SPIFFS.exists ("/reboot.txt") ))
+  {
+    return "";
+  }
+
+  File file = SPIFFS.open("/reboot.txt", "r");
+
+  for(int i=0;i<file.size();i++) //Read upto complete file size
+  {
+    lastRebootInfo += (char)file.read();
+  }
+
+  file.close();  
+
+  return lastRebootInfo;
+}
+
+void Configuration::storeLastRebootInfo(const char *rebootinformation)
+{
+  File file = SPIFFS.open("/reboot.txt", "w");
+  if (!file) 
+  {
+      Serial.println("Error opening reboot info file for writing");
+      return;
+  }  
+
+  int bytesWritten = file.write(rebootinformation, strlen(rebootinformation));
+   
+  if (bytesWritten == 0) 
+  {
+      Serial.println("Reboot info file write failed");
+  }
+
+  file.close();
+}
+
 void Configuration::storeVersionNumber()
 {
   File file = SPIFFS.open("/version.txt", "w");

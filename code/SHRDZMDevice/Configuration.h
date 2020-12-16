@@ -27,7 +27,9 @@ class Configuration
     bool migrateToNewConfigurationStyle();
     const char *get(char *name);
     String readLastVersionNumber();
+    String readLastRebootInfo();
     void storeVersionNumber();
+    void storeLastRebootInfo(const char *rebootinformation);
     void sendSetup(SimpleEspNowConnection *simpleEspConnection);
   protected:
 

@@ -44,11 +44,41 @@ bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
 String deviceName;
+String lastRebootInfo = "";
+bool apConnectingOngoing = false;
+unsigned long apConnectionStartTime = 0;
 bool writeConfiguration = false;
 Ticker configurationBlinker;
-ESP8266WebServer *server;
+ESP8266WebServer *server = NULL;
 
 /// Configuration Webserver
+void startConfigurationAP()
+{
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+  
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+  
+  String APName = "SHRDZM-"+deviceName;
+  WiFi.hostname(APName.c_str());        
+  WiFi.softAP(APName);     
+
+  DLN("Start configuration AP...");
+  
+  server = new ESP8266WebServer(80);
+  
+  server->on("/", handleRoot);
+  server->on("/reboot", handleReboot);
+  server->on("/general", handleRoot);
+  server->on("/settings", handleSettings);
+  server->onNotFound(handleNotFound);
+  server->begin();
+  
+  configurationBlinker.attach(0.2, changeConfigurationBlinker);
+}
+
 char* getWebsite(char* content)
 {  
   int len = strlen(content);
@@ -280,6 +310,7 @@ void handleSettings()
 
   char * temp = getWebsite(content);
 
+  Serial.println("after getWebsite");
   server->send(200, "text/html", temp);
 
   free(temp); 
@@ -306,11 +337,8 @@ void startGatewayWebserver()
   WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
   DLN("after Wifi.begin");
 
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }  
+  apConnectingOngoing = true;
+  apConnectionStartTime = millis();
 }
 
 
@@ -812,6 +840,9 @@ Serial.begin(9600); Serial.println();
     DLN("SPIFFS accessed...");
   }
 
+  lastRebootInfo = configuration.readLastRebootInfo();
+  DLN("Last Reboot Info = "+lastRebootInfo);    
+  
   DLN("configuration loading...");    
   if(!configuration.load())
   {
@@ -975,22 +1006,59 @@ void getMeasurementData()
 
 void loop() 
 {
+  if(writeConfiguration)
+  {
+    writeConfiguration = false;
+    configuration.store();
+  }
+  
   if(configurationMode)
   {
     server->handleClient();
-
-    if(writeConfiguration)
-    {
-      writeConfiguration = false;
-      configuration.store();
-    }
 
     return;  
   }
 
   if(gatewayMode) // start web server
   {
+    if(server != NULL && !apConnectingOngoing)    
+      server->handleClient();
+    
+    if(apConnectingOngoing)
+    {
+      if (WiFi.status() == WL_CONNECTED) 
+      {
+        apConnectingOngoing = false;
+        Serial.println("Connected to AP. Starting Webserver...");
 
+        if(server == NULL)
+        {
+          server = new ESP8266WebServer(80);
+        
+          server->on("/", handleRoot);
+          server->on("/reboot", handleReboot);
+          server->on("/general", handleRoot);
+          server->on("/settings", handleSettings);
+          server->onNotFound(handleNotFound);
+          server->begin();
+        }
+      } 
+      else
+      {
+        if(millis() > apConnectionStartTime + 10000)
+        {
+          Serial.println("Connection timeout. Will start a local AP to reconfigure.");
+//          configuration.setWlanParameter("enabled", "false");
+//          configuration.store();
+
+          configuration.storeLastRebootInfo("connectiontimeout");
+
+          delay(500);
+          ESP.restart();
+        }
+      }
+    }
+    
     return;
   }
   
@@ -1010,28 +1078,7 @@ void loop()
         configurationMode = true;
         simpleEspConnection.end();
 
-        uint8_t pmac[6];
-        WiFi.macAddress(pmac);
-        deviceName = macToStr(pmac);
-      
-        deviceName.replace(":", "");
-        deviceName.toUpperCase();
-
-        String APName = "SHRDZM-"+deviceName;
-        WiFi.hostname(APName.c_str());        
-        WiFi.softAP(APName);     
-        
-        server = new ESP8266WebServer(80);
-
-        server->on("/", handleRoot);
-        server->on("/reboot", handleReboot);
-        server->on("/general", handleRoot);
-        server->on("/settings", handleSettings);
-        server->onNotFound(handleNotFound);
-        server->begin();
-        
-
-        configurationBlinker.attach(0.2, changeConfigurationBlinker);
+        startConfigurationAP();
       }
     }
     return;
