@@ -32,6 +32,7 @@ bool finishSent = false;
 bool processendSet = false;
 bool processendReached = false;
 bool configurationMode = false;
+bool gatewayMode = false;
 String SSID;
 String password;
 String host;
@@ -43,6 +44,7 @@ bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 String newDeviceType = "";
 String deviceName;
+bool writeConfiguration = false;
 Ticker configurationBlinker;
 ESP8266WebServer *server;
 
@@ -192,13 +194,11 @@ void handleReboot()
 
 void handleSettings()
 {
-  bool writeConfiguration = false;
-
   char content[2600];
 
   if(server->args() != 0)
   {
-    if( server->arg("enabled") == "1")
+    if( server->arg("wlanenabled") == "1")
       configuration.setWlanParameter("enabled", "true");
     else
       configuration.setWlanParameter("enabled", "false");
@@ -230,9 +230,9 @@ void handleSettings()
       </p>\
       <br/><br/>\
       <form method='post'>\
-      <input type='checkbox' id='enabled' name='enabled' value='1' %s/>\
-      <input type='hidden' name='enabled' value='0' />\
-      <label for='enabled'>Device should act as it's own gateway</label><br/>\
+      <input type='checkbox' id='wlanenabled' name='wlanenabled' value='1' %s/>\
+      <input type='hidden' name='wlanenabled' value='0' />\
+      <label for='wlanenabled'>Device should act as it's own gateway</label><br/>\
       <br/>\
       <hr/>\
       <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
@@ -267,7 +267,7 @@ void handleSettings()
       </form>\
       "
       ,
-      configuration.getWlanParameter("enabled") == "true" ? "checked" : "",
+      String(configuration.getWlanParameter("enabled")) == "true" ? "checked" : "",
       configuration.getWlanParameter("ssid"),
       configuration.getWlanParameter("password"),
       configuration.getWlanParameter("MQTTbroker"),
@@ -276,10 +276,7 @@ void handleSettings()
       configuration.getWlanParameter("MQTTpassword") 
   );  
 
-  if(writeConfiguration)
-  {
-    configuration.store();
-  }
+  Serial.println("configuration.getWlanParameter(\"enabled\") = "+String(configuration.getWlanParameter("enabled")));
 
   char * temp = getWebsite(content);
 
@@ -290,6 +287,34 @@ void handleSettings()
 
 ///////////////////////////
 
+
+/// Gateway Webserver
+void startGatewayWebserver()
+{
+  WiFi.mode(WIFI_STA);
+  DLN("after WIFI_STA ");
+
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+
+  String APName = "SHRDZMDevice-"+deviceName;
+  WiFi.hostname(APName.c_str());
+  WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
+  DLN("after Wifi.begin");
+
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }  
+}
+
+
+///////////////////////////
 String macToStr(const uint8_t* mac)
 {
   char mac_addr[13];
@@ -856,27 +881,39 @@ Serial.begin(9600); Serial.println();
     ESP.restart();      
   }
 
-  simpleEspConnection.begin();
-
-  DV(simpleEspConnection.myAddress);
-  
-  simpleEspConnection.onPairingFinished(&OnPairingFinished);  
-  simpleEspConnection.setPairingBlinkPort(LEDPIN);  
-  simpleEspConnection.onSendError(&OnSendError);    
-  simpleEspConnection.onSendDone(&OnSendDone);
-  if(configuration.containsKey("gateway"))
+  /// check whether to start in gateway mode
+  if( String(configuration.getWlanParameter("enabled")) == "true" )
   {
-    simpleEspConnection.setServerMac(configuration.get("gateway"));  
+    gatewayMode = true;
   }
 
-  simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
-  simpleEspConnection.onMessage(&OnMessage);  
-
-  if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+  // check if pairing button pressed
+  pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
+  
+  if(!gatewayMode || pairingOngoing)
+  {
+    simpleEspConnection.begin();
+  
+    DV(simpleEspConnection.myAddress);
+    
+    simpleEspConnection.onPairingFinished(&OnPairingFinished);  
+    simpleEspConnection.setPairingBlinkPort(LEDPIN);  
+    simpleEspConnection.onSendError(&OnSendError);    
+    simpleEspConnection.onSendDone(&OnSendDone);
+    if(configuration.containsKey("gateway"))
+    {
+      simpleEspConnection.setServerMac(configuration.get("gateway"));  
+    }
+  
+    simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
+    simpleEspConnection.onMessage(&OnMessage);  
+  }
+  
+  if(pairingOngoing)
   {
     avoidSleeping = true;
     DLN("Start pairing");    
-    pairingOngoing = true;
+//    pairingOngoing = true;
     simpleEspConnection.startPairing(300);
   }
   else
@@ -897,6 +934,11 @@ Serial.begin(9600); Serial.println();
       sendSetup();
       configuration.storeVersionNumber();
     }      
+  }
+
+  if(gatewayMode)
+  {
+    startGatewayWebserver();
   }
 
   clockmillis = millis();  
@@ -937,7 +979,19 @@ void loop()
   {
     server->handleClient();
 
+    if(writeConfiguration)
+    {
+      writeConfiguration = false;
+      configuration.store();
+    }
+
     return;  
+  }
+
+  if(gatewayMode) // start web server
+  {
+
+    return;
   }
   
   if(!firmwareUpdate && configuration.containsKey("gateway"))
@@ -971,6 +1025,7 @@ void loop()
 
         server->on("/", handleRoot);
         server->on("/reboot", handleReboot);
+        server->on("/general", handleRoot);
         server->on("/settings", handleSettings);
         server->onNotFound(handleNotFound);
         server->begin();
