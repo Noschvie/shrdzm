@@ -50,10 +50,14 @@ unsigned long apConnectionStartTime = 0;
 bool writeConfiguration = false;
 Ticker configurationBlinker;
 ESP8266WebServer server;
+WiFiClient espClient;
+PubSubClient mqttclient(espClient);
 
 /// Configuration Webserver
 void startConfigurationAP()
 {
+  configurationMode = true;
+  
   uint8_t pmac[6];
   WiFi.macAddress(pmac);
   deviceName = macToStr(pmac);
@@ -66,8 +70,6 @@ void startConfigurationAP()
   WiFi.softAP(APName);     
 
   DLN("Start configuration AP...");
-  
-//  server = new ESP8266WebServer(80);
   
   server.on("/", handleRoot);
   server.on("/reboot", handleReboot);
@@ -320,6 +322,45 @@ void handleSettings()
 
 
 /// Gateway Webserver
+void mqttreconnect() 
+{
+  // Loop until we're reconnected
+  while (!mqttclient.connected()) 
+  {
+    Serial.print("Attempting MQTT connection...");
+    String clientId = "SHRDZMDevice-"+deviceName;
+    // Attempt to connect
+    if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
+    {
+      Serial.println("connected");
+      // Once connected, publish an announcement...
+      mqttclient.publish("outTopic", "hello world");
+      // ... and resubscribe
+      mqttclient.subscribe("inTopic");
+    } 
+    else 
+    {
+      Serial.print("failed, rc=");
+      Serial.print(mqttclient.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void mqttcallback(char* topic, byte* payload, unsigned int length) 
+{
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+}
+
 void startGatewayWebserver()
 {
   WiFi.mode(WIFI_STA);
@@ -339,6 +380,16 @@ void startGatewayWebserver()
 
   apConnectingOngoing = true;
   apConnectionStartTime = millis();
+
+/*  mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
+                       atoi(configuration.getWlanParameter("MQTTport")),
+                       configuration.getWlanParameter("MQTTuser"),
+                       configuration.getWlanParameter("MQTTpassword")); */
+                       
+  mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
+                       atoi(configuration.getWlanParameter("MQTTport")));
+                       
+  mqttclient.setCallback(mqttcallback);
 }
 
 
@@ -839,9 +890,6 @@ Serial.begin(9600); Serial.println();
   {
     DLN("SPIFFS accessed...");
   }
-
-  lastRebootInfo = configuration.readLastRebootInfo();
-  DLN("Last Reboot Info = "+lastRebootInfo);    
   
   DLN("configuration loading...");    
   if(!configuration.load())
@@ -861,7 +909,7 @@ Serial.begin(9600); Serial.println();
     delay(100);    
     ESP.restart();      
   }
-  
+
   if(!configuration.containsKey("preparetime"))
   {
     configuration.set("preparetime", "0");
@@ -944,7 +992,6 @@ Serial.begin(9600); Serial.println();
   {
     avoidSleeping = true;
     DLN("Start pairing");    
-//    pairingOngoing = true;
     simpleEspConnection.startPairing(300);
   }
   else
@@ -967,12 +1014,22 @@ Serial.begin(9600); Serial.println();
     }      
   }
 
+  clockmillis = millis();  
+
+  lastRebootInfo = configuration.readLastRebootInfo();
+  DLN("Last Reboot Info = "+lastRebootInfo);    
+
+  if(lastRebootInfo == "connectiontimeout")
+  {
+    startConfigurationAP();
+    return;
+  }
+
   if(gatewayMode)
   {
     startGatewayWebserver();
   }
 
-  clockmillis = millis();  
 }
 
 void getMeasurementData()
@@ -1030,26 +1087,19 @@ void loop()
       {
         apConnectingOngoing = false;
         Serial.println("Connected to AP. Starting Webserver...");
-
-//        if(server == NULL)
-        {
-  //        server = new ESP8266WebServer(80);
         
-          server.on("/", handleRoot);
-          server.on("/reboot", handleReboot);
-          server.on("/general", handleRoot);
-          server.on("/settings", handleSettings);
-          server.onNotFound(handleNotFound);
-          server.begin();
-        }
+        server.on("/", handleRoot);
+        server.on("/reboot", handleReboot);
+        server.on("/general", handleRoot);
+        server.on("/settings", handleSettings);
+        server.onNotFound(handleNotFound);
+        server.begin();        
       } 
       else
       {
         if(millis() > apConnectionStartTime + 10000)
         {
           Serial.println("Connection timeout. Will start a local AP to reconfigure.");
-//          configuration.setWlanParameter("enabled", "false");
-//          configuration.store();
 
           configuration.storeLastRebootInfo("connectiontimeout");
 
@@ -1057,6 +1107,15 @@ void loop()
           ESP.restart();
         }
       }
+    }
+
+    if(WiFi.status() == WL_CONNECTED)
+    {
+      if (!mqttclient.connected()) 
+      {
+        mqttreconnect();
+      }
+      mqttclient.loop();
     }
     
     return;
