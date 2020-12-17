@@ -49,7 +49,7 @@ bool apConnectingOngoing = false;
 unsigned long apConnectionStartTime = 0;
 bool writeConfiguration = false;
 Ticker configurationBlinker;
-ESP8266WebServer *server = NULL;
+ESP8266WebServer server;
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -67,14 +67,14 @@ void startConfigurationAP()
 
   DLN("Start configuration AP...");
   
-  server = new ESP8266WebServer(80);
+//  server = new ESP8266WebServer(80);
   
-  server->on("/", handleRoot);
-  server->on("/reboot", handleReboot);
-  server->on("/general", handleRoot);
-  server->on("/settings", handleSettings);
-  server->onNotFound(handleNotFound);
-  server->begin();
+  server.on("/", handleRoot);
+  server.on("/reboot", handleReboot);
+  server.on("/general", handleRoot);
+  server.on("/settings", handleSettings);
+  server.onNotFound(handleNotFound);
+  server.begin();
   
   configurationBlinker.attach(0.2, changeConfigurationBlinker);
 }
@@ -176,7 +176,7 @@ void handleRoot()
 {
   char * temp = getWebsite("<h1>General</h1>General Information");
 
-  server->send(200, "text/html", temp);
+  server.send(200, "text/html", temp);
 
   free(temp); 
 }
@@ -185,18 +185,18 @@ void handleNotFound()
 {
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += server->uri();
+  message += server.uri();
   message += "\nMethod: ";
-  message += (server->method() == HTTP_GET) ? "GET" : "POST";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
   message += "\nArguments: ";
-  message += server->args();
+  message += server.args();
   message += "\n";
 
-  for (uint8_t i = 0; i < server->args(); i++) {
-    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
 
-  server->send(404, "text/plain", message);
+  server.send(404, "text/plain", message);
 }
 
 void handleReboot() 
@@ -215,7 +215,7 @@ void handleReboot()
   </html>\
   ");
 
-  server->send(200, "text/html", temp);
+  server.send(200, "text/html", temp);
 
   delay(2000);
   
@@ -226,30 +226,30 @@ void handleSettings()
 {
   char content[2600];
 
-  if(server->args() != 0)
+  if(server.args() != 0)
   {
-    if( server->arg("wlanenabled") == "1")
+    if( server.arg("wlanenabled") == "1")
       configuration.setWlanParameter("enabled", "true");
     else
       configuration.setWlanParameter("enabled", "false");
 
-    if(server->hasArg("ssid"))
-      configuration.setWlanParameter("ssid", server->arg("ssid").c_str());
+    if(server.hasArg("ssid"))
+      configuration.setWlanParameter("ssid", server.arg("ssid").c_str());
     else
       configuration.setWlanParameter("ssid", "");
         
-    if(server->hasArg("password"))
-      configuration.setWlanParameter("password", server->arg("password").c_str());
+    if(server.hasArg("password"))
+      configuration.setWlanParameter("password", server.arg("password").c_str());
     else
       configuration.setWlanParameter("password", "");    
-    if(server->hasArg("MQTTbroker"))
-      configuration.setWlanParameter("MQTTbroker", server->arg("MQTTbroker").c_str());
-    if(server->hasArg("MQTTport"))
-      configuration.setWlanParameter("MQTTport", server->arg("MQTTport").c_str());
-    if(server->hasArg("MQTTuser"))
-      configuration.setWlanParameter("MQTTuser", server->arg("MQTTuser").c_str());
-    if(server->hasArg("MQTTpassword"))
-      configuration.setWlanParameter("MQTTpassword", server->arg("MQTTpassword").c_str());
+    if(server.hasArg("MQTTbroker"))
+      configuration.setWlanParameter("MQTTbroker", server.arg("MQTTbroker").c_str());
+    if(server.hasArg("MQTTport"))
+      configuration.setWlanParameter("MQTTport", server.arg("MQTTport").c_str());
+    if(server.hasArg("MQTTuser"))
+      configuration.setWlanParameter("MQTTuser", server.arg("MQTTuser").c_str());
+    if(server.hasArg("MQTTpassword"))
+      configuration.setWlanParameter("MQTTpassword", server.arg("MQTTpassword").c_str());
 
     writeConfiguration = true;    
   }
@@ -311,7 +311,7 @@ void handleSettings()
   char * temp = getWebsite(content);
 
   Serial.println("after getWebsite");
-  server->send(200, "text/html", temp);
+  server.send(200, "text/html", temp);
 
   free(temp); 
 }
@@ -1014,15 +1014,15 @@ void loop()
   
   if(configurationMode)
   {
-    server->handleClient();
+    server.handleClient();
 
     return;  
   }
 
   if(gatewayMode) // start web server
   {
-    if(server != NULL && !apConnectingOngoing)    
-      server->handleClient();
+    if(!apConnectingOngoing)    
+      server.handleClient();
     
     if(apConnectingOngoing)
     {
@@ -1031,16 +1031,16 @@ void loop()
         apConnectingOngoing = false;
         Serial.println("Connected to AP. Starting Webserver...");
 
-        if(server == NULL)
+//        if(server == NULL)
         {
-          server = new ESP8266WebServer(80);
+  //        server = new ESP8266WebServer(80);
         
-          server->on("/", handleRoot);
-          server->on("/reboot", handleReboot);
-          server->on("/general", handleRoot);
-          server->on("/settings", handleSettings);
-          server->onNotFound(handleNotFound);
-          server->begin();
+          server.on("/", handleRoot);
+          server.on("/reboot", handleReboot);
+          server.on("/general", handleRoot);
+          server.on("/settings", handleSettings);
+          server.onNotFound(handleNotFound);
+          server.begin();
         }
       } 
       else
