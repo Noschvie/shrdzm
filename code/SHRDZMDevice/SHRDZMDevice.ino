@@ -47,11 +47,13 @@ String deviceName;
 String lastRebootInfo = "";
 bool apConnectingOngoing = false;
 unsigned long apConnectionStartTime = 0;
+unsigned long mqttNextTry = 0;
 bool writeConfiguration = false;
 Ticker configurationBlinker;
 ESP8266WebServer server;
 WiFiClient espClient;
 PubSubClient mqttclient(espClient);
+String MQTT_TOPIC = "SHRDZM/";
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -325,39 +327,61 @@ void handleSettings()
 void mqttreconnect() 
 {
   // Loop until we're reconnected
-  while (!mqttclient.connected()) 
+  if (!mqttclient.connected()) 
   {
-    Serial.print("Attempting MQTT connection...");
+    Serial.println("Attempting MQTT connection...");
     String clientId = "SHRDZMDevice-"+deviceName;
     // Attempt to connect
     if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
     {
+      String subcribeTopicSet = String(MQTT_TOPIC)+"/set";
+      String subcribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+      
       Serial.println("connected");
+      
+      Serial.println("MQTTHost : "+String(configuration.getWlanParameter("MQTTbroker")));
+      Serial.println("MQTTPort : "+String(configuration.getWlanParameter("MQTTport")));
+      Serial.println("MQTTUser : "+String(configuration.getWlanParameter("MQTTuser")));
+      Serial.println("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
+      Serial.println("MQTT_TOPIC : "+MQTT_TOPIC);
+      Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
+      Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subcribeTopicConfig));
+
+      mqttclient.setCallback(mqttcallback);
+      
       // Once connected, publish an announcement...
-      mqttclient.publish("outTopic", "hello world");
+      mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+      mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str());
+      
       // ... and resubscribe
-      mqttclient.subscribe("inTopic");
+      mqttclient.subscribe(subcribeTopicSet.c_str());
+      mqttclient.subscribe(subcribeTopicConfig.c_str());
     } 
-    else 
-    {
-      Serial.print("failed, rc=");
-      Serial.print(mqttclient.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
   }
 }
 
-void mqttcallback(char* topic, byte* payload, unsigned int length) 
+void mqttcallback(char* topic, byte* payload, unsigned int len) 
 {
+  char* p = (char*)malloc(len+1);
+  memcpy(p,payload,len);
+  p[len] = '\0';
+  String cmd = String(p);
+  free(p);  
+
   Serial.print("Message arrived [");
   Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
+  Serial.print("]: ");
+  Serial.write(payload, len);
   Serial.println();
+
+  if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+    delay(1);
+
+    ESP.reset();
+    delay(100);
+  }  
 
 }
 
@@ -374,22 +398,19 @@ void startGatewayWebserver()
   deviceName.toUpperCase();
 
   String APName = "SHRDZMDevice-"+deviceName;
+  MQTT_TOPIC = "SHRDZM/"+deviceName;
+  
   WiFi.hostname(APName.c_str());
   WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
   DLN("after Wifi.begin");
 
   apConnectingOngoing = true;
   apConnectionStartTime = millis();
-
-/*  mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
-                       atoi(configuration.getWlanParameter("MQTTport")),
-                       configuration.getWlanParameter("MQTTuser"),
-                       configuration.getWlanParameter("MQTTpassword")); */
                        
   mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
                        atoi(configuration.getWlanParameter("MQTTport")));
                        
-  mqttclient.setCallback(mqttcallback);
+//  mqttclient.setCallback(mqttcallback);
 }
 
 
@@ -1019,6 +1040,8 @@ Serial.begin(9600); Serial.println();
   lastRebootInfo = configuration.readLastRebootInfo();
   DLN("Last Reboot Info = "+lastRebootInfo);    
 
+  configuration.storeLastRebootInfo("normal");
+  
   if(lastRebootInfo == "connectiontimeout")
   {
     startConfigurationAP();
@@ -1028,6 +1051,7 @@ Serial.begin(9600); Serial.println();
   if(gatewayMode)
   {
     startGatewayWebserver();
+    mqttNextTry = 0;
   }
 
 }
@@ -1111,11 +1135,16 @@ void loop()
 
     if(WiFi.status() == WL_CONNECTED)
     {
-      if (!mqttclient.connected()) 
+      if(!mqttclient.connected())
       {
-        mqttreconnect();
+        if(millis() > mqttNextTry)
+        {
+          mqttreconnect();
+          mqttNextTry = millis() + 5000;
+        }
       }
-      mqttclient.loop();
+      else
+        mqttclient.loop();
     }
     
     return;
