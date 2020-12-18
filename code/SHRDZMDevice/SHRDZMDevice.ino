@@ -1166,7 +1166,7 @@ void loop()
 
         pairingOngoing = false;
         configurationMode = true;
-        simpleEspConnection.end();
+//        simpleEspConnection.end();
 
         startConfigurationAP();
       }
