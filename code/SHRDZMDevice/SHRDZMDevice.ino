@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 15 December 2020
+  Modified 18 December 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -54,6 +54,8 @@ ESP8266WebServer server;
 WiFiClient espClient;
 PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
+String subcribeTopicSet;
+String subscribeTopicConfig;
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -223,7 +225,7 @@ void handleReboot()
 
   delay(2000);
   
-  ESP.reset();  
+  ESP.restart();  
 }
 
 void handleSettings()
@@ -334,8 +336,8 @@ void mqttreconnect()
     // Attempt to connect
     if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
     {
-      String subcribeTopicSet = String(MQTT_TOPIC)+"/set";
-      String subcribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+      subcribeTopicSet = String(MQTT_TOPIC)+"/set";
+      subscribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
       
       Serial.println("connected");
       
@@ -345,13 +347,13 @@ void mqttreconnect()
       Serial.println("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
       Serial.println("MQTT_TOPIC : "+MQTT_TOPIC);
       Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
-      Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subcribeTopicConfig));
+      Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subscribeTopicConfig));
             
       // ... and resubscribe
       if(!mqttclient.subscribe(subcribeTopicSet.c_str()))
         Serial.println("Error at subscribe");
         
-      mqttclient.subscribe(subcribeTopicConfig.c_str());
+      mqttclient.subscribe(subscribeTopicConfig.c_str());
       mqttclient.subscribe("test");
 
       // Once connected, publish an announcement...
@@ -381,14 +383,48 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
     delay(1);
 
-    ESP.reset();
+    ESP.restart();
     delay(100);
   }  
+  else if(String(topic) == subscribeTopicConfig)
+  {
+    StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+    int itemCount = splitter->getItemCount();
 
+    // GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
+
+    if(itemCount == 2)
+    {
+//      setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
+    }
+    else if(itemCount == 3)
+    {
+      if(splitter->getItemAtIndex(0) == "GATEWAY" && splitter->getItemAtIndex(1) == "upgrade")
+      {
+        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");          
+        updateFirmware(splitter->getItemAtIndex(2));
+      }
+//      else        
+//        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
+    }    
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
+  {
+//    getConfig();
+  }  
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
+  }
+
+
+  
 }
 
 void startGatewayWebserver()
 {
+  WiFi.disconnect();
+  delay(100);
   WiFi.mode(WIFI_STA);
   DLN("after WIFI_STA ");
 
@@ -454,13 +490,25 @@ String getValue(String data, char separator, int index)
 }
 
 void sendSetup()
-{
-  if(!configuration.containsKey("gateway"))
+{ 
+  if(!gatewayMode && !configuration.containsKey("gateway"))
     return;
-  
-  simpleEspConnection.sendMessage((char *)"$I$");
-  
-  configuration.sendSetup(&simpleEspConnection);
+
+  if(!gatewayMode)
+  {
+    simpleEspConnection.sendMessage((char *)"$I$");
+    configuration.sendSetup(&simpleEspConnection);
+  }
+  else
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/init").c_str(), "INIT");
+//    configuration.sendSetup(&mqttclient, (String(MQTT_TOPIC)+"/"+deviceName+"/").c_str());
+  }
+
+  //////////////////// !!!!!!!!!!!!!!!!!!
+  if(gatewayMode)
+    return;
+  //////////////////// !!!!!!!!!!!!!!!!!!
 
   if(dev != NULL)
   {
@@ -479,8 +527,11 @@ void sendSetup()
           reply += "|";
       }
 
-      simpleEspConnection.sendMessage((char *)reply.c_str());
+ //     if(!gatewayMode)
+        simpleEspConnection.sendMessage((char *)reply.c_str());
+ //     else
 
+      
       delete sd; 
 
       JsonObject ap = dev->getActionParameter();

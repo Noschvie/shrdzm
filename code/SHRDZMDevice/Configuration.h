@@ -31,7 +31,7 @@ class Configuration
     void storeVersionNumber();
     void storeLastRebootInfo(const char *rebootinformation);
     void sendSetup(SimpleEspNowConnection *simpleEspConnection);
-  protected:
+   protected:
 
 };
 
