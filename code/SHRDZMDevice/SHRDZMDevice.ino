@@ -346,16 +346,18 @@ void mqttreconnect()
       Serial.println("MQTT_TOPIC : "+MQTT_TOPIC);
       Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
       Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subcribeTopicConfig));
+            
+      // ... and resubscribe
+      if(!mqttclient.subscribe(subcribeTopicSet.c_str()))
+        Serial.println("Error at subscribe");
+        
+      mqttclient.subscribe(subcribeTopicConfig.c_str());
+      mqttclient.subscribe("test");
 
-      mqttclient.setCallback(mqttcallback);
-      
       // Once connected, publish an announcement...
       mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
       mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str());
       
-      // ... and resubscribe
-      mqttclient.subscribe(subcribeTopicSet.c_str());
-      mqttclient.subscribe(subcribeTopicConfig.c_str());
     } 
   }
 }
@@ -409,8 +411,8 @@ void startGatewayWebserver()
                        
   mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
                        atoi(configuration.getWlanParameter("MQTTport")));
-                       
-//  mqttclient.setCallback(mqttcallback);
+
+  mqttclient.setCallback(mqttcallback);
 }
 
 
