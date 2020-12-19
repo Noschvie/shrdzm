@@ -348,3 +348,30 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
     simpleEspConnection->sendMessage((char *)reply.c_str());
   }   
 }
+
+void Configuration::sendSetup(PubSubClient *mqttclient, const char *subject)
+{
+//  String reply;
+  
+  JsonObject documentRoot = g_configdoc.as<JsonObject>();
+
+  for (JsonPair kv : documentRoot) 
+  {
+    if(String(kv.key().c_str()) != "device")
+      mqttclient->publish((String(subject)+"/config").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
+  }
+
+  if(!documentRoot.containsKey("devicetype"))
+  {
+      mqttclient->publish((String(subject)+"/config").c_str(), "devicetype: ");
+  }
+
+  if(g_configdoc["device"].size() > 0)
+  {
+    JsonObject sp = documentRoot["device"];
+    for (JsonPair kv : sp) 
+    {
+      mqttclient->publish((String(subject)+"/config").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
+    }
+  }   
+}

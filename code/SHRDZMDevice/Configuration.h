@@ -31,6 +31,7 @@ class Configuration
     void storeVersionNumber();
     void storeLastRebootInfo(const char *rebootinformation);
     void sendSetup(SimpleEspNowConnection *simpleEspConnection);
+    void sendSetup(PubSubClient *mqttclient, const char *subject);
    protected:
 
 };

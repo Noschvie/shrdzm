@@ -395,6 +395,9 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
 
     if(itemCount == 2)
     {
+      if(splitter->getItemAtIndex(0) == deviceName &&
+         splitter->getItemAtIndex(1) == "configuration")
+         sendSetup();
 //      setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
     }
     else if(itemCount == 3)
@@ -415,6 +418,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
   {
     mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
+    sendSetup();
   }
 
 
@@ -502,7 +506,7 @@ void sendSetup()
   else
   {
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/init").c_str(), "INIT");
-//    configuration.sendSetup(&mqttclient, (String(MQTT_TOPIC)+"/"+deviceName+"/").c_str());
+    configuration.sendSetup(&mqttclient, (String(MQTT_TOPIC)+"/"+deviceName).c_str());
   }
 
   //////////////////// !!!!!!!!!!!!!!!!!!
