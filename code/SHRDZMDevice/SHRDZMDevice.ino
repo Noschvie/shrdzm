@@ -509,11 +509,6 @@ void sendSetup()
     configuration.sendSetup(&mqttclient, (String(MQTT_TOPIC)+"/"+deviceName).c_str());
   }
 
-  //////////////////// !!!!!!!!!!!!!!!!!!
-  if(gatewayMode)
-    return;
-  //////////////////// !!!!!!!!!!!!!!!!!!
-
   if(dev != NULL)
   {
     SensorData* sd = dev->readParameterTypes();
@@ -529,12 +524,13 @@ void sendSetup()
         reply += sd->di[i].nameI;
         if(i < sd->size-1)
           reply += "|";
+
+        if(gatewayMode)
+          mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/param").c_str(), (sd->di[i].nameI).c_str());
       }
 
- //     if(!gatewayMode)
+      if(!gatewayMode)
         simpleEspConnection.sendMessage((char *)reply.c_str());
- //     else
-
       
       delete sd; 
 
@@ -546,21 +542,33 @@ void sendSetup()
         for (JsonPair kv : ap) 
         {
           reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+
+          if(gatewayMode)
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/actions").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
         }
     
         reply.remove(reply.length()-1);
     
-        simpleEspConnection.sendMessage((char *)reply.c_str());    
+        if(!gatewayMode)
+          simpleEspConnection.sendMessage((char *)reply.c_str());    
       }      
     }        
   }
 
   String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
-  simpleEspConnection.sendMessage((char *)s.c_str());
+
+  if(!gatewayMode)
+    simpleEspConnection.sendMessage((char *)s.c_str());
+  else
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/version").c_str(), (ver+"-"+ESP.getSketchMD5()).c_str());
+  
 
   // send supported devices
   s = String("$X$")+String(SUPPORTED_DEVICES);
-  simpleEspConnection.sendMessage((char *)s.c_str());  
+  if(!gatewayMode)
+    simpleEspConnection.sendMessage((char *)s.c_str());  
+  else
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensors").c_str(), (String(SUPPORTED_DEVICES)).c_str());
 }
 
 bool updateFirmware(String message)
