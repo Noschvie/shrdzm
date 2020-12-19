@@ -391,14 +391,19 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
     int itemCount = splitter->getItemCount();
 
-    // GATEWAY upgrade http://shrdzm.pintarweb.net/upgrade.php
-
     if(itemCount == 2)
     {
-      if(splitter->getItemAtIndex(0) == deviceName &&
-         splitter->getItemAtIndex(1) == "configuration")
-         sendSetup();
-//      setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
+      if(splitter->getItemAtIndex(0) == deviceName)
+      {
+        if(splitter->getItemAtIndex(1) == "configuration")
+        {
+          sendSetup();
+        }
+        else
+        {
+        //        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
+        }
+      }
     }
     else if(itemCount == 3)
     {
@@ -407,8 +412,34 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
         mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");          
         updateFirmware(splitter->getItemAtIndex(2));
       }
-//      else        
-//        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1), splitter->getItemAtIndex(2));        
+      else 
+      {
+        String message = splitter->getItemAtIndex(1)+":"+splitter->getItemAtIndex(2);
+
+        if(dev != NULL)
+        {
+          JsonObject ap = dev->getActionParameter();
+          if(!ap.isNull())
+          {
+            if(ap.containsKey(splitter->getItemAtIndex(1)))
+            {
+              dev->setAction(message);
+            }
+            else
+            {
+              setConfig(message);
+            }
+          }
+          else
+          {
+            setConfig(message);
+          }      
+        }       
+        else
+        {
+          setConfig(message);
+        }               
+      }
     }    
   }
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
@@ -637,7 +668,7 @@ void setConfig(String cmd)
   String pname = getValue(cmd, ':', 0);
   String pvalue = getValue(cmd, ':', 1);
 
-  DLN("setConfig "+pvalue);
+  DLN("setConfig Name="+pname+", Value="+pvalue);
 
   if( pname == "interval" || 
       pname == "sensorpowerpin" || 
@@ -1211,7 +1242,23 @@ void loop()
       else
         mqttclient.loop();
     }
+
+    if(setNewDeviceType)
+    {
+      initDeviceType(newDeviceType.c_str(), true);
+      setNewDeviceType = false;
+      newDeviceType = "";
     
+      configuration.store();        
+      DLN("vor sendSetup");
+      sendSetup();    
+      DLN("nach sendSetup");
+      configuration.storeLastRebootInfo("devicechanged");
+
+      delay(500);
+      ESP.restart();
+    }
+   
     return;
   }
   
