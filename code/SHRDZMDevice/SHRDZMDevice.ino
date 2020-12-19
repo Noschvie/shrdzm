@@ -326,7 +326,7 @@ void handleSettings()
 
 
 /// Gateway Webserver
-void mqttreconnect() 
+bool mqttreconnect() 
 {
   // Loop until we're reconnected
   if (!mqttclient.connected()) 
@@ -358,10 +358,17 @@ void mqttreconnect()
 
       // Once connected, publish an announcement...
       mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
-      mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str());
-      
+      mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str()); 
+
+      return true;
     } 
+    else
+      return false;
   }
+  else
+    return true;
+    
+  return false;
 }
 
 void mqttcallback(char* topic, byte* payload, unsigned int len) 
@@ -398,10 +405,6 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
         if(splitter->getItemAtIndex(1) == "configuration")
         {
           sendSetup();
-        }
-        else
-        {
-        //        setupObject.AddItem(splitter->getItemAtIndex(0), "$SC$"+splitter->getItemAtIndex(1));        
         }
       }
     }
@@ -442,10 +445,6 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
       }
     }    
   }
-  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,9) == "getconfig")
-  {
-//    getConfig();
-  }  
   else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
   {
     mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
@@ -1235,13 +1234,18 @@ void loop()
       {
         if(millis() > mqttNextTry)
         {
-          mqttreconnect();
-          mqttNextTry = millis() + 5000;
+          if(!mqttreconnect())
+          {
+            mqttNextTry = millis() + 5000;
+            return;
+          }
         }
       }
       else
         mqttclient.loop();
     }
+    else
+      return;
 
     if(setNewDeviceType)
     {
@@ -1258,11 +1262,9 @@ void loop()
       delay(500);
       ESP.restart();
     }
-   
-    return;
   }
   
-  if(!firmwareUpdate && configuration.containsKey("gateway"))
+  if(!firmwareUpdate && configuration.containsKey("gateway") && !gatewayMode)
     sendBufferFilled = simpleEspConnection.loop();
 
   if(pairingOngoing)
@@ -1287,16 +1289,24 @@ void loop()
   if(firmwareUpdate)
     upgradeFirmware();
 
-  if(!batterycheckDone && configuration.containsKey("gateway"))
+  if(!batterycheckDone && (configuration.containsKey("gateway") || gatewayMode))
   {
     batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
     {      
-      String reply = "$D$battery:"+String(analogRead(A0));
+//      String reply = "$D$battery:"+String(analogRead(A0));
+      String reply = "battery:"+String(analogRead(A0));
 
       DLN("battery : "+reply);
 
-      simpleEspConnection.sendMessage((char *)reply.c_str());  
+      if(gatewayMode)
+      {
+        mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
+      }
+      else
+      {
+        simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());  
+      }
       batterycheckDone = true;
     }
   }
@@ -1312,6 +1322,10 @@ void loop()
     
     isDeviceInitialized = true;
   }
+
+
+  if(gatewayMode)
+    return;
   
   // get measurement data
   if(dev != NULL)
