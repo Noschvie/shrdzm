@@ -33,6 +33,7 @@ bool processendSet = false;
 bool processendReached = false;
 bool configurationMode = false;
 bool gatewayMode = false;
+bool firstMeasurement = true;
 String SSID;
 String password;
 String host;
@@ -40,8 +41,11 @@ String url;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
 unsigned long processend = 0;
+unsigned long lastIntervalTime = 0;
+unsigned long preparestart = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
+bool preparing = false;
 String newDeviceType = "";
 String deviceName;
 String lastRebootInfo = "";
@@ -1120,8 +1124,11 @@ Serial.begin(9600); Serial.println();
     }
     
     // check if preparation is needed
-    prepareend = 1000 * atoi(configuration.get("preparetime"));
-    DV(prepareend);
+    if(!gatewayMode)
+    {
+      prepareend = 1000 * atoi(configuration.get("preparetime"));      
+      DV(prepareend);
+    }
 
     if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
     {    
@@ -1149,6 +1156,8 @@ Serial.begin(9600); Serial.println();
     mqttNextTry = 0;
   }
 
+//  Serial.println(atoi(configuration.get("interval"))*1000);
+
 }
 
 void getMeasurementData()
@@ -1172,15 +1181,147 @@ void getMeasurementData()
           DV(reply);
 
           if(gatewayMode)
-            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());                 
-          simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
-//          simpleEspConnection.sendMessage((char *)reply.c_str());  
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str()); 
+          else                
+            simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
         }
         delete sd;
         sd = NULL;
       }
     }
   }  
+}
+
+void handleGatewayLoop()
+{
+  if(!apConnectingOngoing)    
+    server.handleClient();
+  
+  if(apConnectingOngoing)
+  {
+    if (WiFi.status() == WL_CONNECTED) 
+    {
+      apConnectingOngoing = false;
+      Serial.println("Connected to AP. Starting Webserver...");
+      
+      server.on("/", handleRoot);
+      server.on("/reboot", handleReboot);
+      server.on("/general", handleRoot);
+      server.on("/settings", handleSettings);
+      server.onNotFound(handleNotFound);
+      server.begin();        
+    } 
+    else
+    {
+      if(millis() > apConnectionStartTime + 10000)
+      {
+        Serial.println("Connection timeout. Will start a local AP to reconfigure.");
+
+        configuration.storeLastRebootInfo("connectiontimeout");
+
+        delay(500);
+        ESP.restart();
+      }
+    }
+  }
+
+  if(WiFi.status() == WL_CONNECTED)
+  {
+    if(!mqttclient.connected())
+    {
+      if(millis() > mqttNextTry)
+      {
+        if(!mqttreconnect())
+        {
+          mqttNextTry = millis() + 5000;
+          return;
+        }
+      }
+    }
+    else
+      mqttclient.loop();
+  }
+  else
+    return;
+
+  if(setNewDeviceType)
+  {
+    initDeviceType(newDeviceType.c_str(), true);
+    setNewDeviceType = false;
+    newDeviceType = "";
+  
+    configuration.store();        
+    DLN("vor sendSetup");
+    sendSetup();    
+    DLN("nach sendSetup");
+    configuration.storeLastRebootInfo("devicechanged");
+
+    delay(500);
+    ESP.restart();
+  }
+
+  if(firmwareUpdate)
+    upgradeFirmware();
+
+
+  // only if interval is reached or if preparing ongoing
+  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
+    return;
+
+  firstMeasurement = false;
+
+  if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
+  {
+    preparestart = millis();
+    preparing = false;
+  }
+      
+  if(String(configuration.get("batterycheck")) == "ON" && !preparing)
+  {
+    String reply = "battery:"+String(analogRead(A0));
+
+    DLN("battery : "+reply);
+
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
+  }    
+
+  if(!isDeviceInitialized)
+  {
+    if(configuration.get("devicetype") != "UNKNOWN")
+    {
+      initDeviceType(configuration.get("devicetype"), false);
+    }
+    
+    isDeviceInitialized = true;
+  }  
+
+  if(dev != NULL)
+  {
+    if(preparestart > 0 && !preparing)
+    {
+      dev->prepare();
+      DLN("Start prepare");
+      preparing = true;
+    }
+
+  // get measurement data
+    loopDone = dev->loop();
+    if(dev->isNewDataAvailable())
+    {
+      getMeasurementData();
+    } 
+  }  
+
+  if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
+  {
+    preparing = false;
+    preparestart = 0;
+
+    getMeasurementData();
+  }
+
+  if(!preparing)
+    lastIntervalTime = millis();  
 }
 
 void loop() 
@@ -1198,73 +1339,10 @@ void loop()
     return;  
   }
 
-  if(gatewayMode) // start web server
+  if(gatewayMode)
   {
-    if(!apConnectingOngoing)    
-      server.handleClient();
-    
-    if(apConnectingOngoing)
-    {
-      if (WiFi.status() == WL_CONNECTED) 
-      {
-        apConnectingOngoing = false;
-        Serial.println("Connected to AP. Starting Webserver...");
-        
-        server.on("/", handleRoot);
-        server.on("/reboot", handleReboot);
-        server.on("/general", handleRoot);
-        server.on("/settings", handleSettings);
-        server.onNotFound(handleNotFound);
-        server.begin();        
-      } 
-      else
-      {
-        if(millis() > apConnectionStartTime + 10000)
-        {
-          Serial.println("Connection timeout. Will start a local AP to reconfigure.");
-
-          configuration.storeLastRebootInfo("connectiontimeout");
-
-          delay(500);
-          ESP.restart();
-        }
-      }
-    }
-
-    if(WiFi.status() == WL_CONNECTED)
-    {
-      if(!mqttclient.connected())
-      {
-        if(millis() > mqttNextTry)
-        {
-          if(!mqttreconnect())
-          {
-            mqttNextTry = millis() + 5000;
-            return;
-          }
-        }
-      }
-      else
-        mqttclient.loop();
-    }
-    else
-      return;
-
-    if(setNewDeviceType)
-    {
-      initDeviceType(newDeviceType.c_str(), true);
-      setNewDeviceType = false;
-      newDeviceType = "";
-    
-      configuration.store();        
-      DLN("vor sendSetup");
-      sendSetup();    
-      DLN("nach sendSetup");
-      configuration.storeLastRebootInfo("devicechanged");
-
-      delay(500);
-      ESP.restart();
-    }
+    handleGatewayLoop();
+    return;
   }
   
   if(!firmwareUpdate && configuration.containsKey("gateway") && !gatewayMode)

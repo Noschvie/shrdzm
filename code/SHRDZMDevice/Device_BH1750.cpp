@@ -28,8 +28,6 @@ bool Device_BH1750::setDeviceParameter(JsonObject obj)
 
   if(!avail)
     Serial.println("Sensor not found!");
-    
-  BH1750.start();  
 }
 
 bool Device_BH1750::initialize()
@@ -65,11 +63,35 @@ SensorData* Device_BH1750::readInitialSetupParameter()
 
 SensorData* Device_BH1750::readParameter()
 {
-  SensorData *al = new SensorData(1);
-  
-  al->di[0].nameI = "illuminance";
-  al->di[0].valueI = String(BH1750.getLux());  
+  BH1750.start();  
 
+  unsigned long h = millis();
+  bool done = false;
+  bool failure = false;
+
+  while(!done)
+  {
+    done = BH1750.hasValue();
+    if(millis() > h + 1000) // wait max. 1 second
+    {
+      done = true;
+      failure = true;
+    }
+  }
+  
+  SensorData *al = new SensorData(1);
+
+  if(!failure)
+  {
+    al->di[0].nameI = "illuminance";
+    al->di[0].valueI = String(BH1750.getLux());  
+  }
+  else
+  {
+    al->di[0].nameI = "lasterror";
+    al->di[0].valueI = "no data";  
+  }
+  
   dataAvailable = false;
 
   return al;
