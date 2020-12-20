@@ -1153,7 +1153,7 @@ Serial.begin(9600); Serial.println();
 
 void getMeasurementData()
 {
-  if(configuration.containsKey("gateway"))
+  if(configuration.containsKey("gateway") || gatewayMode)
   {      
     if(dev != NULL)
     {
@@ -1165,13 +1165,16 @@ void getMeasurementData()
         
         for(int i = 0; i<sd->size; i++)
         {
-          reply = "$D$";
+         // reply = "$D$";
     
           reply += sd->di[i].nameI+":"+sd->di[i].valueI;
 
           DV(reply);
-    
-          simpleEspConnection.sendMessage((char *)reply.c_str());  
+
+          if(gatewayMode)
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());                 
+          simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
+//          simpleEspConnection.sendMessage((char *)reply.c_str());  
         }
         delete sd;
         sd = NULL;
@@ -1278,7 +1281,6 @@ void loop()
 
         pairingOngoing = false;
         configurationMode = true;
-//        simpleEspConnection.end();
 
         startConfigurationAP();
       }
@@ -1294,7 +1296,6 @@ void loop()
     batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
     {      
-//      String reply = "$D$battery:"+String(analogRead(A0));
       String reply = "battery:"+String(analogRead(A0));
 
       DLN("battery : "+reply);
@@ -1322,10 +1323,6 @@ void loop()
     
     isDeviceInitialized = true;
   }
-
-
-  if(gatewayMode)
-    return;
   
   // get measurement data
   if(dev != NULL)
@@ -1338,6 +1335,7 @@ void loop()
   }  
   else
     loopDone = true;
+  
 
   if(millis() >= prepareend && !processendSet)
   {
@@ -1371,6 +1369,9 @@ void loop()
     clockmillis = millis();
   }
 
+  if(gatewayMode)
+    return;  
+    
   if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {
     // send finish to gateway
