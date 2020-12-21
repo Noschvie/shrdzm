@@ -94,14 +94,14 @@ char* getWebsite(char* content)
 {  
   int len = strlen(content);
   
-  char *temp = (char *) malloc (1400+len);
+  char *temp = (char *) malloc (1500+len);
 
 #ifdef DEBUG
   Serial.println("Handle Root");
   Serial.println("Content len = "+String(len));
 #endif
 
-  snprintf(temp, 1400+len,  
+  snprintf(temp, 1500+len,  
 "<!DOCTYPE html>\
 <html>\
 <head>\
@@ -172,7 +172,8 @@ li a:hover:not(.active) {\
   <li><a href='./deleteconfig'>Delete Config</a></li>\  
   <br/><br/><br/>\
   <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
-  <li><center><font size='2' color='blue'><a href=\"http://shrdzm.com/\" target=\"_blank\">\
+  <br/>\
+  <li><center><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
   SHRDZM Home</a></font></center></li>\  
   <br/><br/>\
 </ul>\
@@ -243,7 +244,7 @@ void handleSettings()
 
   snprintf(content, 2600,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <p>WLAN Settings if Device acts as it\'s own gateway.</p>\
+      <p>WLAN Settings if Device acts as it's own gateway.</p>\
       </p>\
       <br/><br/>\
       "
@@ -290,7 +291,7 @@ void handleGateway()
   
   snprintf(content, 2600,  
       "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
-      <p>WLAN Settings if Device acts as it\'s own gateway.</p>\
+      <p>WLAN Settings if Device acts as it's own gateway.</p>\
       </p>\
       <br/><br/>\
       <form method='post'>\
