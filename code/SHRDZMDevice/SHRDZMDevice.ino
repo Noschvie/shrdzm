@@ -83,6 +83,7 @@ void startConfigurationAP()
   server.on("/reboot", handleReboot);
   server.on("/general", handleRoot);
   server.on("/settings", handleSettings);
+  server.on("/gateway", handleGateway);
   server.onNotFound(handleNotFound);
   server.begin();
   
@@ -104,6 +105,7 @@ char* getWebsite(char* content)
 "<!DOCTYPE html>\
 <html>\
 <head>\
+<link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min.svg\" sizes=\"any\">\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
@@ -152,7 +154,7 @@ li a:hover:not(.active) {\
   margin-bottom: 30px;\
 }\
 </style>\
-<title>SHRDZMGateway - %s</title>\
+<title>SHRDZMDevice - %s</title>\
 </head>\
 <body>\
 \
@@ -163,12 +165,15 @@ li a:hover:not(.active) {\
     </a></li>\
   <li><a href='./general'>General</a></li>\
   <li><a href='./settings'>Settings</a></li>\
+  <li><a href='./gateway'>Gateway</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
   <li><a href='./deleteconfig'>Delete Config</a></li>\  
   <br/><br/><br/>\
   <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
+  <li><center><font size='2' color='blue'><a href=\"http://shrdzm.com/\" target=\"_blank\">\
+  SHRDZM Home</a></font></center></li>\  
   <br/><br/>\
 </ul>\
 \
@@ -236,6 +241,25 @@ void handleSettings()
 {
   char content[2600];
 
+  snprintf(content, 2600,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings if Device acts as it\'s own gateway.</p>\
+      </p>\
+      <br/><br/>\
+      "
+  );  
+
+  char * temp = getWebsite(content);
+
+  server.send(200, "text/html", temp);
+
+  free(temp);   
+}
+
+void handleGateway()
+{
+  char content[2600];
+
   if(server.args() != 0)
   {
     if( server.arg("wlanenabled") == "1")
@@ -265,8 +289,8 @@ void handleSettings()
   }
   
   snprintf(content, 2600,  
-      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <p>WLAN Settings if Device acts as it's own gateway.</p>\
+      "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings if Device acts as it\'s own gateway.</p>\
       </p>\
       <br/><br/>\
       <form method='post'>\
@@ -1217,7 +1241,6 @@ void getMeasurementData()
 
           if(gatewayMode)
           {
-//            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str()); 
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
           }
           else                
@@ -1246,6 +1269,7 @@ void handleGatewayLoop()
       server.on("/reboot", handleReboot);
       server.on("/general", handleRoot);
       server.on("/settings", handleSettings);
+      server.on("/gateway", handleGateway);
       server.onNotFound(handleNotFound);
       server.begin();        
     } 
@@ -1316,11 +1340,10 @@ void handleGatewayLoop()
       
   if(String(configuration.get("batterycheck")) == "ON" && !preparing)
   {
-    String reply = "battery:"+String(analogRead(A0));
+//    String reply = "battery:"+String(analogRead(A0));
+//    DLN("battery : "+reply);
 
-    DLN("battery : "+reply);
-
-    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
   }    
 
   if(!isDeviceInitialized)
