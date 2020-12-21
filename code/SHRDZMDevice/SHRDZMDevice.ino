@@ -286,13 +286,13 @@ void handleSettings()
       <label for='MQTTbroker'>MQTT Broker</label><br/>\
       <br/>\
       <input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
-      <label for='MQTTbroker'>MQTT Port</label><br/>\
+      <label for='MQTTport'>MQTT Port</label><br/>\
       <br/>\
       <input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
       <label for='MQTTuser'>MQTT User</label><br/>\
       <br/>\
       <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
-      <label for='MQTTuser'>MQTT Password</label><br/>\
+      <label for='MQTTpassword'>MQTT Password</label><br/>\
       <br/><br /> <input type='submit' value='Save Configuration!' />\
       <script>\
       function showWLANPassword() {\
@@ -358,7 +358,6 @@ bool mqttreconnect()
         Serial.println("Error at subscribe");
         
       mqttclient.subscribe(subscribeTopicConfig.c_str());
-      mqttclient.subscribe("test");
 
       // Once connected, publish an announcement...
       mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
@@ -414,10 +413,17 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     }
     else if(itemCount == 3)
     {
-      if(splitter->getItemAtIndex(0) == "GATEWAY" && splitter->getItemAtIndex(1) == "upgrade")
+      if(splitter->getItemAtIndex(1) == "upgrade")
       {
-        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");          
-        updateFirmware(splitter->getItemAtIndex(2));
+        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");   
+
+        firmwareUpdate = true;   
+
+        if(!updateFirmwareByMQTT(splitter->getItemAtIndex(2)))
+        {
+          delay(100);    
+          ESP.restart();            
+        }
       }
       else 
       {
@@ -605,6 +611,37 @@ void sendSetup()
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensors").c_str(), (String(SUPPORTED_DEVICES)).c_str());
 }
 
+// Upgrade firmware via inbuild gateway
+bool updateFirmwareByMQTT(String message)
+{
+  host = message;
+  
+  if(host.substring(0,7) != "http://")
+  {
+    DLN("Upgrade : only http address supported! ");
+    return false;    
+  }
+
+  host = host.substring(7);
+
+  if(host.substring(host.length()-4) != ".php")
+  {
+    DLN("Upgrade : only php update script supported");
+    return false;    
+  }
+
+  if(host.indexOf('/') == -1)
+  {
+    DLN("Upgrade : host string not valid");
+    return false;    
+  }
+
+  url = host.substring(host.indexOf('/'));
+  host = host.substring(0,host.indexOf('/'));
+  
+  return true;
+}
+
 bool updateFirmware(String message)
 {
   if(message.indexOf('|') == -1)
@@ -642,8 +679,6 @@ bool updateFirmware(String message)
   url = host.substring(host.indexOf('/'));
   host = host.substring(0,host.indexOf('/'));
 
-  DLN("before simpleEspConnection.end");
-  DLN("after simpleEspConnection.end");
   WiFi.disconnect(true);
   
   WiFi.mode(WIFI_STA);
@@ -1176,12 +1211,15 @@ void getMeasurementData()
         {
          // reply = "$D$";
     
-          reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+          reply = sd->di[i].nameI+":"+sd->di[i].valueI;
 
           DV(reply);
 
           if(gatewayMode)
-            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str()); 
+          {
+//            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str()); 
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+          }
           else                
             simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
         }
