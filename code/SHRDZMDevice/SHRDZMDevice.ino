@@ -169,12 +169,11 @@ li a:hover:not(.active) {\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
-  <li><a href='./deleteconfig'>Delete Config</a></li>\  
+  <li><center><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
+  <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='40'>\
+  Home</a></font></center></li>\  
   <br/><br/><br/>\
   <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
-  <br/>\
-  <li><center><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
-  SHRDZM Home</a></font></center></li>\  
   <br/><br/>\
 </ul>\
 \
@@ -242,15 +241,19 @@ void handleSettings()
 {
   char content[2600];
   String deviceBuffer = "<option></option>";
+  String parameterBuffer = "";
   String b;
   int loop = 0;
-  String deviceType = configuration.get("devicetype");
+  String deviceType;
+  DeviceBase* bufferDev = NULL;
+  JsonObject deviceParameter;
 
   if(server.args() != 0)
   {
     if(server.hasArg("devices"))
     {
       deviceType = server.arg("devices");
+      Serial.println("---"+deviceType+"---");
     }
     else
     {
@@ -258,6 +261,36 @@ void handleSettings()
     }
   }
 
+  if(deviceType != "")
+  {
+    Serial.println("Will create buffer device of "+deviceType);
+    bufferDev = createDeviceObject(deviceType.c_str());
+
+    bufferDev->initialize();
+  }
+
+  if(bufferDev != NULL)
+  {
+    deviceParameter = bufferDev->getDeviceParameter();
+    SensorData* sd = bufferDev->readInitialSetupParameter();
+    
+    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();
+    
+    for (JsonPair kv : documentRoot) 
+    {
+      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
+      {
+        if(sd->getDataItem(kv.key().c_str()) != "")
+        {
+          Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));              
+        }
+        else        
+        {
+          Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
+        }
+      }
+    }
+  }
 
   while(true)
   {
@@ -265,7 +298,7 @@ void handleSettings()
     if(b != "")
     {
       if(b == deviceType)
-        deviceBuffer += "<option selected='selected'>"+b+"</option>";
+        deviceBuffer += "<option selected>"+b+"</option>";
       else      
         deviceBuffer += "<option>"+b+"</option>";
     }
@@ -283,9 +316,11 @@ void handleSettings()
         </select>\
       </label>\
       <br/><br/>\
+      %s\
       </form>\
       ",
-      deviceBuffer.c_str()
+      deviceBuffer.c_str(),
+      parameterBuffer.c_str()
   );  
 
   char * temp = getWebsite(content);
@@ -293,6 +328,9 @@ void handleSettings()
   server.send(200, "text/html", temp);
 
   free(temp);   
+
+  if(bufferDev != NULL)
+    free(bufferDev);
 }
 
 void handleGateway()
@@ -555,6 +593,89 @@ void startGatewayWebserver()
   mqttclient.setCallback(mqttcallback);
 }
 
+///////////////////////////
+// Create device object
+///////////////////////////
+
+DeviceBase * createDeviceObject(const char *deviceType)
+{  
+  if(strcmp(deviceType, "DHT22") == 0)
+  {
+    return new Device_DHT22();
+  }
+  else if(strcmp(deviceType, "BH1750") == 0)
+  {
+    return new Device_BH1750();
+  }
+  else if(strcmp(deviceType, "BMP280") == 0)
+  {
+    return new Device_BMP280();
+  }
+  else if(strcmp(deviceType, "BME280") == 0)
+  {
+    return new Device_BME280();
+  }
+  else if(strcmp(deviceType, "DS18B20") == 0)
+  {
+    return new Device_DS18B20();
+  }
+  else if(strcmp(deviceType, "HTU21D") == 0 || strcmp(deviceType, "HTU21") == 0 ||
+          strcmp(deviceType, "SI7021") == 0 || strcmp(deviceType, "SHT21") == 0)
+  {
+    return new Device_HTU21D();
+  }
+  else if(strcmp(deviceType, "MQ135") == 0)
+  {
+    return new Device_MQ135();
+  }
+  else if(strcmp(deviceType, "WATER") == 0)
+  {
+    return new Device_WATER();
+  }
+  else if(strcmp(deviceType, "ANALOG") == 0)
+  {
+    return new Device_ANALOG();
+  }
+  else if(strcmp(deviceType, "DIGITAL") == 0)
+  {
+    return new Device_DIGITAL();
+  }
+  else if(strcmp(deviceType, "SDS011") == 0)
+  {
+    return new Device_SDS011();
+  }
+  else if(strcmp(deviceType, "IM350") == 0)
+  {
+    return new Device_IM350();
+  }
+  else if(strcmp(deviceType, "SDS011_BMP280") == 0)
+  {
+    return new Device_SDS011_BMP280();
+  }  
+  else if(strcmp(deviceType, "SDS011_BME280") == 0)
+  {
+    return new Device_SDS011_BME280();
+  }  
+  else if(strcmp(deviceType, "DIGITALGROUND") == 0)
+  {
+    return new Device_DIGITALGROUND();
+  }
+  else if(strcmp(deviceType, "RELAYTIMER") == 0)
+  {
+    return new Device_RELAYTIMER();
+  }
+  else if(strcmp(deviceType, "GW60") == 0)
+  {
+    return new Device_GW60();
+  }
+  else
+  {
+    Serial.println("Device Type "+String(deviceType)+" not known");
+    return NULL;
+  }
+
+  return NULL;
+}
 
 ///////////////////////////
 String macToStr(const uint8_t* mac)

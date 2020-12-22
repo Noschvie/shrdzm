@@ -36,6 +36,8 @@ class SensorData
         DataItem(){};
         DataItem(String name, String value);
     };  
+
+    String getDataItem(String name);    
   
     DataItem *di;
     int size;

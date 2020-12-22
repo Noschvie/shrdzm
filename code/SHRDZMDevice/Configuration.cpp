@@ -10,6 +10,11 @@ Configuration::~Configuration()
 {
 }
 
+DynamicJsonDocument *Configuration::getConfigDocument()
+{
+  return &g_configdoc;
+}
+  
 bool Configuration::initialize()
 {
   int i = SLEEP_SECS;

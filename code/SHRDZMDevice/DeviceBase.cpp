@@ -34,6 +34,17 @@ SensorData::~SensorData()
   delete [] di;
 }
 
+String SensorData::getDataItem(String name)
+{
+  for(int i = 0; i< size; i++)
+  {
+    if(di[i].nameI == name)
+      return di[i].valueI;
+  }
+
+  return "";
+}
+
 void DeviceBase::PrintText(String text)
 {
   Serial.println(text);

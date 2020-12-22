@@ -50,10 +50,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.89469356"
-     inkscape:cx="884.72613"
+     inkscape:cx="422.37416"
      inkscape:cy="228.53828"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g40"
      inkscape:document-rotation="0"
      showgrid="false"
      inkscape:window-width="1920"
@@ -77,7 +77,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -93,17 +93,31 @@
        transform="scale(0.26458333)" />
     <g
        id="g40">
-      <text
-         xml:space="preserve"
-         style="font-size:50.8px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-         x="88.852798"
-         y="131.42538"
-         id="text213"><tspan
-           sodipodi:role="line"
-           id="tspan211"
-           x="88.852798"
-           y="131.42538"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583">HRDZM</tspan></text>
+      <g
+         aria-label="HRDZM"
+         id="text213"
+         style="font-size:50.8px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583">
+        <path
+           d="m 95.140884,81.488617 h 12.877196 v 19.031493 h 18.99805 V 81.488617 h 12.8772 v 49.936763 h -12.8772 v -21.17211 h -18.99805 v 21.17211 H 95.140884 Z"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583"
+           id="path24" />
+        <path
+           d="m 170.76515,103.63071 q 4.04712,0 5.78638,-1.50513 1.7727,-1.50513 1.7727,-4.950195 0,-3.411622 -1.7727,-4.883301 -1.73926,-1.47168 -5.78638,-1.47168 h -5.41846 v 12.810306 z m -5.41846,8.89697 v 18.8977 H 152.4695 V 81.488617 h 19.66699 q 9.86694,0 14.44922,3.311279 4.61572,3.31128 4.61572,10.468994 0,4.9502 -2.4082,8.12769 -2.37476,3.17749 -7.19116,4.68261 2.64233,0.60205 4.71606,2.74268 2.10718,2.10718 4.2478,6.42187 l 6.99048,14.18164 h -13.71338 l -6.0874,-12.40893 q -1.8396,-3.74609 -3.74609,-5.11743 -1.87305,-1.37134 -5.01709,-1.37134 z"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583"
+           id="path26" />
+        <path
+           d="m 218.09303,91.221771 v 30.470459 h 4.61573 q 7.89355,0 12.04101,-3.91333 4.18091,-3.91333 4.18091,-11.37207 0,-7.425293 -4.14746,-11.305176 -4.14746,-3.879883 -12.07446,-3.879883 z m -12.87719,-9.733154 h 13.57959 q 11.37207,0 16.92431,1.638916 5.5857,1.605469 9.56592,5.485352 3.51196,3.378173 5.21777,7.793212 1.70581,4.415043 1.70581,10.000733 0,5.65259 -1.70581,10.10107 -1.70581,4.41504 -5.21777,7.79322 -4.01367,3.87988 -9.63281,5.5188 -5.61914,1.60546 -16.85742,1.60546 h -13.57959 z"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583"
+           id="path28" />
+        <path
+           d="m 259.63454,81.488617 h 41.97632 v 7.793213 l -26.79126,32.4104 h 27.56054 v 9.73315 h -43.51489 v -7.79321 l 26.79126,-32.410399 h -26.02197 z"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583"
+           id="path30" />
+        <path
+           d="m 311.74538,81.488617 h 16.38916 l 11.37207,26.724363 11.43896,-26.724363 h 16.35571 v 49.936763 h -12.1748 V 94.90097 l -11.50586,26.92505 h -8.16113 L 323.95363,94.90097 v 36.52441 h -12.20825 z"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583"
+           id="path32" />
+      </g>
       <path
          style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="m 67.35192,118.77674 12.648078,12.64808 V 81.424928 L 55,56.42498 71.056457,40.368524 94.999999,64.312066 V 46.424985 L 71.056457,22.481439 37.112916,56.42498 67.35192,86.663898 Z"

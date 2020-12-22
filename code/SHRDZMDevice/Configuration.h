@@ -18,6 +18,7 @@ class Configuration
     bool containsWlanKey(char *name);
     JsonObject getDeviceParameter();
     JsonObject getWlanParameter();
+    DynamicJsonDocument *getConfigDocument();
     const char *getWlanParameter(const char *parameterName);
     void set(char *name, char *value);
     void setDeviceParameter(const char *name, const char *value);
