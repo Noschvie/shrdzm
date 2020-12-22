@@ -169,9 +169,9 @@ li a:hover:not(.active) {\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
-  <li><center><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
-  <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='40'>\
-  Home</a></font></center></li>\  
+  <li><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
+  <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='60'>\
+  Home</a></font></li>\  
   <br/><br/><br/>\
   <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
   <br/><br/>\
@@ -282,11 +282,13 @@ void handleSettings()
       {
         if(sd->getDataItem(kv.key().c_str()) != "")
         {
-          Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));              
+          Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
+          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(sd->getDataItem(kv.key().c_str()));  
         }
         else        
         {
           Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
+          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
         }
       }
     }
