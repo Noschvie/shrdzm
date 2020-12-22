@@ -190,7 +190,7 @@ li a:hover:not(.active) {\
 
 void handleRoot() 
 {
-  char * temp = getWebsite("<h1>General</h1>General Information");
+  char * temp = getWebsite("<br/><img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>");
 
   server.send(200, "text/html", temp);
 
@@ -241,19 +241,44 @@ void handleReboot()
 void handleSettings()
 {
   char content[2600];
-  String deviceBuffer;
+  String deviceBuffer = "<option></option>";
+  String b;
+  int loop = 0;
+  String deviceType = configuration.get("devicetype");
 
-  StringSplitter *devices = new StringSplitter(SUPPORTED_DEVICES, ',', 30);
-  int deviceCount = devices->getItemCount();
+  if(server.args() != 0)
+  {
+    if(server.hasArg("devices"))
+    {
+      deviceType = server.arg("devices");
+    }
+    else
+    {
+      deviceType = configuration.get("devicetype");          
+    }
+  }
 
-  for(int i = 0; i<deviceCount; i++)
-    deviceBuffer += "<option>"+devices->getItemAtIndex(i)+"</option>";
+
+  while(true)
+  {
+    b = getValue(SUPPORTED_DEVICES, ',', loop++);
+    if(b != "")
+    {
+      if(b == deviceType)
+        deviceBuffer += "<option selected='selected'>"+b+"</option>";
+      else      
+        deviceBuffer += "<option>"+b+"</option>";
+    }
+    else
+      break;
+  }
+
 
   snprintf(content, 2600,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post'>\
       <label>Device Type :\
-        <select name='devices'>\
+        <select name='devices' onchange='this.form.submit()'>\
         %s\
         </select>\
       </label>\
@@ -498,9 +523,6 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
     sendSetup();
   }
-
-
-  
 }
 
 void startGatewayWebserver()

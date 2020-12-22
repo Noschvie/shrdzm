@@ -7,9 +7,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="330.37546mm"
-   height="109.44985mm"
-   viewBox="0 0 330.37546 109.44985"
+   width="332.38327mm"
+   height="111.44985mm"
+   viewBox="0 0 332.38327 111.44985"
    version="1.1"
    id="svg111"
    sodipodi:docname="Logo.svg"
@@ -49,22 +49,26 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.22367339"
-     inkscape:cx="-50.318565"
-     inkscape:cy="210.14016"
+     inkscape:zoom="0.89469356"
+     inkscape:cx="884.72613"
+     inkscape:cy="228.53828"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="false"
-     inkscape:window-width="1600"
-     inkscape:window-height="847"
+     inkscape:window-width="1920"
+     inkscape:window-height="1027"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:snap-bbox="false"
-     inkscape:snap-midpoints="true" />
+     inkscape:snap-midpoints="true"
+     fit-margin-top="1"
+     fit-margin-left="1"
+     fit-margin-right="1"
+     fit-margin-bottom="1" />
   <metadata
      id="metadata108">
     <rdf:RDF>
@@ -81,30 +85,33 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-36.925827,-22.294351)">
-    <text
-       xml:space="preserve"
-       style="font-size:50.8px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="88.852798"
-       y="131.42538"
-       id="text213"><tspan
-         sodipodi:role="line"
-         id="tspan211"
-         x="88.852798"
-         y="131.42538"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583">HRDZM</tspan></text>
+     transform="translate(-35.925827,-21.294351)">
     <path
        d=""
        id="path233"
        style="stroke-width:0.178571"
        transform="scale(0.26458333)" />
-    <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 67.35192,118.77674 12.648078,12.64808 V 81.424928 L 55,56.42498 71.056457,40.368524 94.999999,64.312066 V 46.424985 L 71.056457,22.481439 37.112916,56.42498 67.35192,86.663898 Z"
-       id="path1121" />
-    <path
-       style="fill:#000000;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
-       d="M 107.70961,46.424971 237.46897,22.48144 367.17681,46.424971 V 64.312057 L 237.46897,40.194351 107.70961,64.312057 Z"
-       id="path878" />
+    <g
+       id="g40">
+      <text
+         xml:space="preserve"
+         style="font-size:50.8px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
+         x="88.852798"
+         y="131.42538"
+         id="text213"><tspan
+           sodipodi:role="line"
+           id="tspan211"
+           x="88.852798"
+           y="131.42538"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:68.5px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-width:0.264583">HRDZM</tspan></text>
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 67.35192,118.77674 12.648078,12.64808 V 81.424928 L 55,56.42498 71.056457,40.368524 94.999999,64.312066 V 46.424985 L 71.056457,22.481439 37.112916,56.42498 67.35192,86.663898 Z"
+         id="path1121" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 107.70961,46.424971 237.46897,22.48144 367.17681,46.424971 V 64.312057 L 237.46897,40.194351 107.70961,64.312057 Z"
+         id="path878" />
+    </g>
   </g>
 </svg>
