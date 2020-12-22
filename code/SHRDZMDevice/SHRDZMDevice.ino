@@ -241,13 +241,26 @@ void handleReboot()
 void handleSettings()
 {
   char content[2600];
+  String deviceBuffer;
+
+  StringSplitter *devices = new StringSplitter(SUPPORTED_DEVICES, ',', 30);
+  int deviceCount = devices->getItemCount();
+
+  for(int i = 0; i<deviceCount; i++)
+    deviceBuffer += "<option>"+devices->getItemAtIndex(i)+"</option>";
 
   snprintf(content, 2600,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <p>WLAN Settings if Device acts as it's own gateway.</p>\
-      </p>\
+      <form method='post'>\
+      <label>Device Type :\
+        <select name='devices'>\
+        %s\
+        </select>\
+      </label>\
       <br/><br/>\
-      "
+      </form>\
+      ",
+      deviceBuffer.c_str()
   );  
 
   char * temp = getWebsite(content);
