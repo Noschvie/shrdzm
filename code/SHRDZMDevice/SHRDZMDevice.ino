@@ -60,7 +60,7 @@ PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
-char websideBuffer[5000];
+char websideBuffer[6000];
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -275,6 +275,7 @@ void handleSettings()
   char content[2200];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
+  String deviceParameterBuffer = "";
   String b;
   int loop = 0;
   String deviceType;
@@ -291,6 +292,10 @@ void handleSettings()
     else
     {
       deviceType = configuration.get("devicetype");          
+    }
+    if(server.hasArg("save"))
+    {
+      Serial.println("Save = "+String(server.arg("save")));
     }
   }
 
@@ -346,7 +351,7 @@ void handleSettings()
  
   sprintf(content,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <form method='post'>\
+      <form method='post' id='settingsForm'>\
       <label>Device Type :\
         <select name='devices' onchange='this.form.submit()'>\
         %s\
@@ -354,11 +359,23 @@ void handleSettings()
       </label>\
       <br/><br/>\
       %s\
+      <br/><br/>\
+      <input type='hidden' id='save' name='save' value='false'/>\      
+      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\      
+      <script>\
+       function submitForm()\
+       {\
+          document.getElementById('save').value = 'true';\
+       }\
+      </script>\ 
       </form>\
       ",
       deviceBuffer.c_str(),
       parameterBuffer.c_str()
   );  
+
+//       <input class='submitbutton' type='submit' value='Save Configuration!' />\      
+
 
   char * temp = getWebsite(content);
   Serial.println("after getWebsite size = "+String(strlen(temp)));
