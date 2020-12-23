@@ -177,6 +177,12 @@ label.input {\
 button {\
   margin-top: 1.5em;\
   width: 30%;\
+  border-radius: 10px;\
+}\
+.submitbutton {\
+  background-color: Silver;\
+  border: 1px solid black;\
+  border-radius: 20px;\
 }\
 .main {\
   margin-left: 200px;\
@@ -310,12 +316,12 @@ void handleSettings()
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
         if(sd->getDataItem(kv.key().c_str()) != "")
         {
-          Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
+ //         Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
           parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(sd->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
-          Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
+ //         Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
           parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
         }
       }
@@ -370,7 +376,10 @@ void handleGateway()
   if(server.args() != 0)
   {
     if( server.arg("wlanenabled") == "1")
+    {
       configuration.setWlanParameter("enabled", "true");
+      configuration.set("gateway", deviceName.c_str());
+    }
     else
       configuration.setWlanParameter("enabled", "false");
 
@@ -424,7 +433,8 @@ void handleGateway()
       <br/>\
       <div><input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
       <label for='MQTTpassword'>MQTT Password</label></div><br/>\
-      <br/><br /> <input type='submit' value='Save Configuration!' />\
+      <br/><br />\
+      <input class='submitbutton' type='submit' value='Save Configuration!' />\
       <script>\
       function showWLANPassword() {\
         var x = document.getElementById('password');\
@@ -447,7 +457,7 @@ void handleGateway()
       configuration.getWlanParameter("MQTTpassword") 
   );  
 
-  Serial.println("configuration.getWlanParameter(\"enabled\") = "+String(configuration.getWlanParameter("enabled")));
+//  Serial.println("configuration.getWlanParameter(\"enabled\") = "+String(configuration.getWlanParameter("enabled")));
 
   char * temp = getWebsite(content);
 
