@@ -172,7 +172,7 @@ bool Configuration::containsWlanKey(char *name)
   return g_configdoc["wlan"].containsKey(name);
 }
 
-void Configuration::set(const char *name, const char *value)
+void Configuration::set(char *name, char *value)
 {
   Serial.println("Configuration set :'"+String(name)+"'-'"+String(value)+"'");  
   

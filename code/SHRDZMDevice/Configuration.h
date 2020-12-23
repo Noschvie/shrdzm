@@ -20,7 +20,7 @@ class Configuration
     JsonObject getWlanParameter();
     DynamicJsonDocument *getConfigDocument();
     const char *getWlanParameter(const char *parameterName);
-    void set(const char *name, const char *value);
+    void set(char *name, char *value);
     void setDeviceParameter(const char *name, const char *value);
     void setWlanParameter(const char *name, const char *value);
     void setDeviceParameter(JsonObject dc);    

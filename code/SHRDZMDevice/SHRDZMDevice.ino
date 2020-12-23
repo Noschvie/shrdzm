@@ -293,9 +293,25 @@ void handleSettings()
     {
       deviceType = configuration.get("devicetype");          
     }
+    
     if(server.hasArg("save"))
     {
       Serial.println("Save = "+String(server.arg("save")));
+
+      if(String(server.arg("save")) == "true")
+      {
+        if(deviceType != "")
+        {
+          configuration.set("devicetype", (char *)deviceType.c_str());        
+        }
+        else
+        {
+          configuration.set("devicetype", "UNKNOWN");        
+        }
+
+        writeConfiguration = true;        
+      }
+      
     }
   }
 
@@ -332,8 +348,6 @@ void handleSettings()
       }
     }
   }
-
-//  Serial.println(parameterBuffer);
 
   while(true)
   {
@@ -374,9 +388,6 @@ void handleSettings()
       parameterBuffer.c_str()
   );  
 
-//       <input class='submitbutton' type='submit' value='Save Configuration!' />\      
-
-
   char * temp = getWebsite(content);
   Serial.println("after getWebsite size = "+String(strlen(temp)));
   
@@ -395,7 +406,7 @@ void handleGateway()
     if( server.arg("wlanenabled") == "1")
     {
       configuration.setWlanParameter("enabled", "true");
-      configuration.set("gateway", deviceName.c_str());
+      configuration.set("gateway", (char *)deviceName.c_str());
     }
     else
       configuration.setWlanParameter("enabled", "false");
