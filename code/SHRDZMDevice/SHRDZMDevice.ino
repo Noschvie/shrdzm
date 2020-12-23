@@ -94,12 +94,9 @@ void startConfigurationAP()
 char* getWebsite(char* content)
 {  
   int len = strlen(content);
-  
-//  char *temp = (char *) malloc (1500+len);
 
   Serial.println("Content len = "+String(len));
 
-//  snprintf(temp, 1500+len,  
   sprintf(websideBuffer,  
 "<!DOCTYPE html>\
 <html>\
@@ -148,6 +145,39 @@ li a:hover:not(.active) {\
   background-color: #555;\
   color: white;\
 }\
+label.h2 {\
+  font-weight: bold;\
+  font-size: 150%;\
+  width: 100%;\
+  margin-bottom: 1em;\
+}\
+input,\
+label {\
+  float: left;\
+  width: 40%;\
+  margin-left: 1.5;\
+  padding-left: 5px;\  
+}\
+label {\
+  display: inline-block;\
+  width: 7em;\
+}\
+input {\
+  margin: 0 0 1em .2em;\
+  padding: .2em .5em;\
+  background-color: #fffbf0;\
+  border: 1px solid #e7c157;\
+}\
+label.input {\
+  text-align: right;\
+  margin-left: 10.5;\
+  padding-left: 80px;\
+  line-height: 1.5;\
+}\
+button {\
+  margin-top: 1.5em;\
+  width: 30%;\
+}\
 .main {\
   margin-left: 200px;\
   margin-bottom: 30px;\
@@ -183,7 +213,6 @@ li a:hover:not(.active) {\
 </html>\
   ", deviceName.c_str(), deviceName.c_str(), content);
 
-//  return temp;
   return websideBuffer;
 }
 
@@ -192,8 +221,6 @@ void handleRoot()
   char * temp = getWebsite("<br/><img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>");
 
   server.send(200, "text/html", temp);
-
- // free(temp); 
 }
 
 void handleNotFound() 
@@ -280,24 +307,22 @@ void handleSettings()
     {
       if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
       {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
         if(sd->getDataItem(kv.key().c_str()) != "")
         {
           Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
-          // parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(sd->getDataItem(kv.key().c_str())); 
-          parameterBuffer += "<br/><input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='20' value='"+String(sd->getDataItem(kv.key().c_str()))+"'>";
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(sd->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
           Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
-          parameterBuffer += "<br/><input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='20' value='"+String(kv.value().as<char*>())+"'>";
-     //     parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
         }
-        parameterBuffer += "<label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
       }
     }
   }
 
-  Serial.println(parameterBuffer);
+//  Serial.println(parameterBuffer);
 
   while(true)
   {
@@ -312,9 +337,7 @@ void handleSettings()
     else
       break;
   }
-
-
-//  snprintf(content, 1200,  
+ 
   sprintf(content,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post'>\
@@ -335,8 +358,6 @@ void handleSettings()
   Serial.println("after getWebsite size = "+String(strlen(temp)));
   
   server.send(200, "text/html", temp);
-
-//  free(temp);   
 
   if(bufferDev != NULL)
     free(bufferDev);
@@ -373,8 +394,7 @@ void handleGateway()
 
     writeConfiguration = true;    
   }
-  
-//  snprintf(content, 2600,  
+   
   sprintf(content,  
       "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
       <p>WLAN Settings if Device acts as it's own gateway.</p>\
@@ -383,27 +403,27 @@ void handleGateway()
       <form method='post'>\
       <input type='checkbox' id='wlanenabled' name='wlanenabled' value='1' %s/>\
       <input type='hidden' name='wlanenabled' value='0' />\
-      <label for='wlanenabled'>Device should act as it's own gateway</label><br/>\
-      <br/>\
+      <div><label for='wlanenabled'>Device should act as it's own gateway</label></div><br/>\
+      <br/><br/>\
       <hr/>\
-      <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
-      <label for='ssid'>SSID</label><br/>\
+      <div><input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <p><label for='ssid'>SSID</label></p></div><br/>\
       <br/>\
-      <input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
-      <label for='password'>Password</label><br/>\
-      <input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      <div><input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
+      <label for='password'>Password</label></div><br/><br/>\
+      <div><input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      </div><br/>\
+      <div><input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label></div><br/>\
       <br/>\
-      <input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
-      <label for='MQTTbroker'>MQTT Broker</label><br/>\
+      <div><input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <label for='MQTTport'>MQTT Port</label></div><br/>\
       <br/>\
-      <input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
-      <label for='MQTTport'>MQTT Port</label><br/>\
+      <div><input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label></div><br/>\
       <br/>\
-      <input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
-      <label for='MQTTuser'>MQTT User</label><br/>\
-      <br/>\
-      <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
-      <label for='MQTTpassword'>MQTT Password</label><br/>\
+      <div><input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <label for='MQTTpassword'>MQTT Password</label></div><br/>\
       <br/><br /> <input type='submit' value='Save Configuration!' />\
       <script>\
       function showWLANPassword() {\
@@ -433,8 +453,6 @@ void handleGateway()
 
   Serial.println("after getWebsite size = "+String(strlen(temp)));
   server.send(200, "text/html", temp);
-
-//  free(temp); 
 }
 
 ///////////////////////////
