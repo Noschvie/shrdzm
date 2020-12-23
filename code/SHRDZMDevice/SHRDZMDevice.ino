@@ -281,7 +281,7 @@ void handleSettings()
   String deviceType;
   DeviceBase* bufferDev = NULL;
   JsonObject deviceParameter;
-  SensorData* sd;
+  SensorData* sd = NULL;
 
   if(server.args() != 0)
   {
@@ -289,15 +289,30 @@ void handleSettings()
     {
       deviceType = server.arg("devices");
       Serial.println("---"+deviceType+"---");
+    }
+    else
+    {
+      deviceType = configuration.get("devicetype");          
+    }
+  }
+  else
+  {
+    deviceType = configuration.get("devicetype");          
+  }
 
-      bufferDev = createDeviceObject(deviceType.c_str());
+  if(deviceType != "" && deviceType != "UNKNOWN")
+  {
+    bufferDev = createDeviceObject(deviceType.c_str());
+
+    if(bufferDev)
+    {
       bufferDev->initialize();
-
+    
       if(deviceType == configuration.get("devicetype"))
       {
         // load existing settings
-        deviceParameter = bufferDev->getDeviceParameter();
-        sd = bufferDev->readInitialSetupParameter();
+        deviceParameter = dev->getDeviceParameter();
+      //  sd = dev->readInitialSetupParameter();
         /////////// !!!!!!!!!!!!!        
       }
       else
@@ -308,56 +323,54 @@ void handleSettings()
         
       }
     }
-    else
-    {
-      deviceType = configuration.get("devicetype");          
-    }
-    
-    if(server.hasArg("save"))
-    {
-      Serial.println("Save = "+String(server.arg("save")));
+  }
+      
+  if(server.hasArg("save"))
+  {
+    Serial.println("Save = "+String(server.arg("save")));
 
-      if(String(server.arg("save")) == "true")
+    if(String(server.arg("save")) == "true")
+    {
+      if(deviceType != "")
       {
-        if(deviceType != "")
-        {
-          configuration.set("devicetype", (char *)deviceType.c_str());        
+        configuration.set("devicetype", (char *)deviceType.c_str());        
 
-          JsonObject dc = dev->getDeviceParameter();
+        configuration.setDeviceParameter(deviceParameter);
+  
+        SensorData *initParam = bufferDev->readInitialSetupParameter();
     
-          configuration.setDeviceParameter(dc);
-    
-          SensorData *initParam = dev->readInitialSetupParameter();
-      
-          if(initParam)
+        if(initParam)
+        {
+          for(int i = 0; i<initParam->size; i++)
           {
-            for(int i = 0; i<initParam->size; i++)
+            if(configuration.containsKey((char *)initParam->di[i].nameI.c_str()))
             {
-              if(configuration.containsKey((char *)initParam->di[i].nameI.c_str()))
+              if(server.hasArg((char *)initParam->di[i].nameI.c_str()))
               {
-                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)initParam->di[i].valueI.c_str());
+                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)server.arg((char *)initParam->di[i].nameI.c_str()).c_str());
+                DLN(server.arg((char *)initParam->di[i].nameI.c_str()));
               }
+              else
+                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)initParam->di[i].valueI.c_str());
             }
-            
-            delete initParam;
-          }      
+          }
           
-        }
-        else
-        {
-          configuration.set("devicetype", "UNKNOWN");        
-        }
-
-        writeConfiguration = true;        
+          delete initParam;
+        }      
+        
       }
-      
+      else
+      {
+        configuration.set("devicetype", "UNKNOWN");        
+      }
+
+      writeConfiguration = true;        
     }
+    
   }
 
   if(bufferDev != NULL)
-  {
-
-    
+  {   
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();
     
     for (JsonPair kv : documentRoot) 
@@ -365,14 +378,12 @@ void handleSettings()
       if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
       {
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        if(sd->getDataItem(kv.key().c_str()) != "")
+        if(sd != NULL && sd->getDataItem(kv.key().c_str()) != "")
         {
- //         Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
           parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(sd->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
- //         Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
           parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
         }
       }
