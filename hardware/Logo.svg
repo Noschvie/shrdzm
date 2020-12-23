@@ -5,70 +5,26 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="332.38327mm"
    height="111.44985mm"
    viewBox="0 0 332.38327 111.44985"
    version="1.1"
-   id="svg111"
-   sodipodi:docname="Logo.svg"
-   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
-   inkscape:export-filename="C:\Users\Erich\Nextcloud\Diverses\Arduino\Development\shrdzm\hardware\logo.png"
-   inkscape:export-xdpi="11.603471"
-   inkscape:export-ydpi="11.603471">
+   id="svg111">
   <defs
      id="defs105">
     <clipPath
        clipPathUnits="userSpaceOnUse"
        id="clipPath1287">
       <g
-         inkscape:label="Clip"
          id="use1289"
          style="fill:#000000;fill-opacity:1;fill-rule:evenodd">
         <path
            style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583;stroke-opacity:1"
            id="path1291"
-           sodipodi:type="arc"
-           sodipodi:cx="352.12759"
-           sodipodi:cy="223.07043"
-           sodipodi:rx="22.087204"
-           sodipodi:ry="22.087204"
-           sodipodi:start="5.4969843"
-           sodipodi:end="3.9234129"
-           sodipodi:open="true"
-           sodipodi:arc-type="arc"
            d="m 367.73306,207.43989 a 22.087204,22.087204 0 0 1 0.0395,31.22155 22.087204,22.087204 0 0 1 -31.2215,0.0684 22.087204,22.087204 0 0 1 -0.0973,-31.22142" />
       </g>
     </clipPath>
   </defs>
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="0.89469356"
-     inkscape:cx="422.37416"
-     inkscape:cy="228.53828"
-     inkscape:document-units="mm"
-     inkscape:current-layer="g40"
-     inkscape:document-rotation="0"
-     showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1027"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
-     showguides="true"
-     inkscape:guide-bbox="true"
-     inkscape:snap-bbox="false"
-     inkscape:snap-midpoints="true"
-     fit-margin-top="1"
-     fit-margin-left="1"
-     fit-margin-right="1"
-     fit-margin-bottom="1" />
   <metadata
      id="metadata108">
     <rdf:RDF>
@@ -77,13 +33,11 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
-     inkscape:label="Ebene 1"
-     inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-35.925827,-21.294351)">
     <path

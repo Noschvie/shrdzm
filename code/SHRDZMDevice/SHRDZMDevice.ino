@@ -281,6 +281,7 @@ void handleSettings()
   String deviceType;
   DeviceBase* bufferDev = NULL;
   JsonObject deviceParameter;
+  SensorData* sd;
 
   if(server.args() != 0)
   {
@@ -288,6 +289,24 @@ void handleSettings()
     {
       deviceType = server.arg("devices");
       Serial.println("---"+deviceType+"---");
+
+      bufferDev = createDeviceObject(deviceType.c_str());
+      bufferDev->initialize();
+
+      if(deviceType == configuration.get("devicetype"))
+      {
+        // load existing settings
+        deviceParameter = bufferDev->getDeviceParameter();
+        sd = bufferDev->readInitialSetupParameter();
+        /////////// !!!!!!!!!!!!!        
+      }
+      else
+      {
+        // create default settings
+        deviceParameter = bufferDev->getDeviceParameter();
+        sd = bufferDev->readInitialSetupParameter();
+        
+      }
     }
     else
     {
@@ -303,6 +322,26 @@ void handleSettings()
         if(deviceType != "")
         {
           configuration.set("devicetype", (char *)deviceType.c_str());        
+
+          JsonObject dc = dev->getDeviceParameter();
+    
+          configuration.setDeviceParameter(dc);
+    
+          SensorData *initParam = dev->readInitialSetupParameter();
+      
+          if(initParam)
+          {
+            for(int i = 0; i<initParam->size; i++)
+            {
+              if(configuration.containsKey((char *)initParam->di[i].nameI.c_str()))
+              {
+                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)initParam->di[i].valueI.c_str());
+              }
+            }
+            
+            delete initParam;
+          }      
+          
         }
         else
         {
@@ -315,18 +354,9 @@ void handleSettings()
     }
   }
 
-  if(deviceType != "")
-  {
-    Serial.println("Will create buffer device of "+deviceType);
-    bufferDev = createDeviceObject(deviceType.c_str());
-  }
-
   if(bufferDev != NULL)
   {
-    bufferDev->initialize();
 
-    deviceParameter = bufferDev->getDeviceParameter();
-    SensorData* sd = bufferDev->readInitialSetupParameter();
     
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();
     
