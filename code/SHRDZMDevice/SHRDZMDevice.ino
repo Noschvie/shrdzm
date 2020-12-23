@@ -239,7 +239,7 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[2600];
+  char content[3600];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String b;
@@ -265,12 +265,12 @@ void handleSettings()
   {
     Serial.println("Will create buffer device of "+deviceType);
     bufferDev = createDeviceObject(deviceType.c_str());
-
-    bufferDev->initialize();
   }
 
   if(bufferDev != NULL)
   {
+    bufferDev->initialize();
+
     deviceParameter = bufferDev->getDeviceParameter();
     SensorData* sd = bufferDev->readInitialSetupParameter();
     
@@ -283,16 +283,20 @@ void handleSettings()
         if(sd->getDataItem(kv.key().c_str()) != "")
         {
           Serial.println(kv.key().c_str()+String(":")+sd->getDataItem(kv.key().c_str()));      
-          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(sd->getDataItem(kv.key().c_str()));  
+          // parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(sd->getDataItem(kv.key().c_str())); 
+          parameterBuffer += "<br/><input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='20' value='"+String(sd->getDataItem(kv.key().c_str()))+"'>";
         }
         else        
         {
           Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
-          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
+          parameterBuffer += "<br/><input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='20' value='"+String(kv.value().as<char*>())+"'>";
+//          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
         }
       }
     }
   }
+
+  Serial.println(parameterBuffer);
 
   while(true)
   {
@@ -309,7 +313,7 @@ void handleSettings()
   }
 
 
-  snprintf(content, 2600,  
+  snprintf(content, 3600,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post'>\
       <label>Device Type :\
