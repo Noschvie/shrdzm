@@ -60,6 +60,7 @@ PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
+char websideBuffer[5000];
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -94,14 +95,12 @@ char* getWebsite(char* content)
 {  
   int len = strlen(content);
   
-  char *temp = (char *) malloc (1500+len);
+//  char *temp = (char *) malloc (1500+len);
 
-#ifdef DEBUG
-  Serial.println("Handle Root");
   Serial.println("Content len = "+String(len));
-#endif
 
-  snprintf(temp, 1500+len,  
+//  snprintf(temp, 1500+len,  
+  sprintf(websideBuffer,  
 "<!DOCTYPE html>\
 <html>\
 <head>\
@@ -184,7 +183,8 @@ li a:hover:not(.active) {\
 </html>\
   ", deviceName.c_str(), deviceName.c_str(), content);
 
-  return temp;
+//  return temp;
+  return websideBuffer;
 }
 
 void handleRoot() 
@@ -193,7 +193,7 @@ void handleRoot()
 
   server.send(200, "text/html", temp);
 
-  free(temp); 
+ // free(temp); 
 }
 
 void handleNotFound() 
@@ -239,7 +239,7 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[3600];
+  char content[2200];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String b;
@@ -290,8 +290,9 @@ void handleSettings()
         {
           Serial.println(kv.key().c_str()+String(":")+kv.value().as<char*>());
           parameterBuffer += "<br/><input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='20' value='"+String(kv.value().as<char*>())+"'>";
-//          parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
+     //     parameterBuffer += "<br/>"+String(kv.key().c_str())+String(":")+String(kv.value().as<char*>());  
         }
+        parameterBuffer += "<label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
       }
     }
   }
@@ -313,7 +314,8 @@ void handleSettings()
   }
 
 
-  snprintf(content, 3600,  
+//  snprintf(content, 1200,  
+  sprintf(content,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post'>\
       <label>Device Type :\
@@ -330,10 +332,11 @@ void handleSettings()
   );  
 
   char * temp = getWebsite(content);
-
+  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  
   server.send(200, "text/html", temp);
 
-  free(temp);   
+//  free(temp);   
 
   if(bufferDev != NULL)
     free(bufferDev);
@@ -341,7 +344,7 @@ void handleSettings()
 
 void handleGateway()
 {
-  char content[2600];
+  char content[2300];
 
   if(server.args() != 0)
   {
@@ -371,7 +374,8 @@ void handleGateway()
     writeConfiguration = true;    
   }
   
-  snprintf(content, 2600,  
+//  snprintf(content, 2600,  
+  sprintf(content,  
       "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
       <p>WLAN Settings if Device acts as it's own gateway.</p>\
       </p>\
@@ -427,10 +431,10 @@ void handleGateway()
 
   char * temp = getWebsite(content);
 
-  Serial.println("after getWebsite");
+  Serial.println("after getWebsite size = "+String(strlen(temp)));
   server.send(200, "text/html", temp);
 
-  free(temp); 
+//  free(temp); 
 }
 
 ///////////////////////////
