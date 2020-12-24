@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 18 December 2020
+  Modified 24 December 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -272,7 +272,7 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[2200];
+  char content[2500];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String deviceParameterBuffer = "";
@@ -337,8 +337,7 @@ void handleSettings()
 
         configuration.setDeviceParameter(deviceParameter);
   
-        SensorData *initParam = bufferDev->readInitialSetupParameter();
-    
+        SensorData *initParam = bufferDev->readInitialSetupParameter();    
         if(initParam)
         {
           for(int i = 0; i<initParam->size; i++)
@@ -357,7 +356,18 @@ void handleSettings()
           
           delete initParam;
         }      
-        
+
+        if(!deviceParameter.isNull())
+        {
+          for (JsonPair kv : deviceParameter)
+          {
+            if(server.hasArg(kv.key().c_str()))    
+            {
+              configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+            }
+          }           
+        }
+
       }
       else
       {
@@ -371,8 +381,8 @@ void handleSettings()
 
   if(bufferDev != NULL)
   {   
-    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();
-    
+    // Show general parameter
+    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
     for (JsonPair kv : documentRoot) 
     {
       if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
@@ -388,7 +398,23 @@ void handleSettings()
         }
       }
     }
+
+
+    // Show device parameter
+    if(!deviceParameter.isNull())
+    {
+      parameterBuffer += "<br/>";
+      for (JsonPair kv : deviceParameter)
+      {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+        }
+      }    
+    }
   }
+
+
 
   while(true)
   {

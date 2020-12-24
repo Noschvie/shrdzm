@@ -356,8 +356,6 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 
 void Configuration::sendSetup(PubSubClient *mqttclient, const char *subject)
 {
-//  String reply;
-  
   JsonObject documentRoot = g_configdoc.as<JsonObject>();
 
   for (JsonPair kv : documentRoot) 
