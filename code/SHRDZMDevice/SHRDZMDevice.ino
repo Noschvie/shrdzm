@@ -17,6 +17,7 @@
 Configuration configuration;
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DeviceBase* dev;
+DeviceBase* settingDev = NULL;
 String ver, nam;
 bool firmwareUpdate = false;
 bool avoidSleeping = false;
@@ -271,6 +272,81 @@ void handleReboot()
 }
 
 void handleSettings()
+{
+  char content[2500];
+  String deviceBuffer = "<option></option>";
+  String parameterBuffer = "";
+  String deviceType;
+  String b;
+  int loop = 0;
+  
+  if(settingDev != NULL) 
+  {
+    free(settingDev);
+    settingDev = NULL;
+  }
+
+  // check selected device
+  if(server.args() != 0)
+  {
+    if(server.hasArg("devices"))
+    {
+      deviceType = server.arg("devices");
+    }
+    else
+    {
+      deviceType = configuration.get("devicetype");          
+    }
+  }  
+
+  // Fill select box
+  while(true)
+  {
+    b = getValue(SUPPORTED_DEVICES, ',', loop++);
+    if(b != "")
+    {
+      if(b == deviceType)
+        deviceBuffer += "<option selected>"+b+"</option>";
+      else      
+        deviceBuffer += "<option>"+b+"</option>";
+    }
+    else
+      break;
+  }
+
+
+  sprintf(content,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <form method='post' id='settingsForm'>\
+      <label>Device Type :\
+        <select name='devices' onchange='this.form.submit()'>\
+        %s\
+        </select>\
+      </label>\
+      <br/><br/>\
+      %s\
+      <br/><br/>\
+      <input type='hidden' id='save' name='save' value='false'/>\      
+      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\      
+      <script>\
+       function submitForm()\
+       {\
+          document.getElementById('save').value = 'true';\
+       }\
+      </script>\ 
+      </form>\
+      ",
+      deviceBuffer.c_str(),
+      parameterBuffer.c_str()
+  );  
+
+  char * temp = getWebsite(content);
+  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  
+  server.send(200, "text/html", temp);  
+}
+
+void handleSettings_old()
 {
   char content[2500];
   String deviceBuffer = "<option></option>";
