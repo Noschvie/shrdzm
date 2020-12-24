@@ -180,9 +180,9 @@ button {\
   border-radius: 10px;\
 }\
 .submitbutton {\
-  background-color: Silver;\
+  background-color: Gainsboro;\
   border: 1px solid black;\
-  border-radius: 20px;\
+  border-radius: 10px;\
 }\
 .main {\
   margin-left: 200px;\
