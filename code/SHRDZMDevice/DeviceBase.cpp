@@ -34,6 +34,15 @@ SensorData::~SensorData()
   delete [] di;
 }
 
+void SensorData::setDataItem(const char *name, const char *value)
+{
+  for(int i = 0; i< size; i++)
+  {
+    if(di[i].nameI == name)
+      di[i].valueI = value;
+  }  
+}
+
 String SensorData::getDataItem(String name)
 {
   for(int i = 0; i< size; i++)

@@ -281,7 +281,7 @@ void handleSettings()
   String deviceType;
   DeviceBase* bufferDev = NULL;
   JsonObject deviceParameter;
-  SensorData* sd = NULL;
+  SensorData* initialSettings = NULL;
 
   if(server.args() != 0)
   {
@@ -311,17 +311,25 @@ void handleSettings()
       if(deviceType == configuration.get("devicetype"))
       {
         // load existing settings
-        deviceParameter = dev->getDeviceParameter();
-      //  sd = dev->readInitialSetupParameter();
-        /////////// !!!!!!!!!!!!!        
+        deviceParameter = dev->getDeviceParameter();   
       }
       else
       {
         // create default settings
         deviceParameter = bufferDev->getDeviceParameter();
-        sd = bufferDev->readInitialSetupParameter();
-        
+        initialSettings = bufferDev->readInitialSetupParameter();           
       }
+
+/*      if(!deviceParameter.isNull())
+      {
+        for (JsonPair kv : deviceParameter)
+        {
+          if(server.hasArg(kv.key().c_str()))    
+          {
+            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+          }
+        }           
+      }   */   
     }
   }
       
@@ -388,9 +396,9 @@ void handleSettings()
       if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
       {
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        if(sd != NULL && sd->getDataItem(kv.key().c_str()) != "")
+        if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
         {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(sd->getDataItem(kv.key().c_str()))+"'></div>";
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
@@ -413,8 +421,6 @@ void handleSettings()
       }    
     }
   }
-
-
 
   while(true)
   {

@@ -38,6 +38,7 @@ class SensorData
     };  
 
     String getDataItem(String name);    
+    void setDataItem(const char *name, const char *value);
   
     DataItem *di;
     int size;
