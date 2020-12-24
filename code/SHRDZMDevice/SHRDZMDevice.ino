@@ -182,7 +182,7 @@ button {\
 .submitbutton {\
   background-color: Gainsboro;\
   border: 1px solid black;\
-  border-radius: 10px;\
+  border-radius: 5px;\
 }\
 .main {\
   margin-left: 200px;\
