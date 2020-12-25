@@ -280,25 +280,34 @@ void handleSettings()
   String b;
   int loop = 0;
   
-  if(settingDev != NULL) 
+/*  if(settingDev != NULL) 
+  {
+    Serial.print("former selected device = ");
+    Serial.println(settingDev->getDeviceTypeName());
+    free(settingDev);
+    settingDev = NULL;
+  } */
+
+  // check selected device
+  if(server.hasArg("devices"))
+    deviceType = server.arg("devices");
+  else
+    deviceType = configuration.get("devicetype");       
+
+  if(deviceType == "" && settingDev != NULL)
   {
     free(settingDev);
     settingDev = NULL;
   }
-
-  // check selected device
-  if(server.args() != 0)
+  else
   {
-    if(server.hasArg("devices"))
+    if(settingDev->getDeviceTypeName() != deviceType)
     {
-      deviceType = server.arg("devices");
+      free(settingDev);
+      settingDev = createDeviceObject(deviceType.c_str());  
     }
-    else
-    {
-      deviceType = configuration.get("devicetype");          
-    }
-  }  
-
+  }
+  
   // Fill select box
   while(true)
   {

@@ -7,6 +7,8 @@ const int waitTime = 1100;
 
 Device_IM350::Device_IM350()
 {    
+  deviceTypeName = "IM350";
+  
   done = false;
   dataAvailable = false;  
   memset(m_cipherkey, 0, 33); 

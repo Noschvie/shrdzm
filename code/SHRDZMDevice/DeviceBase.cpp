@@ -16,7 +16,6 @@ ConfigData::~ConfigData()
   delete [] di;
 }
 
-
 SensorData::DataItem::DataItem(String name, String value)
 {
   nameI = name;

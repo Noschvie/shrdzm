@@ -13,6 +13,8 @@
 
 Device_GW60::Device_GW60()
 {  
+  deviceTypeName = "GW60";
+  
   actionParameter = docAction.to<JsonObject>();  
   actionParameter["setpositionpercent"] = "10,20,30,40,50,60,70,80,90,100";
   actionParameter["initposition"] = "up,down";

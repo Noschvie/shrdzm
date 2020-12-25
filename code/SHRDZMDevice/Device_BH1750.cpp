@@ -3,6 +3,7 @@
 Device_BH1750::Device_BH1750()
 {  
   dataAvailable = true;  
+  deviceTypeName = "BH1750";
 }
 
 Device_BH1750::~Device_BH1750()

@@ -2,7 +2,8 @@
 
 Device_ANALOG::Device_ANALOG()
 {  
-  dataAvailable = false;  
+  dataAvailable = false; 
+  deviceTypeName = "ANALOG"; 
 }
 
 Device_ANALOG::~Device_ANALOG()

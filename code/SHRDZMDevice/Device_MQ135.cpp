@@ -2,6 +2,7 @@
 
 Device_MQ135::Device_MQ135()
 {  
+  deviceTypeName = "MQ135";
   dataAvailable = false;  
 }
 

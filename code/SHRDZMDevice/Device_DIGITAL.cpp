@@ -3,6 +3,7 @@
 Device_DIGITAL::Device_DIGITAL()
 {  
   dataAvailable = false;  
+  deviceTypeName = "DIGITAL";
 }
 
 Device_DIGITAL::~Device_DIGITAL()

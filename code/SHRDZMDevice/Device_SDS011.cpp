@@ -95,6 +95,7 @@ uint8_t Device_SDS011::calculateWORKINGPERIODCheckSum()
 
 Device_SDS011::Device_SDS011()
 {    
+  deviceTypeName = "SDS011";
   done = false;
   dataAvailable = true;  
 }

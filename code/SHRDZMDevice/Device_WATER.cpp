@@ -2,6 +2,8 @@
 
 Device_WATER::Device_WATER()
 {  
+  deviceTypeName = "WATER";
+  
   dataAvailable = false;
 }
 

@@ -3,6 +3,7 @@
 Device_BME280::Device_BME280()
 {  
   dataAvailable = false;  
+  deviceTypeName = "BME280";
 }
 
 Device_BME280::~Device_BME280()

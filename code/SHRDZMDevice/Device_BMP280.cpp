@@ -7,6 +7,7 @@ Device_BMP280::Device_BMP280()
 
   dataAvailable = true;
   sensorAvailable = false;
+  deviceTypeName = "BMP280";
 }
 
 Device_BMP280::~Device_BMP280()

@@ -52,6 +52,7 @@ class DeviceBase
     JsonObject getDeviceParameter();
     virtual bool setDeviceParameter(JsonObject obj);
     JsonObject getActionParameter();
+    const char * getDeviceTypeName(){return deviceTypeName.c_str();};
     virtual bool setAction(String action){return false;};
     virtual bool setPostAction(){return false;};
     virtual void prepare(){};
@@ -65,6 +66,7 @@ class DeviceBase
 
   protected:
     void PrintText(String text);
+    String deviceTypeName;
 
     JsonObject deviceParameter;
     JsonObject actionParameter;

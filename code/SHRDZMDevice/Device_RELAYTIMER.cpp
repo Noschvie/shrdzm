@@ -2,6 +2,8 @@
 
 Device_RELAYTIMER::Device_RELAYTIMER()
 {  
+  deviceTypeName = "RELAYTIMER";
+  
   actionParameter = docAction.to<JsonObject>();  
   actionParameter["relay12"] = "TRIGGER";
   actionParameter["relay02"] = "TRIGGER";

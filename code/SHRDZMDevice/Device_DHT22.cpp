@@ -3,6 +3,7 @@
 Device_DHT22::Device_DHT22()
 {  
   dataAvailable = false;    
+  deviceTypeName = "DHT22";
 }
 
 Device_DHT22::~Device_DHT22()
