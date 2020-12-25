@@ -279,14 +279,9 @@ void handleSettings()
   String deviceType;
   String b;
   int loop = 0;
-  
-/*  if(settingDev != NULL) 
-  {
-    Serial.print("former selected device = ");
-    Serial.println(settingDev->getDeviceTypeName());
-    free(settingDev);
-    settingDev = NULL;
-  } */
+  JsonObject deviceParameter;
+  SensorData* initialSettings = NULL;
+
 
   // check selected device
   if(server.hasArg("devices"))
@@ -294,20 +289,110 @@ void handleSettings()
   else
     deviceType = configuration.get("devicetype");       
 
-  if(deviceType == "" && settingDev != NULL)
+  DV(deviceType);
+
+
+  // check if save was pressed
+  if(server.hasArg("save"))
   {
-    free(settingDev);
-    settingDev = NULL;
-  }
-  else
-  {
+    Serial.println("Save = "+String(server.arg("save")));
+
+    if(String(server.arg("save")) == "true") // now to save the parameter to the configuration
+    {
+      configuration.set("devicetype", (char *)deviceType.c_str()); 
+      
+      JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
+      for (JsonPair kv : documentRoot) 
+      {
+        if(server.hasArg(kv.key().c_str()))
+        {
+          DV(server.arg(kv.key().c_str()));
+          configuration.set((char *)kv.key().c_str(), (char *)server.arg(kv.key().c_str()).c_str());
+        }
+      }   
+
+      // get names for device parameter
+      deviceParameter = settingDev->getDeviceParameter(); 
+      if(!deviceParameter.isNull())
+      {
+        configuration.removeAllDeviceParameter();
+        
+        for (JsonPair kv : deviceParameter)
+        {
+          if(server.hasArg(kv.key().c_str()))
+          {
+            DV(server.arg(kv.key().c_str()));
+            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+          }
+        }    
+      }  
+      
+      writeConfiguration = true;          
+    }
+  }  
+
+  if(settingDev != NULL)
+  { // get former selected device type
     if(String(settingDev->getDeviceTypeName()) != deviceType)
     {
       free(settingDev);
-      settingDev = createDeviceObject(deviceType.c_str());  
+      settingDev = NULL;
     }
   }
-  
+
+  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
+  {
+    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev->initialize();
+  }
+
+  if(settingDev != NULL)
+  {
+    if(deviceType == configuration.get("devicetype"))
+    {
+      deviceParameter = dev->getDeviceParameter(); 
+    }
+    else
+    {
+      deviceParameter = settingDev->getDeviceParameter();
+      initialSettings = settingDev->readInitialSetupParameter();           
+    }
+
+    
+    // Show general parameter
+    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
+    for (JsonPair kv : documentRoot) 
+    {
+      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
+      {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
+        }
+        else        
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+        }
+      }
+    }    
+
+
+    // Show device parameter
+    if(!deviceParameter.isNull())
+    {
+      parameterBuffer += "<br/>";
+      for (JsonPair kv : deviceParameter)
+      {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+        }
+      }    
+    }    
+  }
+
+    
   // Fill select box
   while(true)
   {
@@ -323,6 +408,7 @@ void handleSettings()
       break;
   }
 
+  DV(deviceBuffer);
 
   sprintf(content,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
@@ -350,6 +436,7 @@ void handleSettings()
   );  
 
   char * temp = getWebsite(content);
+  DV(writeConfiguration);
   Serial.println("after getWebsite size = "+String(strlen(temp)));
   
   server.send(200, "text/html", temp);  

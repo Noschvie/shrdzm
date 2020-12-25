@@ -22,6 +22,7 @@ class Configuration
     const char *getWlanParameter(const char *parameterName);
     void set(char *name, char *value);
     void setDeviceParameter(const char *name, const char *value);
+    void removeAllDeviceParameter();
     void setWlanParameter(const char *name, const char *value);
     void setDeviceParameter(JsonObject dc);    
     void setWlanParameter(JsonObject dc);

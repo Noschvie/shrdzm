@@ -179,6 +179,11 @@ void Configuration::set(char *name, char *value)
   g_configdoc[name] = value;
 }
 
+void Configuration::removeAllDeviceParameter()
+{
+  g_configdoc.remove("device");  
+}
+
 void Configuration::setDeviceParameter(const char *name, const char *value)
 {
   String v(value);
