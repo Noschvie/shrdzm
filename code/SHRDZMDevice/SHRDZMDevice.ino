@@ -227,38 +227,13 @@ void handleRoot()
 {
   char content[2000];
   String informationTable = "<br><br>";  
-//  String informationTable = "<table border='0' width='200px' text-align='left'><col style='width:50%' text-align='left'><col style='width:50%' text-align='left'>";  
-
-//String(configuration.getWlanParameter("enabled")) == "true"
-
 
   informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
   informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
   informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
   informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
   informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
-  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br>";
-
-/*  informationTable += "<tr><th>Device Type</th></td><th>"+String(configuration.get("devicetype"))+"</th></tr>";
-  informationTable += "<tr><th>Chip ID</th></td><th>"+String(ESP.getChipId())+"</th></tr>";
-  informationTable += "<tr><th>Gateway Mode</th></td><th>"+
-    String(((configuration.getWlanParameter("enabled") == "true") ? "ON" : "OFF"))+
-    "</th></tr>";
-  if(configuration.getWlanParameter("enabled") == "true")
-  {
-    informationTable += "<tr><th>MQTTTopic Gateway</th></td><th>SHRDZM/"+
-      String(configuration.get("gateway"))+
-      "</th></tr>";
-    informationTable += "<tr><th>MQTTTopic Device</th></td><th>SHRDZM/"+
-      String(configuration.get("gateway"))+"/"+deviceName+
-      "</th></tr>";
-    informationTable += "<tr><th>MQTTTopic Sensor</th></td><th>SHRDZM/"+
-      String(configuration.get("gateway"))+"/"+deviceName+"/sensor/"+
-      "</th></tr>";
-  }  
-  
-  informationTable += "</table>";
-*/
+  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br>";
 
   sprintf(content,  
       "<h1>General</h1>\
