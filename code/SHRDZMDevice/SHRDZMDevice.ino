@@ -225,8 +225,51 @@ button {\
 
 void handleRoot() 
 {
-  char * temp = getWebsite("<br/><img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>");
+  char content[2000];
+  String informationTable = "<br><br>";  
+//  String informationTable = "<table border='0' width='200px' text-align='left'><col style='width:50%' text-align='left'><col style='width:50%' text-align='left'>";  
 
+//String(configuration.getWlanParameter("enabled")) == "true"
+
+
+  informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
+  informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
+  informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
+  informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
+  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
+  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br>";
+
+/*  informationTable += "<tr><th>Device Type</th></td><th>"+String(configuration.get("devicetype"))+"</th></tr>";
+  informationTable += "<tr><th>Chip ID</th></td><th>"+String(ESP.getChipId())+"</th></tr>";
+  informationTable += "<tr><th>Gateway Mode</th></td><th>"+
+    String(((configuration.getWlanParameter("enabled") == "true") ? "ON" : "OFF"))+
+    "</th></tr>";
+  if(configuration.getWlanParameter("enabled") == "true")
+  {
+    informationTable += "<tr><th>MQTTTopic Gateway</th></td><th>SHRDZM/"+
+      String(configuration.get("gateway"))+
+      "</th></tr>";
+    informationTable += "<tr><th>MQTTTopic Device</th></td><th>SHRDZM/"+
+      String(configuration.get("gateway"))+"/"+deviceName+
+      "</th></tr>";
+    informationTable += "<tr><th>MQTTTopic Sensor</th></td><th>SHRDZM/"+
+      String(configuration.get("gateway"))+"/"+deviceName+"/sensor/"+
+      "</th></tr>";
+  }  
+  
+  informationTable += "</table>";
+*/
+
+  sprintf(content,  
+      "<h1>General</h1>\
+      <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
+      <br /><br /><br /><br />\
+      %s\
+      ",
+      informationTable.c_str()
+  );  
+
+  char * temp = getWebsite(content);
   server.send(200, "text/html", temp);
 }
 
@@ -263,6 +306,7 @@ void handleReboot()
   </body>\
   </html>\
   ");
+
 
   server.send(200, "text/html", temp);
 
@@ -1592,9 +1636,6 @@ void handleGatewayLoop()
       
   if(String(configuration.get("batterycheck")) == "ON" && !preparing)
   {
-//    String reply = "battery:"+String(analogRead(A0));
-//    DLN("battery : "+reply);
-
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
   }    
 
