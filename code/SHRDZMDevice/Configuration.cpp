@@ -182,6 +182,7 @@ void Configuration::set(char *name, char *value)
 void Configuration::removeAllDeviceParameter()
 {
   g_configdoc.remove("device");  
+  g_configdoc.createNestedObject("device");  
 }
 
 void Configuration::setDeviceParameter(const char *name, const char *value)

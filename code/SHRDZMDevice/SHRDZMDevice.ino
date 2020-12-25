@@ -61,7 +61,7 @@ PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
-char websideBuffer[6000];
+char websideBuffer[5000];
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -282,21 +282,27 @@ void handleSettings()
   JsonObject deviceParameter;
   SensorData* initialSettings = NULL;
 
-
+  if(settingDev != NULL)
+  {
+    free(settingDev);
+    settingDev = NULL;
+  }
+  
   // check selected device
   if(server.hasArg("devices"))
     deviceType = server.arg("devices");
   else
     deviceType = configuration.get("devicetype");       
 
-  DV(deviceType);
-
-
+  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
+  {
+    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev->initialize();
+  }
+    
   // check if save was pressed
   if(server.hasArg("save"))
   {
-    Serial.println("Save = "+String(server.arg("save")));
-
     if(String(server.arg("save")) == "true") // now to save the parameter to the configuration
     {
       configuration.set("devicetype", (char *)deviceType.c_str()); 
@@ -306,7 +312,6 @@ void handleSettings()
       {
         if(server.hasArg(kv.key().c_str()))
         {
-          DV(server.arg(kv.key().c_str()));
           configuration.set((char *)kv.key().c_str(), (char *)server.arg(kv.key().c_str()).c_str());
         }
       }   
@@ -321,36 +326,20 @@ void handleSettings()
         {
           if(server.hasArg(kv.key().c_str()))
           {
-            DV(server.arg(kv.key().c_str()));
-            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+            configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
           }
         }    
       }  
-      
+
       writeConfiguration = true;          
     }
   }  
 
   if(settingDev != NULL)
-  { // get former selected device type
-    if(String(settingDev->getDeviceTypeName()) != deviceType)
-    {
-      free(settingDev);
-      settingDev = NULL;
-    }
-  }
-
-  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
-  {
-    settingDev = createDeviceObject(deviceType.c_str());        
-    settingDev->initialize();
-  }
-
-  if(settingDev != NULL)
   {
     if(deviceType == configuration.get("devicetype"))
     {
-      deviceParameter = dev->getDeviceParameter(); 
+      deviceParameter = configuration.getDeviceParameter();
     }
     else
     {
@@ -358,7 +347,6 @@ void handleSettings()
       initialSettings = settingDev->readInitialSetupParameter();           
     }
 
-    
     // Show general parameter
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
     for (JsonPair kv : documentRoot) 
@@ -377,7 +365,6 @@ void handleSettings()
       }
     }    
 
-
     // Show device parameter
     if(!deviceParameter.isNull())
     {
@@ -390,8 +377,7 @@ void handleSettings()
         }
       }    
     }    
-  }
-
+  } 
     
   // Fill select box
   while(true)
@@ -407,8 +393,6 @@ void handleSettings()
     else
       break;
   }
-
-  DV(deviceBuffer);
 
   sprintf(content,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
@@ -440,206 +424,6 @@ void handleSettings()
   Serial.println("after getWebsite size = "+String(strlen(temp)));
   
   server.send(200, "text/html", temp);  
-}
-
-void handleSettings_old()
-{
-  char content[2500];
-  String deviceBuffer = "<option></option>";
-  String parameterBuffer = "";
-  String deviceParameterBuffer = "";
-  String b;
-  int loop = 0;
-  String deviceType;
-  DeviceBase* bufferDev = NULL;
-  JsonObject deviceParameter;
-  SensorData* initialSettings = NULL;
-
-  if(server.args() != 0)
-  {
-    if(server.hasArg("devices"))
-    {
-      deviceType = server.arg("devices");
-      Serial.println("---"+deviceType+"---");
-    }
-    else
-    {
-      deviceType = configuration.get("devicetype");          
-    }
-  }
-  else
-  {
-    deviceType = configuration.get("devicetype");          
-  }
-
-  if(deviceType != "" && deviceType != "UNKNOWN")
-  {
-    bufferDev = createDeviceObject(deviceType.c_str());
-
-    if(bufferDev)
-    {
-      bufferDev->initialize();
-    
-      if(deviceType == configuration.get("devicetype"))
-      {
-        // load existing settings
-        deviceParameter = dev->getDeviceParameter();   
-      }
-      else
-      {
-        // create default settings
-        deviceParameter = bufferDev->getDeviceParameter();
-        initialSettings = bufferDev->readInitialSetupParameter();           
-      }
-
-/*      if(!deviceParameter.isNull())
-      {
-        for (JsonPair kv : deviceParameter)
-        {
-          if(server.hasArg(kv.key().c_str()))    
-          {
-            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
-          }
-        }           
-      }   */   
-    }
-  }
-      
-  if(server.hasArg("save"))
-  {
-    Serial.println("Save = "+String(server.arg("save")));
-
-    if(String(server.arg("save")) == "true")
-    {
-      if(deviceType != "")
-      {
-        configuration.set("devicetype", (char *)deviceType.c_str());        
-
-        configuration.setDeviceParameter(deviceParameter);
-  
-        SensorData *initParam = bufferDev->readInitialSetupParameter();    
-        if(initParam)
-        {
-          for(int i = 0; i<initParam->size; i++)
-          {
-            if(configuration.containsKey((char *)initParam->di[i].nameI.c_str()))
-            {
-              if(server.hasArg((char *)initParam->di[i].nameI.c_str()))
-              {
-                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)server.arg((char *)initParam->di[i].nameI.c_str()).c_str());
-                DLN(server.arg((char *)initParam->di[i].nameI.c_str()));
-              }
-              else
-                configuration.set((char *)initParam->di[i].nameI.c_str(), (char *)initParam->di[i].valueI.c_str());
-            }
-          }
-          
-          delete initParam;
-        }      
-
-        if(!deviceParameter.isNull())
-        {
-          for (JsonPair kv : deviceParameter)
-          {
-            if(server.hasArg(kv.key().c_str()))    
-            {
-              configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
-            }
-          }           
-        }
-
-      }
-      else
-      {
-        configuration.set("devicetype", "UNKNOWN");        
-      }
-
-      writeConfiguration = true;        
-    }
-    
-  }
-
-  if(bufferDev != NULL)
-  {   
-    // Show general parameter
-    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
-    for (JsonPair kv : documentRoot) 
-    {
-      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
-      {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
-        {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
-        }
-        else        
-        {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
-        }
-      }
-    }
-
-
-    // Show device parameter
-    if(!deviceParameter.isNull())
-    {
-      parameterBuffer += "<br/>";
-      for (JsonPair kv : deviceParameter)
-      {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
-        }
-      }    
-    }
-  }
-
-  while(true)
-  {
-    b = getValue(SUPPORTED_DEVICES, ',', loop++);
-    if(b != "")
-    {
-      if(b == deviceType)
-        deviceBuffer += "<option selected>"+b+"</option>";
-      else      
-        deviceBuffer += "<option>"+b+"</option>";
-    }
-    else
-      break;
-  }
- 
-  sprintf(content,  
-      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <form method='post' id='settingsForm'>\
-      <label>Device Type :\
-        <select name='devices' onchange='this.form.submit()'>\
-        %s\
-        </select>\
-      </label>\
-      <br/><br/>\
-      %s\
-      <br/><br/>\
-      <input type='hidden' id='save' name='save' value='false'/>\      
-      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\      
-      <script>\
-       function submitForm()\
-       {\
-          document.getElementById('save').value = 'true';\
-       }\
-      </script>\ 
-      </form>\
-      ",
-      deviceBuffer.c_str(),
-      parameterBuffer.c_str()
-  );  
-
-  char * temp = getWebsite(content);
-  Serial.println("after getWebsite size = "+String(strlen(temp)));
-  
-  server.send(200, "text/html", temp);
-
-  if(bufferDev != NULL)
-    free(bufferDev);
 }
 
 void handleGateway()
