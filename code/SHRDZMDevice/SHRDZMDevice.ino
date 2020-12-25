@@ -301,7 +301,7 @@ void handleSettings()
   }
   else
   {
-    if(settingDev->getDeviceTypeName() != deviceType)
+    if(String(settingDev->getDeviceTypeName()) != deviceType)
     {
       free(settingDev);
       settingDev = createDeviceObject(deviceType.c_str());  
