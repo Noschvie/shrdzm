@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 24 December 2020
+  Modified 26 December 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -1679,7 +1679,7 @@ void loop()
 
   if(pairingOngoing)
   {
-    if(millis() > 2000)
+    if(millis() > 5000)
     {
       if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
       {
