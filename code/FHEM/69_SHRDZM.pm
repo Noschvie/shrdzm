@@ -34,6 +34,7 @@ my @topics = (
     "gatewaymqttversion",
 	"+/config",
 	"+/sensor",
+	"+/sensor/#",
 	"+/sensors",
 	"+/init",
 	"+/param",
@@ -626,6 +627,15 @@ sub onmessage($$$) # from mqtt
 				Log3 $hash->{NAME}, 1, "!!! $message !!!";
 			}
 		}
+		elsif($len =~ 5) # parameter is part of subject
+		{
+			if($abc[3] eq "sensor")
+			{
+				Log3 $hash->{NAME}, 5, "sensor value $message";
+
+				Dispatch($hash, $abc[2] . " value " . $abc[4] . ":" .  $message);
+			}			
+		}		
     } 
 	else 
 	{

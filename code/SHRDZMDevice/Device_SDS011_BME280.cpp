@@ -73,6 +73,8 @@ static const byte WORKINGPERIOD[19] =
 
 Device_SDS011_BME280::Device_SDS011_BME280()
 {    
+  deviceTypeName = "SDS011_BME280";
+  
   done = false;
   dataAvailable = false;  
   sensorAvailable = false;      

@@ -73,6 +73,8 @@ static const byte WORKINGPERIOD[19] =
 
 Device_SDS011_BMP280::Device_SDS011_BMP280()
 {    
+  deviceTypeName = "SDS011_BMP280";
+  
   bmp_temp = bmp.getTemperatureSensor();
   bmp_pressure = bmp.getPressureSensor();  
 

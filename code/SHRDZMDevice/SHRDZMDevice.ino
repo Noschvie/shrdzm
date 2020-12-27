@@ -3,7 +3,7 @@
 
   Created 20 Jul 2020
   By Erich O. Pintar
-  Modified 31 August 2020
+  Modified 26 December 2020
   By Erich O. Pintar
 
   https://github.com/saghonfly
@@ -17,6 +17,7 @@
 Configuration configuration;
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::CLIENT);
 DeviceBase* dev;
+DeviceBase* settingDev = NULL;
 String ver, nam;
 bool firmwareUpdate = false;
 bool avoidSleeping = false;
@@ -31,6 +32,9 @@ bool pairingOngoing = false;
 bool finishSent = false;
 bool processendSet = false;
 bool processendReached = false;
+bool configurationMode = false;
+bool gatewayMode = false;
+bool firstMeasurement = true;
 String SSID;
 String password;
 String host;
@@ -38,9 +42,762 @@ String url;
 unsigned long clockmillis = 0;
 unsigned long prepareend = 0;
 unsigned long processend = 0;
+unsigned long lastIntervalTime = 0;
+unsigned long preparestart = 0;
+unsigned long configurationAPWaitStartTime = 0;
+unsigned long configurationAPWaitOngoingStartTime = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
+bool preparing = false;
+bool configurationAPWaiting = false;
+bool configurationAPWaitOngoing = false;
 String newDeviceType = "";
+String deviceName;
+String lastRebootInfo = "";
+bool apConnectingOngoing = false;
+unsigned long apConnectionStartTime = 0;
+unsigned long mqttNextTry = 0;
+bool writeConfiguration = false;
+Ticker configurationBlinker;
+ESP8266WebServer server;
+WiFiClient espClient;
+PubSubClient mqttclient(espClient);
+String MQTT_TOPIC = "SHRDZM/";
+String subcribeTopicSet;
+String subscribeTopicConfig;
+char websideBuffer[5000];
+
+/// Configuration Webserver
+void startConfigurationAP()
+{
+  configurationMode = true;
+    
+  String APName = "SHRDZMDevice-"+deviceName;
+  WiFi.hostname(APName.c_str());        
+  WiFi.softAP(APName);     
+
+  DLN("Start configuration AP...");
+  
+  server.on("/", handleRoot);
+  server.on("/reboot", handleReboot);
+  server.on("/general", handleRoot);
+  server.on("/settings", handleSettings);
+  server.on("/gateway", handleGateway);
+  server.onNotFound(handleNotFound);
+  server.begin();
+  
+  configurationBlinker.attach(0.2, changeConfigurationBlinker);
+}
+
+char* getWebsite(char* content)
+{  
+  int len = strlen(content);
+
+  Serial.println("Content len = "+String(len));
+
+  sprintf(websideBuffer,  
+"<!DOCTYPE html>\
+<html>\
+<head>\
+<link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min.svg\" sizes=\"any\">\
+<style>\
+body {\
+  font-family: Arial, Helvetica, sans-serif;\
+}\
+\
+hr\
+{ \
+  display: block;\
+  margin-top: 0.5em;\
+  margin-bottom: 0.5em;\
+  margin-left: auto;\
+  margin-right: auto;\
+  border-style: inset;\
+  border-width: 1px;\
+}\
+ul \
+{\
+list-style-type: none;\
+  margin: 0;\
+  padding: 0;\
+  width: 150px;\
+  background-color: #f1f1f1;\
+  position: fixed;\
+  height: 100%;\
+  overflow: auto;\
+}\
+\
+li a {\
+  display: block;\
+  color: #000;\
+  padding: 8px 16px;\
+  text-decoration: none;\
+}\
+\
+li a.active {\
+  background-color: #4CAF50;\
+  color: white;\
+}\
+\
+li a:hover:not(.active) {\
+  background-color: #555;\
+  color: white;\
+}\
+label.h2 {\
+  font-weight: bold;\
+  font-size: 150%;\
+  width: 100%;\
+  margin-bottom: 1em;\
+}\
+input,\
+label {\
+  float: left;\
+  width: 40%;\
+  margin-left: 1.5;\
+  padding-left: 5px;\
+}\
+label {\
+  display: inline-block;\
+  width: 7em;\
+}\
+input {\
+  margin: 0 0 1em .2em;\
+  padding: .2em .5em;\
+  background-color: #fffbf0;\
+  border: 1px solid #e7c157;\
+}\
+label.input {\
+  text-align: right;\
+  margin-left: 10.5;\
+  padding-left: 80px;\
+  line-height: 1.5;\
+}\
+button {\
+  margin-top: 1.5em;\
+  width: 30%;\
+  border-radius: 10px;\
+}\
+.submitbutton {\
+  background-color: Gainsboro;\
+  border: 1px solid black;\
+  border-radius: 5px;\
+}\
+.main {\
+  margin-left: 200px;\
+  margin-bottom: 30px;\
+}\
+</style>\
+<title>SHRDZMDevice - %s</title>\
+</head>\
+<body>\
+\
+<ul>\
+  <li>\
+    <a class='active' href='#home'>SHRDZMDevice<br/>\
+      <font size='2'>%s</font>\
+    </a></li>\
+  <li><a href='./general'>General</a></li>\
+  <li><a href='./settings'>Settings</a></li>\
+  <li><a href='./gateway'>Gateway</a></li>\
+  <li><a href='./about'>About</a></li>\
+  <li><a href='./reboot'>Reboot</a></li>\
+  <br/>\
+  <li><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
+  <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='60'>\
+  Home</a></font></li>\
+  <br/><br/><br/>\
+  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\
+  <br/><br/>\
+</ul>\
+\
+<div class='main'>\
+  %s\
+</div>\
+</body>\
+</html>\
+  ", deviceName.c_str(), deviceName.c_str(), content);
+
+  return websideBuffer;
+}
+
+void handleRoot() 
+{
+  char content[2000];
+  String informationTable = "<br><br>";  
+
+  informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
+  informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
+  informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
+  informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
+  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
+  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br>";
+
+  sprintf(content,  
+      "<h1>General</h1>\
+      <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
+      <br /><br /><br /><br />\
+      %s\
+      ",
+      informationTable.c_str()
+  );  
+
+  char * temp = getWebsite(content);
+  server.send(200, "text/html", temp);
+}
+
+void handleNotFound() 
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+
+  server.send(404, "text/plain", message);
+}
+
+void handleReboot() 
+{
+  char temp[300];
+  
+  snprintf(temp, 300,
+  "<!DOCTYPE html>\
+  <html>\
+  <head>\
+  <meta http-equiv='refresh' content='20; url=/'>\
+  </head>\
+  <body>\
+  <h1>Please wait. Will reboot in 20 seconds...</h1>\
+  </body>\
+  </html>\
+  ");
+
+
+  server.send(200, "text/html", temp);
+
+  delay(2000);
+  
+  ESP.restart();  
+}
+
+void handleSettings()
+{
+  char content[2500];
+  String deviceBuffer = "<option></option>";
+  String parameterBuffer = "";
+  String deviceType;
+  String b;
+  int loop = 0;
+  JsonObject deviceParameter;
+  SensorData* initialSettings = NULL;
+
+  if(settingDev != NULL)
+  {
+    free(settingDev);
+    settingDev = NULL;
+  }
+  
+  // check selected device
+  if(server.hasArg("devices"))
+    deviceType = server.arg("devices");
+  else
+    deviceType = configuration.get("devicetype");       
+
+  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
+  {
+    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev->initialize();
+  }
+    
+  // check if save was pressed
+  if(server.hasArg("save"))
+  {
+    if(String(server.arg("save")) == "true") // now to save the parameter to the configuration
+    {
+      configuration.set("devicetype", (char *)deviceType.c_str()); 
+      
+      JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
+      for (JsonPair kv : documentRoot) 
+      {
+        if(server.hasArg(kv.key().c_str()))
+        {
+          configuration.set((char *)kv.key().c_str(), (char *)server.arg(kv.key().c_str()).c_str());
+        }
+      }   
+
+      // get names for device parameter
+      deviceParameter = settingDev->getDeviceParameter(); 
+      if(!deviceParameter.isNull())
+      {
+        configuration.removeAllDeviceParameter();
+        
+        for (JsonPair kv : deviceParameter)
+        {
+          if(server.hasArg(kv.key().c_str()))
+          {
+            configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
+          }
+        }    
+      }  
+
+      writeConfiguration = true;          
+    }
+  }  
+
+  if(settingDev != NULL)
+  {
+    if(deviceType == configuration.get("devicetype"))
+    {
+      deviceParameter = configuration.getDeviceParameter();
+    }
+    else
+    {
+      deviceParameter = settingDev->getDeviceParameter();
+      initialSettings = settingDev->readInitialSetupParameter();           
+    }
+
+    // Show general parameter
+    JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
+    for (JsonPair kv : documentRoot) 
+    {
+      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
+      {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
+        }
+        else        
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+        }
+      }
+    }    
+
+    // Show device parameter
+    if(!deviceParameter.isNull())
+    {
+      parameterBuffer += "<br/>";
+      for (JsonPair kv : deviceParameter)
+      {
+        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        {
+          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+        }
+      }    
+    }    
+  } 
+    
+  // Fill select box
+  while(true)
+  {
+    b = getValue(SUPPORTED_DEVICES, ',', loop++);
+    if(b != "")
+    {
+      if(b == deviceType)
+        deviceBuffer += "<option selected>"+b+"</option>";
+      else      
+        deviceBuffer += "<option>"+b+"</option>";
+    }
+    else
+      break;
+  }
+
+  sprintf(content,  
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <form method='post' id='settingsForm'>\
+      <label>Device Type :\
+        <select name='devices' onchange='this.form.submit()'>\
+        %s\
+        </select>\
+      </label>\
+      <br/><br/>\
+      %s\
+      <br/><br/>\
+      <input type='hidden' id='save' name='save' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\
+      <script>\
+       function submitForm()\
+       {\
+          document.getElementById('save').value = 'true';\
+       }\
+      </script>\
+      </form>\
+      ",
+      deviceBuffer.c_str(),
+      parameterBuffer.c_str()
+  );  
+
+  char * temp = getWebsite(content);
+  DV(writeConfiguration);
+  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  
+  server.send(200, "text/html", temp);  
+}
+
+void handleGateway()
+{
+  char content[2300];
+
+  if(server.args() != 0)
+  {
+    if( server.arg("wlanenabled") == "1")
+    {
+      configuration.setWlanParameter("enabled", "true");
+      configuration.set("gateway", (char *)deviceName.c_str());
+    }
+    else
+      configuration.setWlanParameter("enabled", "false");
+
+    if(server.hasArg("ssid"))
+      configuration.setWlanParameter("ssid", server.arg("ssid").c_str());
+    else
+      configuration.setWlanParameter("ssid", "");
+        
+    if(server.hasArg("password"))
+      configuration.setWlanParameter("password", server.arg("password").c_str());
+    else
+      configuration.setWlanParameter("password", "");    
+    if(server.hasArg("MQTTbroker"))
+      configuration.setWlanParameter("MQTTbroker", server.arg("MQTTbroker").c_str());
+    if(server.hasArg("MQTTport"))
+      configuration.setWlanParameter("MQTTport", server.arg("MQTTport").c_str());
+    if(server.hasArg("MQTTuser"))
+      configuration.setWlanParameter("MQTTuser", server.arg("MQTTuser").c_str());
+    if(server.hasArg("MQTTpassword"))
+      configuration.setWlanParameter("MQTTpassword", server.arg("MQTTpassword").c_str());
+
+    writeConfiguration = true;    
+  }
+   
+  sprintf(content,  
+      "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings if Device acts as it's own gateway.</p>\
+      </p>\
+      <br/><br/>\
+      <form method='post'>\
+      <input type='checkbox' id='wlanenabled' name='wlanenabled' value='1' %s/>\
+      <input type='hidden' name='wlanenabled' value='0' />\
+      <div><label for='wlanenabled'>Device should act as it's own gateway</label></div><br/>\
+      <br/><br/>\
+      <hr/>\
+      <div><input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <p><label for='ssid'>SSID</label></p></div><br/>\
+      <br/>\
+      <div><input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
+      <label for='password'>Password</label></div><br/><br/>\
+      <div><input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      </div><br/>\
+      <div><input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <label for='MQTTport'>MQTT Port</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <label for='MQTTpassword'>MQTT Password</label></div><br/>\
+      <br/><br />\
+      <input class='submitbutton' type='submit' value='Save Configuration!' />\
+      <script>\
+      function showWLANPassword() {\
+        var x = document.getElementById('password');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\
+      </form>\
+      "
+      ,
+      String(configuration.getWlanParameter("enabled")) == "true" ? "checked" : "",
+      configuration.getWlanParameter("ssid"),
+      configuration.getWlanParameter("password"),
+      configuration.getWlanParameter("MQTTbroker"),
+      configuration.getWlanParameter("MQTTport"),
+      configuration.getWlanParameter("MQTTuser"),
+      configuration.getWlanParameter("MQTTpassword") 
+  );  
+
+//  Serial.println("configuration.getWlanParameter(\"enabled\") = "+String(configuration.getWlanParameter("enabled")));
+
+  char * temp = getWebsite(content);
+
+  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  server.send(200, "text/html", temp);
+}
+
+///////////////////////////
+
+
+/// Gateway Webserver
+bool mqttreconnect() 
+{
+  // Loop until we're reconnected
+  if (!mqttclient.connected()) 
+  {
+    Serial.println("Attempting MQTT connection...");
+    String clientId = "SHRDZMDevice-"+deviceName;
+    // Attempt to connect
+    if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
+    {
+      subcribeTopicSet = String(MQTT_TOPIC)+"/set";
+      subscribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+      
+      Serial.println("connected");
+      
+      Serial.println("MQTTHost : "+String(configuration.getWlanParameter("MQTTbroker")));
+      Serial.println("MQTTPort : "+String(configuration.getWlanParameter("MQTTport")));
+      Serial.println("MQTTUser : "+String(configuration.getWlanParameter("MQTTuser")));
+      Serial.println("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
+      Serial.println("MQTT_TOPIC : "+MQTT_TOPIC);
+      Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
+      Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subscribeTopicConfig));
+            
+      // ... and resubscribe
+      if(!mqttclient.subscribe(subcribeTopicSet.c_str()))
+        Serial.println("Error at subscribe");
+        
+      mqttclient.subscribe(subscribeTopicConfig.c_str());
+
+      // Once connected, publish an announcement...
+      mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+      mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str()); 
+
+      return true;
+    } 
+    else
+      return false;
+  }
+  else
+    return true;
+    
+  return false;
+}
+
+void mqttcallback(char* topic, byte* payload, unsigned int len) 
+{
+  char* p = (char*)malloc(len+1);
+  memcpy(p,payload,len);
+  p[len] = '\0';
+  String cmd = String(p);
+  free(p);  
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.write(payload, len);
+  Serial.println();
+
+  if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+    delay(1);
+
+    ESP.restart();
+    delay(100);
+  }  
+  else if(String(topic) == subscribeTopicConfig)
+  {
+    StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
+    int itemCount = splitter->getItemCount();
+
+    if(itemCount == 2)
+    {
+      if(splitter->getItemAtIndex(0) == deviceName)
+      {
+        if(splitter->getItemAtIndex(1) == "configuration")
+        {
+          sendSetup();
+        }
+      }
+    }
+    else if(itemCount == 3)
+    {
+      if(splitter->getItemAtIndex(1) == "upgrade")
+      {
+        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");   
+
+        firmwareUpdate = true;   
+
+        if(!updateFirmwareByMQTT(splitter->getItemAtIndex(2)))
+        {
+          delay(100);    
+          ESP.restart();            
+        }
+      }
+      else 
+      {
+        String message = splitter->getItemAtIndex(1)+":"+splitter->getItemAtIndex(2);
+
+        if(dev != NULL)
+        {
+          JsonObject ap = dev->getActionParameter();
+          if(!ap.isNull())
+          {
+            if(ap.containsKey(splitter->getItemAtIndex(1)))
+            {
+              dev->setAction(message);
+            }
+            else
+            {
+              setConfig(message);
+            }
+          }
+          else
+          {
+            setConfig(message);
+          }      
+        }       
+        else
+        {
+          setConfig(message);
+        }               
+      }
+    }    
+  }
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
+    sendSetup();
+  }
+}
+
+void startGatewayWebserver()
+{
+  WiFi.disconnect();
+  delay(100);
+  WiFi.mode(WIFI_STA);
+  DLN("after WIFI_STA ");
+
+  String APName = "SHRDZMDevice-"+deviceName;
+  MQTT_TOPIC = "SHRDZM/"+deviceName;
+  
+  WiFi.hostname(APName.c_str());
+  WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
+  DLN("after Wifi.begin");
+
+  apConnectingOngoing = true;
+  apConnectionStartTime = millis();
+                       
+  mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
+                       atoi(configuration.getWlanParameter("MQTTport")));
+
+  mqttclient.setCallback(mqttcallback);
+}
+
+///////////////////////////
+// Create device object
+///////////////////////////
+
+DeviceBase * createDeviceObject(const char *deviceType)
+{  
+  if(strcmp(deviceType, "DHT22") == 0)
+  {
+    return new Device_DHT22();
+  }
+  else if(strcmp(deviceType, "BH1750") == 0)
+  {
+    return new Device_BH1750();
+  }
+  else if(strcmp(deviceType, "BMP280") == 0)
+  {
+    return new Device_BMP280();
+  }
+  else if(strcmp(deviceType, "BME280") == 0)
+  {
+    return new Device_BME280();
+  }
+  else if(strcmp(deviceType, "DS18B20") == 0)
+  {
+    return new Device_DS18B20();
+  }
+  else if(strcmp(deviceType, "HTU21D") == 0 || strcmp(deviceType, "HTU21") == 0 ||
+          strcmp(deviceType, "SI7021") == 0 || strcmp(deviceType, "SHT21") == 0)
+  {
+    return new Device_HTU21D();
+  }
+  else if(strcmp(deviceType, "MQ135") == 0)
+  {
+    return new Device_MQ135();
+  }
+  else if(strcmp(deviceType, "WATER") == 0)
+  {
+    return new Device_WATER();
+  }
+  else if(strcmp(deviceType, "ANALOG") == 0)
+  {
+    return new Device_ANALOG();
+  }
+  else if(strcmp(deviceType, "DIGITAL") == 0)
+  {
+    return new Device_DIGITAL();
+  }
+  else if(strcmp(deviceType, "SDS011") == 0)
+  {
+    return new Device_SDS011();
+  }
+  else if(strcmp(deviceType, "IM350") == 0)
+  {
+    return new Device_IM350();
+  }
+  else if(strcmp(deviceType, "SDS011_BMP280") == 0)
+  {
+    return new Device_SDS011_BMP280();
+  }  
+  else if(strcmp(deviceType, "SDS011_BME280") == 0)
+  {
+    return new Device_SDS011_BME280();
+  }  
+  else if(strcmp(deviceType, "DIGITALGROUND") == 0)
+  {
+    return new Device_DIGITALGROUND();
+  }
+  else if(strcmp(deviceType, "RELAYTIMER") == 0)
+  {
+    return new Device_RELAYTIMER();
+  }
+  else if(strcmp(deviceType, "GW60") == 0)
+  {
+    return new Device_GW60();
+  }
+  else
+  {
+    Serial.println("Device Type "+String(deviceType)+" not known");
+    return NULL;
+  }
+
+  return NULL;
+}
+
+///////////////////////////
+String macToStr(const uint8_t* mac)
+{
+  char mac_addr[13];
+  mac_addr[12] = 0;
+  
+  sprintf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+  return String(mac_addr);
+}
+
+void changeConfigurationBlinker()
+{
+#ifdef LEDPIN
+  digitalWrite(LEDPIN, !(digitalRead(LEDPIN)));
+#endif
+}
 
 String getValue(String data, char separator, int index)
 {
@@ -62,13 +819,20 @@ String getValue(String data, char separator, int index)
 }
 
 void sendSetup()
-{
-  if(!configuration.containsKey("gateway"))
+{ 
+  if(!gatewayMode && !configuration.containsKey("gateway"))
     return;
-  
-  simpleEspConnection.sendMessage((char *)"$I$");
-  
-  configuration.sendSetup(&simpleEspConnection);
+
+  if(!gatewayMode)
+  {
+    simpleEspConnection.sendMessage((char *)"$I$");
+    configuration.sendSetup(&simpleEspConnection);
+  }
+  else
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/init").c_str(), "INIT");
+    configuration.sendSetup(&mqttclient, (String(MQTT_TOPIC)+"/"+deviceName).c_str());
+  }
 
   if(dev != NULL)
   {
@@ -85,10 +849,14 @@ void sendSetup()
         reply += sd->di[i].nameI;
         if(i < sd->size-1)
           reply += "|";
+
+        if(gatewayMode)
+          mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/param").c_str(), (sd->di[i].nameI).c_str());
       }
 
-      simpleEspConnection.sendMessage((char *)reply.c_str());
-
+      if(!gatewayMode)
+        simpleEspConnection.sendMessage((char *)reply.c_str());
+      
       delete sd; 
 
       JsonObject ap = dev->getActionParameter();
@@ -99,21 +867,64 @@ void sendSetup()
         for (JsonPair kv : ap) 
         {
           reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
+
+          if(gatewayMode)
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/actions").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
         }
     
         reply.remove(reply.length()-1);
     
-        simpleEspConnection.sendMessage((char *)reply.c_str());    
+        if(!gatewayMode)
+          simpleEspConnection.sendMessage((char *)reply.c_str());    
       }      
     }        
   }
 
   String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
-  simpleEspConnection.sendMessage((char *)s.c_str());
+
+  if(!gatewayMode)
+    simpleEspConnection.sendMessage((char *)s.c_str());
+  else
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/version").c_str(), (ver+"-"+ESP.getSketchMD5()).c_str());
+  
 
   // send supported devices
   s = String("$X$")+String(SUPPORTED_DEVICES);
-  simpleEspConnection.sendMessage((char *)s.c_str());  
+  if(!gatewayMode)
+    simpleEspConnection.sendMessage((char *)s.c_str());  
+  else
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensors").c_str(), (String(SUPPORTED_DEVICES)).c_str());
+}
+
+// Upgrade firmware via inbuild gateway
+bool updateFirmwareByMQTT(String message)
+{
+  host = message;
+  
+  if(host.substring(0,7) != "http://")
+  {
+    DLN("Upgrade : only http address supported! ");
+    return false;    
+  }
+
+  host = host.substring(7);
+
+  if(host.substring(host.length()-4) != ".php")
+  {
+    DLN("Upgrade : only php update script supported");
+    return false;    
+  }
+
+  if(host.indexOf('/') == -1)
+  {
+    DLN("Upgrade : host string not valid");
+    return false;    
+  }
+
+  url = host.substring(host.indexOf('/'));
+  host = host.substring(0,host.indexOf('/'));
+  
+  return true;
 }
 
 bool updateFirmware(String message)
@@ -153,10 +964,6 @@ bool updateFirmware(String message)
   url = host.substring(host.indexOf('/'));
   host = host.substring(0,host.indexOf('/'));
 
-  DLN("before simpleEspConnection.end");
-//  simpleEspConnection.end();
-//  delay(100);
-  DLN("after simpleEspConnection.end");
   WiFi.disconnect(true);
   
   WiFi.mode(WIFI_STA);
@@ -184,7 +991,7 @@ void setConfig(String cmd)
   String pname = getValue(cmd, ':', 0);
   String pvalue = getValue(cmd, ':', 1);
 
-  DLN("setConfig "+pvalue);
+  DLN("setConfig Name="+pname+", Value="+pvalue);
 
   if( pname == "interval" || 
       pname == "sensorpowerpin" || 
@@ -198,7 +1005,6 @@ void setConfig(String cmd)
     {
       newDeviceType = pvalue;
       setNewDeviceType = true;
-//      initDeviceType(pvalue.c_str(), true);
     }
     else
     {
@@ -244,7 +1050,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
   else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
   {
-//    initDeviceType(String((char *)message).substring(5).c_str(), true);
     newDeviceType = String((char *)message).substring(5);
     setNewDeviceType = true;
     
@@ -350,7 +1155,6 @@ void upgradeFirmware()
   
   if ((WiFi.status() == WL_CONNECTED)) 
   {     
-  // shrdzm.pintarweb.net fingerprint : 9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC 
     ESPhttpUpdate.onStart(update_started);
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
@@ -359,14 +1163,9 @@ void upgradeFirmware()
     String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
     DLN("WLAN connected!");
   
-    // char* fingerprint = "9A 10 D8 D2 DF 8B C1 7C 36 B7 60 A2 F6 44 13 12 44 8B 91 FC";
-  
     WiFiClient client; 
     Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
     t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
-//    t_httpUpdate_return ret = ESPhttpUpdate.update(client, host, 80, url, versionStr);    
-
-  //      t_httpUpdate_return ret = ESPhttpUpdate.update(host, 443, url, versionStr, "9A:10:D8:D2:DF:8B:C1:7C:36:B7:60:A2:F6:44:13:12:44:8B:91:FC");    
     
     switch (ret) 
     {
@@ -522,16 +1321,41 @@ Serial.begin(9600); Serial.println();
 
   DV(nam);
 
+  // set device name
+  WiFi.mode(WIFI_STA);  
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+  
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+
+  DV(deviceName);
+
+#ifdef LITTLEFS
+  if(!LittleFS.begin())
+  {
+    DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
+    LittleFS.format();
+    LittleFS.begin();  
+  }
+  else
+  {
+    DLN("LittleFS accessed...");
+  }
+#else
   if(!SPIFFS.begin())
   {
     DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
     SPIFFS.format();
+    SPIFFS.begin();  
   }
   else
   {
     DLN("SPIFFS accessed...");
   }
-
+#endif
+  
   DLN("configuration loading...");    
   if(!configuration.load())
   {
@@ -550,7 +1374,7 @@ Serial.begin(9600); Serial.println();
     delay(100);    
     ESP.restart();      
   }
-  
+
   if(!configuration.containsKey("preparetime"))
   {
     configuration.set("preparetime", "0");
@@ -596,32 +1420,45 @@ Serial.begin(9600); Serial.println();
 #endif
     configuration.set("pairingpin", (char *)(String(s).c_str()));
     configuration.store();    
-    
+
     delay(100);    
     ESP.restart();      
   }
 
-  simpleEspConnection.begin();
-
-  DV(simpleEspConnection.myAddress);
-  
-  simpleEspConnection.onPairingFinished(&OnPairingFinished);  
-  simpleEspConnection.setPairingBlinkPort(LEDPIN);  
-  simpleEspConnection.onSendError(&OnSendError);    
-  simpleEspConnection.onSendDone(&OnSendDone);
-  if(configuration.containsKey("gateway"))
+  /// check whether to start in gateway mode
+  if( String(configuration.getWlanParameter("enabled")) == "true" )
   {
-    simpleEspConnection.setServerMac(configuration.get("gateway"));  
+    gatewayMode = true;
   }
 
-  simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
-  simpleEspConnection.onMessage(&OnMessage);  
-
-  if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+  // check if pairing button pressed
+  pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
+  
+  if(pairingOngoing || !gatewayMode)
+  {
+    gatewayMode = false;
+    configurationAPWaiting = true;
+    simpleEspConnection.begin();
+  
+    DV(simpleEspConnection.myAddress);
+    
+    simpleEspConnection.onPairingFinished(&OnPairingFinished);  
+    simpleEspConnection.setPairingBlinkPort(LEDPIN);  
+    simpleEspConnection.onSendError(&OnSendError);    
+    simpleEspConnection.onSendDone(&OnSendDone);
+    if(configuration.containsKey("gateway"))
+    {
+      simpleEspConnection.setServerMac(configuration.get("gateway"));  
+    }
+  
+    simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
+    simpleEspConnection.onMessage(&OnMessage);  
+  }
+  
+  if(pairingOngoing)
   {
     avoidSleeping = true;
     DLN("Start pairing");    
-    pairingOngoing = true;
     simpleEspConnection.startPairing(300);
   }
   else
@@ -634,8 +1471,11 @@ Serial.begin(9600); Serial.println();
     }
     
     // check if preparation is needed
-    prepareend = 1000 * atoi(configuration.get("preparetime"));
-    DV(prepareend);
+    if(!gatewayMode)
+    {
+      prepareend = 1000 * atoi(configuration.get("preparetime"));      
+      DV(prepareend);
+    }
 
     if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
     {    
@@ -645,11 +1485,28 @@ Serial.begin(9600); Serial.println();
   }
 
   clockmillis = millis();  
+
+  lastRebootInfo = configuration.readLastRebootInfo();
+  DLN("Last Reboot Info = "+lastRebootInfo);    
+
+  configuration.storeLastRebootInfo("normal");
+  
+  if(lastRebootInfo == "connectiontimeout")
+  {
+    startConfigurationAP();
+    return;
+  }
+
+  if(gatewayMode && !pairingOngoing)
+  {
+    startGatewayWebserver();
+    mqttNextTry = 0;
+  }
 }
 
 void getMeasurementData()
 {
-  if(configuration.containsKey("gateway"))
+  if(configuration.containsKey("gateway") || gatewayMode)
   {      
     if(dev != NULL)
     {
@@ -661,13 +1518,19 @@ void getMeasurementData()
         
         for(int i = 0; i<sd->size; i++)
         {
-          reply = "$D$";
+         // reply = "$D$";
     
-          reply += sd->di[i].nameI+":"+sd->di[i].valueI;
+          reply = sd->di[i].nameI+":"+sd->di[i].valueI;
 
           DV(reply);
-    
-          simpleEspConnection.sendMessage((char *)reply.c_str());  
+
+          if(gatewayMode)
+          {
+            Serial.println("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+          }
+          else                
+            simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
         }
         delete sd;
         sd = NULL;
@@ -676,27 +1539,229 @@ void getMeasurementData()
   }  
 }
 
-void loop() 
+void handleGatewayLoop()
 {
-  if(!firmwareUpdate && configuration.containsKey("gateway"))
-    sendBufferFilled = simpleEspConnection.loop();
+  if(!apConnectingOngoing)    
+    server.handleClient();
+  
+  if(apConnectingOngoing)
+  {
+    if (WiFi.status() == WL_CONNECTED) 
+    {
+      apConnectingOngoing = false;
+      Serial.println("Connected to AP. Starting Webserver...");
+      
+      server.on("/", handleRoot);
+      server.on("/reboot", handleReboot);
+      server.on("/general", handleRoot);
+      server.on("/settings", handleSettings);
+      server.on("/gateway", handleGateway);
+      server.onNotFound(handleNotFound);
+      server.begin();        
+    } 
+    else
+    {
+      if(millis() > apConnectionStartTime + 10000)
+      {
+        Serial.println("Connection timeout. Will start a local AP to reconfigure.");
 
-  if(pairingOngoing)
+        configuration.storeLastRebootInfo("connectiontimeout");
+
+        delay(500);
+        ESP.restart();
+      }
+    }
+  }
+
+  if(WiFi.status() == WL_CONNECTED)
+  {
+    if(!mqttclient.connected())
+    {
+      if(millis() > mqttNextTry)
+      {
+        if(!mqttreconnect())
+        {
+          mqttNextTry = millis() + 5000;
+          return;
+        }
+      }
+    }
+    else
+      mqttclient.loop();
+  }
+  else
     return;
+
+  if(setNewDeviceType)
+  {
+    initDeviceType(newDeviceType.c_str(), true);
+    setNewDeviceType = false;
+    newDeviceType = "";
+  
+    configuration.store();        
+    DLN("vor sendSetup");
+    sendSetup();    
+    DLN("nach sendSetup");
+    configuration.storeLastRebootInfo("devicechanged");
+
+    delay(500);
+    ESP.restart();
+  }
 
   if(firmwareUpdate)
     upgradeFirmware();
 
-  if(!batterycheckDone && configuration.containsKey("gateway"))
+
+  // only if interval is reached or if preparing ongoing
+  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
+    return;
+
+  firstMeasurement = false;
+
+  if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
+  {
+    preparestart = millis();
+    preparing = false;
+  }
+      
+  if(String(configuration.get("batterycheck")) == "ON" && !preparing)
+  {
+    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
+  }    
+
+  if(!isDeviceInitialized)
+  {
+    if(configuration.get("devicetype") != "UNKNOWN")
+    {
+      initDeviceType(configuration.get("devicetype"), false);
+    }
+    
+    isDeviceInitialized = true;
+  }  
+
+  if(dev != NULL)
+  {
+    if(preparestart > 0 && !preparing)
+    {
+      dev->prepare();
+      DLN("Start prepare");
+      preparing = true;
+    }
+
+  // get measurement data
+    loopDone = dev->loop();
+    if(dev->isNewDataAvailable())
+    {
+      getMeasurementData();
+    } 
+  }  
+
+  if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
+  {
+    preparing = false;
+    preparestart = 0;
+
+    Serial.println("before getMeasurementData");
+    getMeasurementData();
+    Serial.println("after getMeasurementData");
+  }
+
+  if(!preparing)
+    lastIntervalTime = millis();  
+}
+
+void loop() 
+{
+  if(writeConfiguration)
+  {
+    writeConfiguration = false;
+    configuration.store();
+  }
+  
+  if(configurationMode)
+  {
+    server.handleClient();
+
+    return;  
+  }
+
+  if(gatewayMode)
+  {
+    handleGatewayLoop();
+    return;
+  }
+  
+  if(!firmwareUpdate && configuration.containsKey("gateway") && !gatewayMode)
+    sendBufferFilled = simpleEspConnection.loop();
+
+  if(pairingOngoing)
+  {
+    if(configurationAPWaiting)
+    {
+      configurationAPWaiting = !digitalRead(atoi(configuration.get("pairingpin")));
+      if(!configurationAPWaiting)
+      {
+        configurationAPWaitStartTime = millis();
+        DV(configurationAPWaitStartTime);
+      }
+    }
+
+    if(configurationAPWaitStartTime > 0)
+    {      
+      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+      {
+        if(!configurationAPWaitOngoing)
+        {
+          configurationAPWaitOngoing = true;
+          configurationAPWaitOngoingStartTime = millis();
+          DV(configurationAPWaitOngoingStartTime);
+        }
+      }      
+      else
+      {
+        configurationAPWaitOngoing = false;        
+        configurationAPWaitOngoingStartTime = 0;
+      }
+    }
+
+    if(configurationAPWaitOngoing && configurationAPWaitOngoingStartTime + 3000 < millis())
+//    if(millis() > 5000)
+    {
+      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+      {
+        DLN("Entering configuration mode...");
+        simpleEspConnection.endPairing();
+
+        pairingOngoing = false;
+        configurationMode = true;
+
+        startConfigurationAP();
+      }
+    } 
+    
+    return;
+  }
+
+  if(firmwareUpdate)
+    upgradeFirmware();
+
+  if(!batterycheckDone && (configuration.containsKey("gateway") || gatewayMode))
   {
     batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
     {      
-      String reply = "$D$battery:"+String(analogRead(A0));
+      String reply = "battery:"+String(analogRead(A0));
 
       DLN("battery : "+reply);
 
-      simpleEspConnection.sendMessage((char *)reply.c_str());  
+      if(gatewayMode)
+      {
+        mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
+      }
+      else
+      {
+        simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());  
+      }
       batterycheckDone = true;
     }
   }
@@ -724,6 +1789,7 @@ void loop()
   }  
   else
     loopDone = true;
+  
 
   if(millis() >= prepareend && !processendSet)
   {
@@ -744,7 +1810,7 @@ void loop()
     if(dev != NULL)
     {
       processendReached = dev->hasProcessEarlyEnded();
-      DLN("Process early finshed.");
+      DV(processendReached);
     }
   }
 
@@ -756,6 +1822,9 @@ void loop()
     DV(finalMeasurementDone);
     clockmillis = millis();
   }
+
+  if(gatewayMode)
+    return;  
 
   if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {

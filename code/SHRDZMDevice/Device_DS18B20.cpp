@@ -2,7 +2,8 @@
 
 Device_DS18B20::Device_DS18B20()
 {  
-  dataAvailable = false;    
+  dataAvailable = false;   
+  deviceTypeName = "DS18B20"; 
 }
 
 Device_DS18B20::~Device_DS18B20()

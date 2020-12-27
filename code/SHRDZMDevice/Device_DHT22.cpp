@@ -3,6 +3,7 @@
 Device_DHT22::Device_DHT22()
 {  
   dataAvailable = false;    
+  deviceTypeName = "DHT22";
 }
 
 Device_DHT22::~Device_DHT22()
@@ -54,7 +55,8 @@ SensorData* Device_DHT22::readInitialSetupParameter()
 SensorData* Device_DHT22::readParameter()
 {
   SensorData *al = new SensorData(2);
-  delay(dht.getMinimumSamplingPeriod());
+
+//  delay(dht.getMinimumSamplingPeriod());
 
   al->di[0].nameI = "temperature";
   al->di[0].valueI = String(dht.getTemperature());

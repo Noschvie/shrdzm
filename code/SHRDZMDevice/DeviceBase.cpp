@@ -16,7 +16,6 @@ ConfigData::~ConfigData()
   delete [] di;
 }
 
-
 SensorData::DataItem::DataItem(String name, String value)
 {
   nameI = name;
@@ -32,6 +31,26 @@ SensorData::SensorData(int size)
 SensorData::~SensorData()
 {
   delete [] di;
+}
+
+void SensorData::setDataItem(const char *name, const char *value)
+{
+  for(int i = 0; i< size; i++)
+  {
+    if(di[i].nameI == name)
+      di[i].valueI = value;
+  }  
+}
+
+String SensorData::getDataItem(String name)
+{
+  for(int i = 0; i< size; i++)
+  {
+    if(di[i].nameI == name)
+      return di[i].valueI;
+  }
+
+  return "";
 }
 
 void DeviceBase::PrintText(String text)

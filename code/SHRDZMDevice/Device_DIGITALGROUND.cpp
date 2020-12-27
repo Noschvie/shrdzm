@@ -3,6 +3,7 @@
 Device_DIGITALGROUND::Device_DIGITALGROUND()
 {  
   dataAvailable = false;  
+  deviceTypeName = "DIGITALGROUND";
 }
 
 Device_DIGITALGROUND::~Device_DIGITALGROUND()

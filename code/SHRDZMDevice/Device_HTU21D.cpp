@@ -3,6 +3,7 @@
 Device_HTU21D::Device_HTU21D()
 {  
   dataAvailable = false;  
+  deviceTypeName = "HTU21D";
 }
 
 Device_HTU21D::~Device_HTU21D()

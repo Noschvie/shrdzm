@@ -10,6 +10,11 @@ Configuration::~Configuration()
 {
 }
 
+DynamicJsonDocument *Configuration::getConfigDocument()
+{
+  return &g_configdoc;
+}
+  
 bool Configuration::initialize()
 {
   int i = SLEEP_SECS;
@@ -33,14 +38,23 @@ bool Configuration::store()
   Serial.println("Strore configuration...");
   serializeJson(g_configdoc, Serial);
 
+  Serial.println();
+#ifdef LITTLEFS  
+  File configFile = LittleFS.open("/shrdzm_config.json", "w");
+#else
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+#endif
+  Serial.println("file opened...");
+  
   if (!configFile) 
   {
     Serial.println("failed to open config file for writing");
     return false;
   }
 
+  Serial.println("serializing...");
   serializeJson(g_configdoc, configFile);
+  Serial.println("serialized...");
   configFile.close();
     
   return true;
@@ -48,6 +62,8 @@ bool Configuration::store()
 
 bool Configuration::migrateToNewConfigurationStyle()
 {
+  bool update = false;
+  
   if(g_configdoc.containsKey("configuration"))
   {
     if(g_configdoc["configuration"].containsKey("interval"))
@@ -71,15 +87,55 @@ bool Configuration::migrateToNewConfigurationStyle()
 
     g_configdoc.remove("configuration");
 
-    return true;
+    update = true;
   }
 
-  return false;
+  if(!containsWlanKey("enabled"))
+  {
+    setWlanParameter("enabled", "false");
+    update = true;
+  }
+  if(!containsWlanKey("ssid"))
+  {
+    setWlanParameter("ssid", "");
+    update = true;
+  }
+  if(!containsWlanKey("password"))
+  {
+    setWlanParameter("password", "");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTbroker"))
+  {
+    setWlanParameter("MQTTbroker", "test.mosquitto.org");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTport"))
+  {
+    setWlanParameter("MQTTport", "1883");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTuser"))
+  {
+    setWlanParameter("MQTTuser", "");
+    update = true;
+  }
+  if(!containsWlanKey("MQTTpassword"))
+  {
+    setWlanParameter("MQTTpassword", "");
+    update = true;
+  }
+
+  return update;
 }
 
 bool Configuration::load()
 {
+#ifdef LITTLEFS  
+  File configFile = LittleFS.open("/shrdzm_config.json", "r");
+#else  
   File configFile = SPIFFS.open("/shrdzm_config.json", "r");
+#endif  
   if (configFile) 
   {
     String content;
@@ -102,7 +158,7 @@ bool Configuration::load()
     Serial.println();
   }
   else
-  {
+  {    
     return false;
   }
   
@@ -119,6 +175,11 @@ bool Configuration::containsDeviceKey(char *name)
   return g_configdoc["device"].containsKey(name);
 }
 
+bool Configuration::containsWlanKey(char *name)
+{
+  return g_configdoc["wlan"].containsKey(name);
+}
+
 void Configuration::set(char *name, char *value)
 {
   Serial.println("Configuration set :'"+String(name)+"'-'"+String(value)+"'");  
@@ -126,7 +187,13 @@ void Configuration::set(char *name, char *value)
   g_configdoc[name] = value;
 }
 
-void Configuration::setDeviceParameter(char *name, char *value)
+void Configuration::removeAllDeviceParameter()
+{
+  g_configdoc.remove("device");  
+  g_configdoc.createNestedObject("device");  
+}
+
+void Configuration::setDeviceParameter(const char *name, const char *value)
 {
   String v(value);
 
@@ -135,9 +202,23 @@ void Configuration::setDeviceParameter(char *name, char *value)
   g_configdoc["device"][name] = v;
 }
 
+void Configuration::setWlanParameter(const char *name, const char *value)
+{
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["wlan"][name] = v;
+}
+
 void Configuration::setDeviceParameter(JsonObject dc)
 {
   g_configdoc["device"] = dc;
+}
+ 
+void Configuration::setWlanParameter(JsonObject dc)
+{
+  g_configdoc["wlan"] = dc;
 }
  
 const char* Configuration::get(char *name)
@@ -153,17 +234,34 @@ JsonObject Configuration::getDeviceParameter()
   return g_configdoc["device"];
 }
 
+JsonObject Configuration::getWlanParameter()
+{
+  return g_configdoc["wlan"];
+}
+
+const char* Configuration::getWlanParameter(const char *parameterName)
+{
+  return g_configdoc["wlan"][parameterName];
+}
+
 String Configuration::readLastVersionNumber()
 {
   String lastVersionNumber = "";
   
+#ifdef LITTLEFS  
+  if (!(LittleFS.exists ("/version.txt") ))
+#else
   if (!(SPIFFS.exists ("/version.txt") ))
+#endif  
   {
     return "";
   }
 
+#ifdef LITTLEFS  
+  File file = LittleFS.open("/version.txt", "r");
+#else
   File file = SPIFFS.open("/version.txt", "r");
-
+#endif
   for(int i=0;i<file.size();i++) //Read upto complete file size
   {
     lastVersionNumber += (char)file.read();
@@ -174,9 +272,65 @@ String Configuration::readLastVersionNumber()
   return lastVersionNumber;
 }
 
+String Configuration::readLastRebootInfo()
+{
+  String lastRebootInfo = "";
+  
+#ifdef LITTLEFS  
+  if (!(LittleFS.exists ("/reboot.txt") ))
+#else
+  if (!(SPIFFS.exists ("/reboot.txt") ))
+#endif  
+  {
+    return lastRebootInfo;
+  }
+
+#ifdef LITTLEFS  
+  File file = LittleFS.open("/reboot.txt", "r");
+#else
+  File file = SPIFFS.open("/reboot.txt", "r");
+#endif  
+
+  for(int i=0;i<file.size();i++) //Read upto complete file size
+  {
+    lastRebootInfo += (char)file.read();
+  }
+
+  file.close();  
+
+  return lastRebootInfo;
+}
+
+void Configuration::storeLastRebootInfo(const char *rebootinformation)
+{
+#ifdef LITTLEFS  
+  File file = LittleFS.open("/reboot.txt", "w");
+#else
+  File file = SPIFFS.open("/reboot.txt", "w");
+#endif  
+  if (!file) 
+  {
+      Serial.println("Error opening reboot info file for writing");
+      return;
+  }  
+
+  int bytesWritten = file.write(rebootinformation, strlen(rebootinformation));
+   
+  if (bytesWritten == 0) 
+  {
+      Serial.println("Reboot info file write failed");
+  }
+
+  file.close();
+}
+
 void Configuration::storeVersionNumber()
 {
+#ifdef LITTLEFS  
+  File file = LittleFS.open("/version.txt", "w");
+#else
   File file = SPIFFS.open("/version.txt", "w");
+#endif  
   if (!file) 
   {
       Serial.println("Error opening version file for writing");
@@ -234,5 +388,30 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
     reply.remove(reply.length()-1);
 
     simpleEspConnection->sendMessage((char *)reply.c_str());
+  }   
+}
+
+void Configuration::sendSetup(PubSubClient *mqttclient, const char *subject)
+{
+  JsonObject documentRoot = g_configdoc.as<JsonObject>();
+
+  for (JsonPair kv : documentRoot) 
+  {
+    if(String(kv.key().c_str()) != "device")
+      mqttclient->publish((String(subject)+"/config").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
+  }
+
+  if(!documentRoot.containsKey("devicetype"))
+  {
+      mqttclient->publish((String(subject)+"/config").c_str(), "devicetype: ");
+  }
+
+  if(g_configdoc["device"].size() > 0)
+  {
+    JsonObject sp = documentRoot["device"];
+    for (JsonPair kv : sp) 
+    {
+      mqttclient->publish((String(subject)+"/config").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
+    }
   }   
 }

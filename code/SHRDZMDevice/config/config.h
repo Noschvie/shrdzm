@@ -5,6 +5,7 @@
 #define VERSION		"0.3.0"
 #define NAME		"SHRDZMDevice"
 
+//#define LITTLEFS
 
 #define SLEEP_SECS 10
 //#define SLEEP_SECS 2 * 60 
@@ -25,10 +26,20 @@
 #endif
 
 #include <ArduinoJson.h>
-#include "..\Configuration.h"
 #include "SimpleEspNowConnection.h"
-#include "FS.h"
+#include "StringSplitter.h"
+//#include "FS.h"
+
+#ifdef LITTLEFS
+#include <LittleFS.h>
+#endif
+
+#include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
+#include <ESP8266WebServer.h>
+#include <PubSubClient.h>
+#include <Ticker.h>
+#include "..\Configuration.h"
 
 #define SUPPORTED_DEVICES "DHT22,BH1750,BMP280,BME280,DS18B20,HTU21,HTU21D,SI7021,SHT21,MQ135,WATER,ANALOG,DIGITAL,DIGITALGROUND,RELAYTIMER,IM350,SDS011,SDS011_BMP280,SDS011_BME280,GW60"
 

@@ -24,8 +24,6 @@ class Device_DHT22 : public DeviceBase
 
   private:
     bool dataAvailable;
-  
-
 };
 
 #endif
