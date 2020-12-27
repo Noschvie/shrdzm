@@ -44,9 +44,13 @@ unsigned long prepareend = 0;
 unsigned long processend = 0;
 unsigned long lastIntervalTime = 0;
 unsigned long preparestart = 0;
+unsigned long configurationAPWaitStartTime = 0;
+unsigned long configurationAPWaitOngoingStartTime = 0;
 bool finalMeasurementDone = false;
 bool setNewDeviceType = false;
 bool preparing = false;
+bool configurationAPWaiting = false;
+bool configurationAPWaitOngoing = false;
 String newDeviceType = "";
 String deviceName;
 String lastRebootInfo = "";
@@ -68,7 +72,7 @@ void startConfigurationAP()
 {
   configurationMode = true;
     
-  String APName = "SHRDZM-"+deviceName;
+  String APName = "SHRDZMDevice-"+deviceName;
   WiFi.hostname(APName.c_str());        
   WiFi.softAP(APName);     
 
@@ -1433,6 +1437,7 @@ Serial.begin(9600); Serial.println();
   if(pairingOngoing || !gatewayMode)
   {
     gatewayMode = false;
+    configurationAPWaiting = true;
     simpleEspConnection.begin();
   
     DV(simpleEspConnection.myAddress);
@@ -1691,7 +1696,36 @@ void loop()
 
   if(pairingOngoing)
   {
-    if(millis() > 5000)
+    if(configurationAPWaiting)
+    {
+      configurationAPWaiting = !digitalRead(atoi(configuration.get("pairingpin")));
+      if(!configurationAPWaiting)
+      {
+        configurationAPWaitStartTime = millis();
+        DV(configurationAPWaitStartTime);
+      }
+    }
+
+    if(configurationAPWaitStartTime > 0)
+    {      
+      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
+      {
+        if(!configurationAPWaitOngoing)
+        {
+          configurationAPWaitOngoing = true;
+          configurationAPWaitOngoingStartTime = millis();
+          DV(configurationAPWaitOngoingStartTime);
+        }
+      }      
+      else
+      {
+        configurationAPWaitOngoing = false;        
+        configurationAPWaitOngoingStartTime = 0;
+      }
+    }
+
+    if(configurationAPWaitOngoing && configurationAPWaitOngoingStartTime + 3000 < millis())
+//    if(millis() > 5000)
     {
       if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
       {
@@ -1703,7 +1737,8 @@ void loop()
 
         startConfigurationAP();
       }
-    }
+    } 
+    
     return;
   }
 
