@@ -39,7 +39,7 @@ bool Configuration::store()
   serializeJson(g_configdoc, Serial);
 
   Serial.println();
-  File configFile = SPIFFS.open("/shrdzm_config.json", "w");
+  File configFile = LittleFS.open("/shrdzm_config.json", "w");
   Serial.println("file opened...");
   
   if (!configFile) 
@@ -127,7 +127,8 @@ bool Configuration::migrateToNewConfigurationStyle()
 
 bool Configuration::load()
 {
-  File configFile = SPIFFS.open("/shrdzm_config.json", "r");
+  File configFile = LittleFS.open("/shrdzm_config.json", "r");
+//  File configFile = SPIFFS.open("/shrdzm_config.json", "r");
   if (configFile) 
   {
     String content;
@@ -151,6 +152,7 @@ bool Configuration::load()
   }
   else
   {
+    
     return false;
   }
   
@@ -240,12 +242,14 @@ String Configuration::readLastVersionNumber()
 {
   String lastVersionNumber = "";
   
-  if (!(SPIFFS.exists ("/version.txt") ))
+//  if (!(SPIFFS.exists ("/version.txt") ))
+  if (!(LittleFS.exists ("/version.txt") ))
   {
     return "";
   }
 
-  File file = SPIFFS.open("/version.txt", "r");
+//  File file = SPIFFS.open("/version.txt", "r");
+  File file = LittleFS.open("/version.txt", "r");
 
   for(int i=0;i<file.size();i++) //Read upto complete file size
   {
@@ -261,12 +265,14 @@ String Configuration::readLastRebootInfo()
 {
   String lastRebootInfo = "";
   
-  if (!(SPIFFS.exists ("/reboot.txt") ))
+//  if (!(SPIFFS.exists ("/reboot.txt") ))
+  if (!(LittleFS.exists ("/reboot.txt") ))
   {
-    return "";
+    return lastRebootInfo;
   }
 
-  File file = SPIFFS.open("/reboot.txt", "r");
+//  File file = SPIFFS.open("/reboot.txt", "r");
+  File file = LittleFS.open("/reboot.txt", "r");
 
   for(int i=0;i<file.size();i++) //Read upto complete file size
   {
@@ -280,7 +286,8 @@ String Configuration::readLastRebootInfo()
 
 void Configuration::storeLastRebootInfo(const char *rebootinformation)
 {
-  File file = SPIFFS.open("/reboot.txt", "w");
+//  File file = SPIFFS.open("/reboot.txt", "w");
+  File file = LittleFS.open("/reboot.txt", "w");
   if (!file) 
   {
       Serial.println("Error opening reboot info file for writing");
@@ -299,7 +306,8 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
 
 void Configuration::storeVersionNumber()
 {
-  File file = SPIFFS.open("/version.txt", "w");
+//  File file = SPIFFS.open("/version.txt", "w");
+  File file = LittleFS.open("/version.txt", "w");
   if (!file) 
   {
       Serial.println("Error opening version file for writing");

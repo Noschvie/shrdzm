@@ -157,7 +157,7 @@ label {\
   float: left;\
   width: 40%;\
   margin-left: 1.5;\
-  padding-left: 5px;\  
+  padding-left: 5px;\
 }\
 label {\
   display: inline-block;\
@@ -207,9 +207,9 @@ button {\
   <br/>\
   <li><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
   <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='60'>\
-  Home</a></font></li>\  
+  Home</a></font></li>\
   <br/><br/><br/>\
-  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\  
+  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\
   <br/><br/>\
 </ul>\
 \
@@ -424,14 +424,14 @@ void handleSettings()
       <br/><br/>\
       %s\
       <br/><br/>\
-      <input type='hidden' id='save' name='save' value='false'/>\      
-      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\      
+      <input type='hidden' id='save' name='save' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\
       <script>\
        function submitForm()\
        {\
           document.getElementById('save').value = 'true';\
        }\
-      </script>\ 
+      </script>\
       </form>\
       ",
       deviceBuffer.c_str(),
@@ -520,7 +520,7 @@ void handleGateway()
           x.type = 'password';\
         }\
       }\
-      </script>\ 
+      </script>\
       </form>\
       "
       ,
@@ -1331,14 +1331,15 @@ Serial.begin(9600); Serial.println();
 
   DV(nam);
 
-  if(!SPIFFS.begin())
+  if(!LittleFS.begin())
   {
     DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
-    SPIFFS.format();
+    LittleFS.format();
+    LittleFS.begin();  
   }
   else
   {
-    DLN("SPIFFS accessed...");
+    DLN("LittleFS accessed...");
   }
   
   DLN("configuration loading...");    
@@ -1419,8 +1420,9 @@ Serial.begin(9600); Serial.println();
   // check if pairing button pressed
   pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
   
-  if(!gatewayMode || pairingOngoing)
+  if(pairingOngoing || !gatewayMode)
   {
+    gatewayMode = false;
     simpleEspConnection.begin();
   
     DV(simpleEspConnection.myAddress);
@@ -1480,14 +1482,11 @@ Serial.begin(9600); Serial.println();
     return;
   }
 
-  if(gatewayMode)
+  if(gatewayMode && !pairingOngoing)
   {
     startGatewayWebserver();
     mqttNextTry = 0;
   }
-
-//  Serial.println(atoi(configuration.get("interval"))*1000);
-
 }
 
 void getMeasurementData()
@@ -1512,6 +1511,7 @@ void getMeasurementData()
 
           if(gatewayMode)
           {
+            Serial.println("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
           }
           else                
@@ -1646,7 +1646,9 @@ void handleGatewayLoop()
     preparing = false;
     preparestart = 0;
 
+    Serial.println("before getMeasurementData");
     getMeasurementData();
+    Serial.println("after getMeasurementData");
   }
 
   if(!preparing)
@@ -1763,7 +1765,7 @@ void loop()
     if(dev != NULL)
     {
       processendReached = dev->hasProcessEarlyEnded();
-      DLN("Process early finshed.");
+      DV(processendReached);
     }
   }
 
@@ -1778,7 +1780,7 @@ void loop()
 
   if(gatewayMode)
     return;  
-    
+
   if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {
     // send finish to gateway

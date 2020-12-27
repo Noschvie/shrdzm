@@ -4,6 +4,7 @@ Device_DHT22::Device_DHT22()
 {  
   dataAvailable = false;    
   deviceTypeName = "DHT22";
+  initTimestamp = 0;
 }
 
 Device_DHT22::~Device_DHT22()
@@ -18,6 +19,8 @@ bool Device_DHT22::setDeviceParameter(JsonObject obj)
   if(deviceParameter.containsKey("pin"))
   {
     dht.setup(deviceParameter["pin"].as<uint8_t>(), DHTesp::DHT22);
+    initTimestamp = millis();
+    Serial.println("initTimestamp = "+String(initTimestamp));
   }
 }
 
@@ -55,7 +58,8 @@ SensorData* Device_DHT22::readInitialSetupParameter()
 SensorData* Device_DHT22::readParameter()
 {
   SensorData *al = new SensorData(2);
-  delay(dht.getMinimumSamplingPeriod());
+
+//  delay(dht.getMinimumSamplingPeriod());
 
   al->di[0].nameI = "temperature";
   al->di[0].valueI = String(dht.getTemperature());

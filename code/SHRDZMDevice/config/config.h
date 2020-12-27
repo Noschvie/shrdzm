@@ -27,7 +27,8 @@
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "StringSplitter.h"
-#include "FS.h"
+//#include "FS.h"
+#include <LittleFS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
 #include <ESP8266WebServer.h>
