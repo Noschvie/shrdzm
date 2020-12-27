@@ -4,7 +4,6 @@ Device_DHT22::Device_DHT22()
 {  
   dataAvailable = false;    
   deviceTypeName = "DHT22";
-  initTimestamp = 0;
 }
 
 Device_DHT22::~Device_DHT22()
@@ -19,8 +18,6 @@ bool Device_DHT22::setDeviceParameter(JsonObject obj)
   if(deviceParameter.containsKey("pin"))
   {
     dht.setup(deviceParameter["pin"].as<uint8_t>(), DHTesp::DHT22);
-    initTimestamp = millis();
-    Serial.println("initTimestamp = "+String(initTimestamp));
   }
 }
 

@@ -67,14 +67,7 @@ char websideBuffer[5000];
 void startConfigurationAP()
 {
   configurationMode = true;
-  
-  uint8_t pmac[6];
-  WiFi.macAddress(pmac);
-  deviceName = macToStr(pmac);
-  
-  deviceName.replace(":", "");
-  deviceName.toUpperCase();
-  
+    
   String APName = "SHRDZM-"+deviceName;
   WiFi.hostname(APName.c_str());        
   WiFi.softAP(APName);     
@@ -683,13 +676,6 @@ void startGatewayWebserver()
   delay(100);
   WiFi.mode(WIFI_STA);
   DLN("after WIFI_STA ");
-
-  uint8_t pmac[6];
-  WiFi.macAddress(pmac);
-  deviceName = macToStr(pmac);
-
-  deviceName.replace(":", "");
-  deviceName.toUpperCase();
 
   String APName = "SHRDZMDevice-"+deviceName;
   MQTT_TOPIC = "SHRDZM/"+deviceName;
@@ -1331,6 +1317,18 @@ Serial.begin(9600); Serial.println();
 
   DV(nam);
 
+  // set device name
+  WiFi.mode(WIFI_STA);  
+  uint8_t pmac[6];
+  WiFi.macAddress(pmac);
+  deviceName = macToStr(pmac);
+  
+  deviceName.replace(":", "");
+  deviceName.toUpperCase();
+
+  DV(deviceName);
+
+#ifdef LITTLEFS
   if(!LittleFS.begin())
   {
     DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
@@ -1341,6 +1339,18 @@ Serial.begin(9600); Serial.println();
   {
     DLN("LittleFS accessed...");
   }
+#else
+  if(!SPIFFS.begin())
+  {
+    DLN("First use. I need to format file system. This will take a few seconds. Please wait...");
+    SPIFFS.format();
+    SPIFFS.begin();  
+  }
+  else
+  {
+    DLN("SPIFFS accessed...");
+  }
+#endif
   
   DLN("configuration loading...");    
   if(!configuration.load())

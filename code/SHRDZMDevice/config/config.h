@@ -5,6 +5,7 @@
 #define VERSION		"0.3.0"
 #define NAME		"SHRDZMDevice"
 
+//#define LITTLEFS
 
 #define SLEEP_SECS 10
 //#define SLEEP_SECS 2 * 60 
@@ -28,7 +29,11 @@
 #include "SimpleEspNowConnection.h"
 #include "StringSplitter.h"
 //#include "FS.h"
+
+#ifdef LITTLEFS
 #include <LittleFS.h>
+#endif
+
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
 #include <ESP8266WebServer.h>
