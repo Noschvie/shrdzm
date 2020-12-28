@@ -165,8 +165,6 @@ SensorData* Device_SDS011::readInitialSetupParameter()
 
 void Device_SDS011::setActiveMode() 
 {   
-  Serial.println("setActiveMode checksum : "+String(calculateREPORTINGMODECheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
     if(i == 17)
@@ -178,17 +176,11 @@ void Device_SDS011::setActiveMode()
   }
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-    Serial.print(swSer.read());
-  }  
-
-  Serial.println();
+    swSer.read();
 }
 
 void Device_SDS011::setWorkingPeriod() 
 {   
-  Serial.println("setWorkingPeriod checksum : "+String(calculateWORKINGPERIODCheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
     if(i == 17)
@@ -200,11 +192,7 @@ void Device_SDS011::setWorkingPeriod()
   }
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-    Serial.print(swSer.read());
-  }  
-
-  Serial.println();
+    swSer.read();
 }
 
 
@@ -226,11 +214,7 @@ void Device_SDS011::wakeup()
   
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-    Serial.print(swSer.read());
-  }
-
-  Serial.println();
+    swSer.read();
 }
 
 void Device_SDS011::gotoSleep()
@@ -305,6 +289,7 @@ SensorData* Device_SDS011::readParameter()
   }
 
   dataAvailable = false;
+  done = false;
 
   gotoSleep();
   
