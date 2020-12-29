@@ -1468,6 +1468,7 @@ Serial.begin(9600); Serial.println();
     {
       pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
       digitalWrite(atoi(configuration.get("sensorpowerpin")),HIGH);          
+      DLN("sensor power on");
     }
     
     // check if preparation is needed
