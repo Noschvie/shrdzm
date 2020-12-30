@@ -1114,6 +1114,7 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 {
   simpleEspConnection.setServerMac(ga);
   configuration.set("gateway", (char *)ad.c_str());  
+  configuration.setWlanParameter("enabled", "false");  
 
   configuration.store();   
 }
@@ -1425,58 +1426,76 @@ Serial.begin(9600); Serial.println();
     ESP.restart();      
   }
 
-  /// check whether to start in gateway mode
-  if( String(configuration.getWlanParameter("enabled")) == "true" )
+  // enable sensor power if configured
+  if(atoi(configuration.get("sensorpowerpin")) != 99)
   {
-    gatewayMode = true;
+    pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
+    digitalWrite(atoi(configuration.get("sensorpowerpin")),HIGH);          
+    DLN("sensor power on");
   }
 
   // check if pairing button pressed
   pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
+
+  // check last boot info
+  lastRebootInfo = configuration.readLastRebootInfo();
+  DLN("Last Reboot Info = "+lastRebootInfo);    
+
+  configuration.storeLastRebootInfo("normal");
   
-  if(pairingOngoing || !gatewayMode)
+  if(lastRebootInfo == "connectiontimeout" && !pairingOngoing)
   {
-    gatewayMode = false;
-    configurationAPWaiting = true;
-    simpleEspConnection.begin();
-  
-    DV(simpleEspConnection.myAddress);
-    
-    simpleEspConnection.onPairingFinished(&OnPairingFinished);  
-    simpleEspConnection.setPairingBlinkPort(LEDPIN);  
-    simpleEspConnection.onSendError(&OnSendError);    
-    simpleEspConnection.onSendDone(&OnSendDone);
-    if(configuration.containsKey("gateway"))
-    {
-      simpleEspConnection.setServerMac(configuration.get("gateway"));  
-    }
-  
-    simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
-    simpleEspConnection.onMessage(&OnMessage);  
+    startConfigurationAP();
+    return;
   }
+
+  /// check whether to start in gateway mode
+  if( String(configuration.getWlanParameter("enabled")) == "true" && !pairingOngoing)
+    gatewayMode = true;
+
+  DV(gatewayMode);
+
+  if(gatewayMode)
+  {
+    startGatewayWebserver();
+    mqttNextTry = 0;
+    clockmillis = millis();      
+    return;
+  }  
+
+  // start ESPNow
+  configurationAPWaiting = true;
+  simpleEspConnection.begin();
+
+  DV(simpleEspConnection.myAddress);
+  
+  simpleEspConnection.onPairingFinished(&OnPairingFinished);  
+  simpleEspConnection.setPairingBlinkPort(LEDPIN);  
+  simpleEspConnection.onSendError(&OnSendError);    
+  simpleEspConnection.onSendDone(&OnSendDone);
+  if(configuration.containsKey("gateway") && !pairingOngoing)
+  {
+    simpleEspConnection.setServerMac(configuration.get("gateway")); 
+    DLN("set server mac to "+String(configuration.get("gateway")));
+  }
+
+  simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
+  simpleEspConnection.onMessage(&OnMessage);  
   
   if(pairingOngoing)
   {
     avoidSleeping = true;
     DLN("Start pairing");    
-    simpleEspConnection.startPairing(300);
+    ESP.eraseConfig();
+    if(!simpleEspConnection.startPairing(300))
+    {
+      DLN("Start pairing failed!");      
+    }
   }
   else
   {
-    // enable sensor power if configured
-    if(atoi(configuration.get("sensorpowerpin")) != 99)
-    {
-      pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
-      digitalWrite(atoi(configuration.get("sensorpowerpin")),HIGH);          
-      DLN("sensor power on");
-    }
-    
-    // check if preparation is needed
-    if(!gatewayMode)
-    {
-      prepareend = 1000 * atoi(configuration.get("preparetime"));      
-      DV(prepareend);
-    }
+    prepareend = 1000 * atoi(configuration.get("preparetime"));      
+    DV(prepareend);
 
     if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
     {    
@@ -1486,23 +1505,6 @@ Serial.begin(9600); Serial.println();
   }
 
   clockmillis = millis();  
-
-  lastRebootInfo = configuration.readLastRebootInfo();
-  DLN("Last Reboot Info = "+lastRebootInfo);    
-
-  configuration.storeLastRebootInfo("normal");
-  
-  if(lastRebootInfo == "connectiontimeout")
-  {
-    startConfigurationAP();
-    return;
-  }
-
-  if(gatewayMode && !pairingOngoing)
-  {
-    startGatewayWebserver();
-    mqttNextTry = 0;
-  }
 }
 
 void getMeasurementData()
@@ -1682,7 +1684,6 @@ void loop()
   if(configurationMode)
   {
     server.handleClient();
-
     return;  
   }
 
@@ -1692,7 +1693,7 @@ void loop()
     return;
   }
   
-  if(!firmwareUpdate && configuration.containsKey("gateway") && !gatewayMode)
+  if(!firmwareUpdate && configuration.containsKey("gateway"))
     sendBufferFilled = simpleEspConnection.loop();
 
   if(pairingOngoing)
@@ -1703,7 +1704,6 @@ void loop()
       if(!configurationAPWaiting)
       {
         configurationAPWaitStartTime = millis();
-        DV(configurationAPWaitStartTime);
       }
     }
 
@@ -1715,7 +1715,6 @@ void loop()
         {
           configurationAPWaitOngoing = true;
           configurationAPWaitOngoingStartTime = millis();
-          DV(configurationAPWaitOngoingStartTime);
         }
       }      
       else
@@ -1832,8 +1831,15 @@ void loop()
     // send finish to gateway
     if(configuration.containsKey("gateway"))
     {
-      simpleEspConnection.sendMessage("$F$");  
-      DLN("Finished process sent");
+      if(!simpleEspConnection.sendMessage("$F$"))
+      {
+        DLN("Finish message not sent!");
+      }
+      else      
+      {
+        DLN("Finished process sent");
+      }
+        
       finishSent = true;
     }    
   }

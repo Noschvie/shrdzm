@@ -602,6 +602,8 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {
     simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+
+    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
   
