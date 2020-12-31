@@ -1693,9 +1693,11 @@ void loop()
     return;
   }
   
-  if(!firmwareUpdate && configuration.containsKey("gateway"))
+  if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
     sendBufferFilled = simpleEspConnection.loop();
 
+//  return;
+  
   if(pairingOngoing)
   {
     if(configurationAPWaiting)
@@ -1725,7 +1727,6 @@ void loop()
     }
 
     if(configurationAPWaitOngoing && configurationAPWaitOngoingStartTime + 3000 < millis())
-//    if(millis() > 5000)
     {
       if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
       {
