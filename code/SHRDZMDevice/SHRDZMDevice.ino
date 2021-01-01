@@ -44,6 +44,7 @@ unsigned long prepareend = 0;
 unsigned long processend = 0;
 unsigned long lastIntervalTime = 0;
 unsigned long preparestart = 0;
+unsigned long currentUptime = 0;
 unsigned long configurationAPWaitStartTime = 0;
 unsigned long configurationAPWaitOngoingStartTime = 0;
 bool finalMeasurementDone = false;
@@ -172,10 +173,20 @@ label.input {\
   padding-left: 80px;\
   line-height: 1.5;\
 }\
+input.factoryresetbutton, textarea {\
+background: cyan;\
+border: 2px solid red;\
+color: black;\
+}\
 button {\
   margin-top: 1.5em;\
   width: 30%;\
   border-radius: 10px;\
+}\
+.factoryresetbutton\
+  background-color: Red;\
+  border: 2px solid black;\
+  border-radius: 5px;\
 }\
 .submitbutton {\
   background-color: Gainsboro;\
@@ -223,6 +234,37 @@ button {\
 void handleRoot() 
 {
   char content[2000];
+
+  if(server.hasArg("factoryreset"))
+  {
+    if(String(server.arg("factoryreset")) == "true") // factory reset was pressed
+    {
+      snprintf(content, 300,
+      "<!DOCTYPE html>\
+      <html>\
+      <head>\
+      </head>\
+      <body>\
+      <h1>Factory Reset was pressed. SHRDZMDevice will be restarted with default configuration.</h1>\
+      </body>\
+      </html>\
+      ");
+    
+    
+      server.send(200, "text/html", content);
+
+#ifdef LITTLEFS
+      LittleFS.format();
+#else
+      SPIFFS.format();
+#endif
+
+      delay(2000);
+      
+      ESP.restart();        
+    }
+  }
+  
   String informationTable = "<br><br>";  
 
   informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
@@ -237,6 +279,17 @@ void handleRoot()
       <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
       <br /><br /><br /><br />\
       %s\
+      <br/><br/>\
+      <form method='post' id='factoryReset'>\
+      <input type='hidden' id='factoryreset' name='factoryreset' value='false'/>\
+      <input class='factoryresetbutton' type='submit' onclick='submitForm()' value='Factory Reset!' />\
+      <script>\
+       function submitForm()\
+       {\
+          document.getElementById('factoryreset').value = 'true';\
+       }\
+      </script>\
+      </form>\
       ",
       informationTable.c_str()
   );  
@@ -1116,7 +1169,8 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
   configuration.set("gateway", (char *)ad.c_str());  
   configuration.setWlanParameter("enabled", "false");  
 
-  configuration.store();   
+  writeConfiguration = true;
+//  configuration.store();   
 }
 
 void OnSendError(uint8_t* ad)
@@ -1464,7 +1518,6 @@ Serial.begin(9600); Serial.println();
   }  
 
   // start ESPNow
-  configurationAPWaiting = true;
   simpleEspConnection.begin();
 
   DV(simpleEspConnection.myAddress);
@@ -1673,12 +1726,80 @@ void handleGatewayLoop()
     lastIntervalTime = millis();  
 }
 
+// check paiting button for more than 3 and less than 10 seconds aafter device is at least 5 seconds up
+bool checkAPModeRequest()
+{
+  currentUptime = millis();
+  if( currentUptime < 5000 )
+    return false;
+
+  if(digitalRead(atoi(configuration.get("pairingpin")))) // pairing pin released
+  {
+    if(!configurationAPWaiting)
+    {
+      configurationAPWaiting = true;
+      DV(configurationAPWaiting);
+      return false;
+    }
+    
+    if((configurationAPWaitStartTime > 0) && 
+       (currentUptime > (configurationAPWaitStartTime + 3000)) &&
+       (currentUptime < (configurationAPWaitStartTime + 10000)))
+    {
+      DLN("Configuration AP trigger detected...");
+      configurationAPWaitStartTime = 0;
+      return true; 
+    }
+    else if((configurationAPWaitStartTime > 0) && 
+       (currentUptime > (configurationAPWaitStartTime + 10000)))
+    {
+      DLN("Factory reset trigger detected...");
+      configurationAPWaitStartTime = 0;
+
+#ifdef LITTLEFS
+      LittleFS.format();
+#else
+      SPIFFS.format();
+#endif
+
+      delay(1000);
+      
+      ESP.restart();        
+      
+      return false; 
+    }    
+
+    configurationAPWaitStartTime = 0;
+    
+    return false;
+  }
+  else if(configurationAPWaitStartTime == 0 && configurationAPWaiting)
+  {
+    configurationAPWaitStartTime = currentUptime;
+    DV(configurationAPWaitStartTime);
+  }
+
+  return false;
+}
+
 void loop() 
 {
   if(writeConfiguration)
   {
     writeConfiguration = false;
     configuration.store();
+  }
+
+  if(checkAPModeRequest())
+  {
+    if(pairingOngoing)
+      simpleEspConnection.endPairing();
+
+    pairingOngoing = false;
+    configurationMode = true;
+    startConfigurationAP();
+    
+    return;    
   }
   
   if(configurationMode)
@@ -1696,53 +1817,10 @@ void loop()
   if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
     sendBufferFilled = simpleEspConnection.loop();
 
-//  return;
-  
+
   if(pairingOngoing)
-  {
-    if(configurationAPWaiting)
-    {
-      configurationAPWaiting = !digitalRead(atoi(configuration.get("pairingpin")));
-      if(!configurationAPWaiting)
-      {
-        configurationAPWaitStartTime = millis();
-      }
-    }
-
-    if(configurationAPWaitStartTime > 0)
-    {      
-      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
-      {
-        if(!configurationAPWaitOngoing)
-        {
-          configurationAPWaitOngoing = true;
-          configurationAPWaitOngoingStartTime = millis();
-        }
-      }      
-      else
-      {
-        configurationAPWaitOngoing = false;        
-        configurationAPWaitOngoingStartTime = 0;
-      }
-    }
-
-    if(configurationAPWaitOngoing && configurationAPWaitOngoingStartTime + 3000 < millis())
-    {
-      if(digitalRead(atoi(configuration.get("pairingpin"))) == false)
-      {
-        DLN("Entering configuration mode...");
-        simpleEspConnection.endPairing();
-
-        pairingOngoing = false;
-        configurationMode = true;
-
-        startConfigurationAP();
-      }
-    } 
-    
-    return;
-  }
-
+    return;  
+  
   if(firmwareUpdate)
     upgradeFirmware();
 
@@ -1880,10 +1958,10 @@ void loop()
 
   if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty() && finalMeasurementDone && processendReached)
   {
-    if(initReboot)
+    if(initReboot && !writeConfiguration)
     {
       ESP.restart();
-      delay(100);
+      delay(500);
 
       return;
     }
