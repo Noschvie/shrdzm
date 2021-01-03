@@ -591,6 +591,34 @@ void OnSendError(uint8_t* ad)
 #endif  
 }
 
+void sendOpenESPMessages(String ad)
+{
+  clientAddress = ad;
+  SetupObject::SetupItem *si = setupObject.GetItem(ad);
+
+  if(si != NULL)
+  {
+    String message = si->m_parameterName;
+
+    if(si->m_parameterValue != "")
+      message += ":"+ si->m_parameterValue;
+
+#ifdef DEBUG
+    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+#endif
+    
+    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
+
+    setupObject.RemoveItem(si);
+
+    reportDeviceStateInfo(ad, "Sent setup");
+  }  
+  else
+  {
+//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
+  }  
+}
+
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   if(String((char *)message) == "$PING$")
@@ -601,9 +629,12 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {
-    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
 
-    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
+    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
+//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+
+//    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
   
@@ -784,9 +815,12 @@ void OnPaired(uint8_t *ga, String ad)
 void OnConnected(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
- // Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+  Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
+  sendOpenESPMessages(ad);
+
+/*
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
 
@@ -796,6 +830,10 @@ void OnConnected(uint8_t *ga, String ad)
 
     if(si->m_parameterValue != "")
       message += ":"+ si->m_parameterValue;
+
+#ifdef DEBUG
+    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+#endif
     
     simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
@@ -806,7 +844,7 @@ void OnConnected(uint8_t *ga, String ad)
   else
   {
 //    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  }
+  } */
 }
 
 void OnPairingFinished()

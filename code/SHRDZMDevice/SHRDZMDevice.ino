@@ -1591,6 +1591,10 @@ void getMeasurementData()
         delete sd;
         sd = NULL;
       }
+
+      // send message about last measurement;
+      simpleEspConnection.sendMessage("$F$");
+
     }
   }  
 }
@@ -1605,7 +1609,7 @@ void handleGatewayLoop()
     if (WiFi.status() == WL_CONNECTED) 
     {
       apConnectingOngoing = false;
-      Serial.println("Connected to AP. Starting Webserver...");
+      DLN("Connected to AP. Starting Webserver...");
       
       server.on("/", handleRoot);
       server.on("/reboot", handleReboot);
@@ -1619,7 +1623,7 @@ void handleGatewayLoop()
     {
       if(millis() > apConnectionStartTime + 10000)
       {
-        Serial.println("Connection timeout. Will start a local AP to reconfigure.");
+        DLN("Connection timeout. Will start a local AP to reconfigure.");
 
         configuration.storeLastRebootInfo("connectiontimeout");
 
@@ -1726,60 +1730,14 @@ void handleGatewayLoop()
     lastIntervalTime = millis();  
 }
 
-// check paiting button for more than 3 and less than 10 seconds aafter device is at least 5 seconds up
-bool checkAPModeRequest()
+void handleESPNowLoop()
 {
-  currentUptime = millis();
-  if( currentUptime < 5000 )
-    return false;
+  if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
+    sendBufferFilled = simpleEspConnection.loop();
 
-  if(digitalRead(atoi(configuration.get("pairingpin")))) // pairing pin released
-  {
-    if(!configurationAPWaiting)
-    {
-      configurationAPWaiting = true;
-      DV(configurationAPWaiting);
-      return false;
-    }
-    
-    if((configurationAPWaitStartTime > 0) && 
-       (currentUptime > (configurationAPWaitStartTime + 3000)) &&
-       (currentUptime < (configurationAPWaitStartTime + 10000)))
-    {
-      DLN("Configuration AP trigger detected...");
-      configurationAPWaitStartTime = 0;
-      return true; 
-    }
-    else if((configurationAPWaitStartTime > 0) && 
-       (currentUptime > (configurationAPWaitStartTime + 10000)))
-    {
-      DLN("Factory reset trigger detected...");
-      configurationAPWaitStartTime = 0;
+  if(firmwareUpdate)
+    upgradeFirmware();
 
-#ifdef LITTLEFS
-      LittleFS.format();
-#else
-      SPIFFS.format();
-#endif
-
-      delay(1000);
-      
-      ESP.restart();        
-      
-      return false; 
-    }    
-
-    configurationAPWaitStartTime = 0;
-    
-    return false;
-  }
-  else if(configurationAPWaitStartTime == 0 && configurationAPWaiting)
-  {
-    configurationAPWaitStartTime = currentUptime;
-    DV(configurationAPWaitStartTime);
-  }
-
-  return false;
 }
 
 void loop() 
@@ -1813,18 +1771,24 @@ void loop()
     handleGatewayLoop();
     return;
   }
+  else
+  {
+    handleESPNowLoop();
+//    return;
+  }
   
-  if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
+/*  if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
     sendBufferFilled = simpleEspConnection.loop();
-
+*/
 
   if(pairingOngoing)
     return;  
   
-  if(firmwareUpdate)
+/*  if(firmwareUpdate)
     upgradeFirmware();
+*/
 
-  if(!batterycheckDone && (configuration.containsKey("gateway") || gatewayMode))
+  if(!batterycheckDone && (configuration.containsKey("gateway")))
   {
     batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
@@ -1905,7 +1869,7 @@ void loop()
   if(gatewayMode)
     return;  
 
-  if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
+/*  if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {
     // send finish to gateway
     if(configuration.containsKey("gateway"))
@@ -1921,7 +1885,7 @@ void loop()
         
       finishSent = true;
     }    
-  }
+  } */
 
   if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone & finalMeasurementDone && millis() >= prepareend)
   {
