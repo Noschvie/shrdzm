@@ -1,3 +1,24 @@
+void handleBatteryCheck()
+{
+  batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
+
+  if(!batterycheckDone)
+  {      
+    String reply = "battery:"+String(analogRead(A0));
+  
+    DLN("battery : "+reply);
+  
+    if(gatewayMode)
+    {
+      mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
+    }
+    else
+    {
+      simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());  
+    }
+    batterycheckDone = true;
+  }  
+}
 
 // check paiting button for more than 3 and less than 10 seconds aafter device is at least 5 seconds up
 bool checkAPModeRequest()

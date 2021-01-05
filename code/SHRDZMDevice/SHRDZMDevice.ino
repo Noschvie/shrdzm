@@ -1684,10 +1684,11 @@ void handleGatewayLoop()
     preparing = false;
   }
       
-  if(String(configuration.get("batterycheck")) == "ON" && !preparing)
-  {
-    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
-  }    
+//  if(String(configuration.get("batterycheck")) == "ON" && !preparing)
+//  {
+    handleBatteryCheck();
+//    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
+//  }    
 
   if(!isDeviceInitialized)
   {
@@ -1737,6 +1738,24 @@ void handleESPNowLoop()
 
   if(firmwareUpdate)
     upgradeFirmware();
+
+  if(!configuration.containsKey("gateway") || String(configuration.get("gateway")) == "")
+    return;
+
+  if(!batterycheckDone)
+    handleBatteryCheck();
+
+  if(!isDeviceInitialized)
+  {
+    if(configuration.get("devicetype") != "UNKNOWN")
+    {
+      initDeviceType(configuration.get("devicetype"), false);
+      if(dev != NULL)
+        dev->prepare();
+    }
+    
+    isDeviceInitialized = true;
+  }
 
 }
 
@@ -1788,7 +1807,7 @@ void loop()
     upgradeFirmware();
 */
 
-  if(!batterycheckDone && (configuration.containsKey("gateway")))
+/*  if(!batterycheckDone && (configuration.containsKey("gateway")))
   {
     batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
     if(!batterycheckDone)
@@ -1809,6 +1828,7 @@ void loop()
     }
   }
 
+
   if(!isDeviceInitialized)
   {
     if(configuration.get("devicetype") != "UNKNOWN")
@@ -1820,6 +1840,7 @@ void loop()
     
     isDeviceInitialized = true;
   }
+*/
   
   // get measurement data
   if(dev != NULL)
@@ -1866,8 +1887,6 @@ void loop()
     clockmillis = millis();
   }
 
-  if(gatewayMode)
-    return;  
 
 /*  if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
   {
@@ -1897,6 +1916,7 @@ void loop()
     if(dev != NULL)
     {
       dev->setPostAction();
+//      Serial.println("PostAction done");
   
       if(dev->isNewDataAvailable())
       {    

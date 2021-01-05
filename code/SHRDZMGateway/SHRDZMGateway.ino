@@ -592,7 +592,7 @@ void OnSendError(uint8_t* ad)
 }
 
 void sendOpenESPMessages(String ad)
-{
+{  
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
 
@@ -621,6 +621,10 @@ void sendOpenESPMessages(String ad)
 
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
+#ifdef DEBUG  
+  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
+#endif
+  
   if(String((char *)message) == "$PING$")
   {
     OnConnected(ad, simpleEspConnection.macToStr(ad));
@@ -629,19 +633,15 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {
-    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
-
-    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
-//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+//    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
+    
+//    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
+    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
 
 //    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
   
-#ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
-#endif
-
   String m = (char *)message;
 
   if(m.substring(0,3) == "$D$")       // Data
