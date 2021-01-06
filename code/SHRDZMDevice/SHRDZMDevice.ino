@@ -10,7 +10,7 @@
 
 */
 
-#define DEBUG_SHRDZM
+//#define DEBUG_SHRDZM
 
 #include "config/config.h"
 

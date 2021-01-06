@@ -611,7 +611,8 @@ void sendOpenESPMessages(String ad)
 
     setupObject.RemoveItem(si);
 
-    reportDeviceStateInfo(ad, "Sent setup");
+    if(simEnabled)
+      reportDeviceStateInfo(ad, "Sent setup");
   }  
   else
   {
@@ -633,15 +634,15 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {
-//    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
+    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
     
-//    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
-    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
+//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
 
 //    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
-  
+
   String m = (char *)message;
 
   if(m.substring(0,3) == "$D$")       // Data
@@ -1199,42 +1200,45 @@ void loop()
   }
   
   simpleEspConnection.loop();
-  
-  if (!mqtt.connected() && simEnabled) 
+
+  if (simEnabled) 
   {
-    // Reconnect every 10 seconds
-    uint32_t t = millis();
-    if (t - lastReconnectAttempt > 10000L) 
+    if(!mqtt.connected())
     {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) 
+      // Reconnect every 10 seconds
+      uint32_t t = millis();
+      if (t - lastReconnectAttempt > 10000L) 
       {
-        lastReconnectAttempt = 0;
-        
-        mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
-        mqtt.publish((String(MQTT_TOPIC)+"/IP").c_str(), localIP.c_str());
-  
-  #ifdef VERSION
-        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
-  #else      
-        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
-  #endif
-  
-        mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
+        lastReconnectAttempt = t;
+        if (mqttConnect()) 
+        {
+          lastReconnectAttempt = 0;
+          
+          mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+          mqtt.publish((String(MQTT_TOPIC)+"/IP").c_str(), localIP.c_str());
+    
+    #ifdef VERSION
+          mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
+    #else      
+          mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
+    #endif
+    
+          mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
+        }
       }
     }
-  }
-  else if(simEnabled)
-  {
-    // send open mqtt messages
-    MQTTBufferObject::BufferItem *i = mqttBufferObject.GetNextItem();
-    if(i != NULL)
+    else
     {
-      mqtt.publish(i->m_subject.c_str(), i->m_text.c_str());          
-      mqttBufferObject.RemoveItem(i);
-    }
-    
-    mqtt.loop();
+      // send open mqtt messages
+      MQTTBufferObject::BufferItem *i = mqttBufferObject.GetNextItem();
+      if(i != NULL)
+      {
+        mqtt.publish(i->m_subject.c_str(), i->m_text.c_str());          
+        mqttBufferObject.RemoveItem(i);
+      }
+      
+      mqtt.loop();
+    }    
   }
   
   if(firmwareUpdate)
