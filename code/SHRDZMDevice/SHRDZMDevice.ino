@@ -1154,7 +1154,7 @@ void OnPairingFinished()
 
   DLN("OnPairingFinished");
 
-  sendSetup();
+//  sendSetup();
   avoidSleeping = false;
   pairingOngoing = false;
 
@@ -1171,8 +1171,12 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
 
   DV((char *)ad.c_str());
 
-  writeConfiguration = true;
-//  configuration.store();   
+  pairingOngoing = false;
+ // writeConfiguration = true;
+  
+  configuration.store();   
+
+  sendSetup();  
 }
 
 void OnSendError(uint8_t* ad)
@@ -1767,6 +1771,8 @@ void loop()
   {
     writeConfiguration = false;
     configuration.store();
+
+    sendSetup();
   }
 
   if(checkAPModeRequest())

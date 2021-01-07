@@ -786,6 +786,8 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
 void OnPaired(uint8_t *ga, String ad)
 {
+  Serial.println("***************************************----");
+  
 #ifdef DEBUG
   Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 #endif
@@ -824,7 +826,7 @@ void OnConnected(uint8_t *ga, String ad)
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
-  sendOpenESPMessages(ad);
+//  sendOpenESPMessages(ad);
 
 /*
   clientAddress = ad;
