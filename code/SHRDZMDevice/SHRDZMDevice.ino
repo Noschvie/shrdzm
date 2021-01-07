@@ -10,7 +10,7 @@
 
 */
 
-//#define DEBUG_SHRDZM
+#define DEBUG_SHRDZM
 
 #include "config/config.h"
 
@@ -1168,6 +1168,8 @@ void OnNewGatewayAddress(uint8_t *ga, String ad)
   simpleEspConnection.setServerMac(ga);
   configuration.set("gateway", (char *)ad.c_str());  
   configuration.setWlanParameter("enabled", "false");  
+
+  DV((char *)ad.c_str());
 
   writeConfiguration = true;
 //  configuration.store();   

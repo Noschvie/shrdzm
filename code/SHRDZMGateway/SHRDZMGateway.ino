@@ -810,7 +810,12 @@ void OnPaired(uint8_t *ga, String ad)
 
   // send via GSM    
   if(simEnabled)
+  {
+#ifdef DEBUG
+    Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
+#endif
     mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
+  }
 }
 
 void OnConnected(uint8_t *ga, String ad)

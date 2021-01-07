@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define VERSION		"0.3.0"
+#define VERSION		"0.3.3"
 #define NAME		"SHRDZMDevice"
 
 //#define LITTLEFS
