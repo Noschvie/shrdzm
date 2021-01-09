@@ -224,6 +224,7 @@ void handleSettings()
     if(webserver.hasArg("MQTTpassword"))
       configuration.setSim800Parameter("MQTTpassword", webserver.arg("MQTTpassword").c_str());    
 
+    storeConfiguration = true;
   }
       
   sprintf(content,   

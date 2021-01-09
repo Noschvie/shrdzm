@@ -28,12 +28,25 @@ void setup()
   {
     startConfigurationAP(configuration.m_deviceName);
     DLN("Configuration AP for "+configuration.m_deviceName+" started...");
+    
+    return;
   }
 
-
+/*  simpleEspConnection.begin();
+  simpleEspConnection.setPairingBlinkPort(2);
+  simpleEspConnection.onMessage(&OnMessage);  
+  simpleEspConnection.onPaired(&OnPaired);  
+  simpleEspConnection.onPairingFinished(&OnPairingFinished);    
+  simpleEspConnection.onSendError(&OnSendError);  
+  simpleEspConnection.onConnected(&OnConnected);  */
 }
 
 void loop() 
 {
   helperLoop();
+  OTALoop();
+  
+//  simpleEspConnection.loop();
+
+  handleSerial();
 }

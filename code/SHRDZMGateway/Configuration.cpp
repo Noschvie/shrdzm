@@ -4,6 +4,7 @@ static DynamicJsonDocument g_configdoc(1024);
 
 Configuration::Configuration()
 {
+ 
 }
 
 Configuration::~Configuration()
