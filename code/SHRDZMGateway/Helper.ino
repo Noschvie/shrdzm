@@ -2,6 +2,7 @@ char websideBuffer[5000];
 String deviceName;
 ESP8266WebServer webserver;
 bool APModeEnabled = false;
+bool storeConfiguration = false;
 
 bool checkAP()
 {
@@ -55,7 +56,7 @@ li a {\
 }\
 \
 li a.active {\
-  background-color: #4CAF50;\
+  background-color: #9999ff;\
   color: white;\
 }\
 \
@@ -78,7 +79,7 @@ label {\
 }\
 label {\
   display: inline-block;\
-  width: 7em;\
+  width: 20em;\
 }\
 input {\
   margin: 0 0 1em .2em;\
@@ -180,6 +181,120 @@ void handleRoot()
 
 void handleSettings()
 {
+  char content[2600];
+
+  if(webserver.args() != 0)
+  {
+    if(webserver.hasArg("ssid"))
+      configuration.setWlanParameter("ssid", webserver.arg("ssid").c_str());
+    else
+      configuration.setWlanParameter("ssid", ""); 
+        
+    if(webserver.hasArg("ssidpassword"))
+      configuration.setWlanParameter("password", webserver.arg("ssidpassword").c_str());     
+    else
+      configuration.setWlanParameter("password", ""); 
+    
+    if(webserver.hasArg("sim800"))
+    {
+      if( webserver.arg("sim800") == "1")
+        configuration.setSim800Parameter("enabled", "true");
+      else
+        configuration.setSim800Parameter("enabled", "false");
+    }
+    else
+    {
+      configuration.setSim800Parameter("enabled", "false");
+    }
+
+    if(webserver.hasArg("pin"))
+      configuration.setSim800Parameter("pin", webserver.arg("pin").c_str());    
+    if(webserver.hasArg("apn"))
+      configuration.setSim800Parameter("apn", webserver.arg("apn").c_str());    
+    if(webserver.hasArg("user"))
+      configuration.setSim800Parameter("user", webserver.arg("user").c_str());    
+    if(webserver.hasArg("password"))
+      configuration.setSim800Parameter("password", webserver.arg("password").c_str());    
+    if(webserver.hasArg("MQTTbroker"))
+      configuration.setSim800Parameter("MQTTbroker", webserver.arg("MQTTbroker").c_str());    
+    if(webserver.hasArg("MQTTport"))
+      configuration.setSim800Parameter("MQTTport", webserver.arg("MQTTport").c_str());    
+    if(webserver.hasArg("MQTTuser"))
+      configuration.setSim800Parameter("MQTTuser", webserver.arg("MQTTuser").c_str());    
+    if(webserver.hasArg("MQTTpassword"))
+      configuration.setSim800Parameter("MQTTpassword", webserver.arg("MQTTpassword").c_str());    
+
+  }
+      
+  sprintf(content,   
+      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      <p>WLAN Settings only needed if OTA is used.</p>\
+      <br/><br/>\
+      <form method='post'>\
+      <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+      <label for='ssid'>SSID</label><br/>\
+      <br/>\
+      <div><input type='password' id='ssidpassword' name='ssidpassword' placeholder='Password' size='50' value='%s'>\
+      <label for='ssidpassword'>Password</label></div><br/><br/>\
+      <div><input type='checkbox' onclick='showWLANPassword()'>Show Password\
+      </div><br/>\
+      <hr/>\
+      </p>\
+      <div><input type='checkbox' id='sim800' name='sim800' value='1' %s/>\
+      <input type='hidden' name='sim800' value='0' />\
+      <label for='sim800'>I have a SIM800 module attached</label></div><br/>\
+      <br/>\
+      <div><input type='number' id='pin' name='pin' placeholder='PIN' size='50' value='%s'>\
+      <label for='pin'>PIN</label></div><br/>\
+      <br/>\
+      <input type='text' id='apn' name='apn' placeholder='APN' size='50' value='%s'>\
+      <label for='apn'>APN</label><br/>\
+      <br/>\
+      <input type='text' id='user' name='user' placeholder='User' size='50' value='%s'>\
+      <label for='user'>User</label><br/>\
+      <br/>\
+      <input type='text' id='passwort' name='password' placeholder='Password' size='50' value='%s'>\
+      <label for='passwort'>Password</label><br/>\
+      <br/>\
+      <br/>\
+      <input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Broker</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+      <label for='MQTTbroker'>MQTT Port</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT User</label><br/>\
+      <br/>\
+      <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+      <label for='MQTTuser'>MQTT Password</label><br/>\
+      <br/><br /> <input type='submit' value='Save Configuration!' />\
+      <script>\
+      function showWLANPassword() {\
+        var x = document.getElementById('ssidpassword');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\ 
+      </form>\
+      ", 
+      configuration.getWlanParameter("ssid"),
+      configuration.getWlanParameter("password"),
+      configuration.getSim800Parameter("enabled") == "true" ? "checked" : "",
+      configuration.getSim800Parameter("pin"),
+      configuration.getSim800Parameter("apn"),
+      configuration.getSim800Parameter("user"),
+      configuration.getSim800Parameter("password"),
+      configuration.getSim800Parameter("MQTTbroker"),
+      configuration.getSim800Parameter("MQTTport"),
+      configuration.getSim800Parameter("MQTTuser"),
+      configuration.getSim800Parameter("MQTTpassword"));  
+
+  char * temp = getWebsite(content);
+  webserver.send(200, "text/html", temp);  
 }
 
 void handleReboot() 
@@ -225,4 +340,10 @@ void helperLoop()
 {
   if(APModeEnabled)
      webserver.handleClient();
+
+  if(storeConfiguration)
+  {
+    storeConfiguration = false;
+    configuration.store();
+  }
 }
