@@ -32,7 +32,6 @@ SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 DynamicJsonDocument configdoc(1024);
 JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
-
 SoftwareSerial SerialAT(14, 12); // RX, TX for SIM800
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
