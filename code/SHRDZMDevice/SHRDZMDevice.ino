@@ -1462,7 +1462,7 @@ Serial.begin(9600); Serial.println();
 
     delay(100);    
     ESP.restart();      
-  }
+  }  
 
   String lastVersionNumber = configuration.readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
@@ -1524,6 +1524,9 @@ Serial.begin(9600); Serial.println();
     return;
   }  
 
+  if(configuration.get("gateway") == NULL && !pairingOngoing)
+    gotoInfiniteSleep();
+
   // start ESPNow
   simpleEspConnection.begin();
 
@@ -1532,13 +1535,12 @@ Serial.begin(9600); Serial.println();
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   simpleEspConnection.onSendError(&OnSendError);    
-  simpleEspConnection.onSendDone(&OnSendDone);
   if(configuration.containsKey("gateway") && !pairingOngoing)
   {
     simpleEspConnection.setServerMac(configuration.get("gateway")); 
     DLN("set server mac to "+String(configuration.get("gateway")));
-  }
-
+  }  
+  simpleEspConnection.onSendDone(&OnSendDone);
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
   simpleEspConnection.onMessage(&OnMessage);  
   
@@ -1601,7 +1603,13 @@ void getMeasurementData()
 
       // send message about last measurement;
       if(!gatewayMode)
+      {
+        DLN("sende $F$ zum server");
         simpleEspConnection.sendMessage("$F$");
+
+        if(!preparing)
+          lastIntervalTime = millis();            
+      }
     }
   }  
 }
@@ -1745,22 +1753,10 @@ void handleESPNowLoop()
   if(!configuration.containsKey("gateway") || String(configuration.get("gateway")) == "")
     return;
 
-/*  if(!isDeviceInitialized)
-  {
-    if(configuration.get("devicetype") != "UNKNOWN")
-    {
-      initDeviceType(configuration.get("devicetype"), false);
-      if(dev != NULL)
-        dev->prepare();
-    }
-    
-    isDeviceInitialized = true;
-  } */
-
   if(atoi(configuration.get("processtime")) + atoi(configuration.get("preparetime")) >= atoi(configuration.get("interval")))    
     sleepEnabled = false;
   else
-    sleepEnabled = true;
+    sleepEnabled = true;  
 
   // only if interval is reached or if preparing ongoing
   if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
@@ -1786,7 +1782,7 @@ void handleESPNowLoop()
     isDeviceInitialized = true;
   }  
 
-  if(dev != NULL)
+  if(dev != NULL && isDeviceInitialized)
   {
     if(preparestart > 0 && !preparing)
     {
@@ -1796,22 +1792,24 @@ void handleESPNowLoop()
     }
 
   // get measurement data
-    loopDone = dev->loop();
+/*    loopDone = dev->loop();
     if(dev->isNewDataAvailable())
     {
       getMeasurementData();
-    } 
+    } */
+
+    if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
+    {
+      preparing = false;
+      preparestart = 0;
+  
+      Serial.println("before getMeasurementData");
+      getMeasurementData();
+      Serial.println("after getMeasurementData");
+    }
   }  
-
-  if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
-  {
-    preparing = false;
-    preparestart = 0;
-
-    Serial.println("before getMeasurementData");
-    getMeasurementData();
-    Serial.println("after getMeasurementData");
-  }
+  else
+    simpleEspConnection.sendMessage("$F$");
 
   if(!preparing)
     lastIntervalTime = millis();    
@@ -1838,6 +1836,9 @@ void loop()
     
     return;    
   }
+
+  if(pairingOngoing)
+    return;  
   
   if(configurationMode)
   {
@@ -1856,78 +1857,31 @@ void loop()
 //    return;
   }
   
+  if(setNewDeviceType)
+  {
+    initDeviceType(newDeviceType.c_str(), true);
+    setNewDeviceType = false;
+    newDeviceType = "";
 
-  if(pairingOngoing)
-    return;  
+    configuration.store();        
+    DLN("vor sendSetup");
+    sendSetup();    
+    DLN("nach sendSetup");
+
+    delay(100);
+    ESP.restart();
+    delay(500);
+  }
   
   if(!sleepEnabled)
     return;
   
-  // get measurement data
-  if(dev != NULL)
+  if(forceSleep && !setNewDeviceType)
   {
-    loopDone = dev->loop();
-    if(dev->isNewDataAvailable())
-    {
-      getMeasurementData();
-    } 
-  }  
-  else
-    loopDone = true;
-  
-
-  if(millis() >= prepareend && !processendSet)
-  {
-    if(atof(configuration.get("processtime")) > 0.0f)
-    {
-      processend = 1000 * atof(configuration.get("processtime")) + millis();      
-    }
-    else
-    {
-      processend = 0;
-    }    
-    
-    processendSet = true;
+    gotoSleep();    
   }
 
-  if(processendSet && !processendReached)
-  {
-    if(dev != NULL)
-    {
-      processendReached = dev->hasProcessEarlyEnded();
-      DV(processendReached);
-    }
-  }
-
-  if(!finalMeasurementDone && millis() >= prepareend)
-  {
-    getMeasurementData();
-
-    finalMeasurementDone = true;
-    DV(finalMeasurementDone);
-    clockmillis = millis();
-  }
-
-
-/*  if(((loopDone && !sendBufferFilled && finalMeasurementDone) || processendReached) && !finishSent)
-  {
-    // send finish to gateway
-    if(configuration.containsKey("gateway"))
-    {
-      if(!simpleEspConnection.sendMessage("$F$"))
-      {
-        DLN("Finish message not sent!");
-      }
-      else      
-      {
-        DLN("Finished process sent");
-      }
-        
-      finishSent = true;
-    }    
-  } */
-
-  if(millis() > MAXCONTROLWAIT+clockmillis && !sendBufferFilled && loopDone & finalMeasurementDone && millis() >= prepareend)
+  if(millis() > MAXCONTROLWAIT+lastIntervalTime)
   {
       canGoDown = true;
   }  
@@ -1937,7 +1891,6 @@ void loop()
     if(dev != NULL)
     {
       dev->setPostAction();
-//      Serial.println("PostAction done");
   
       if(dev->isNewDataAvailable())
       {    
@@ -1948,20 +1901,7 @@ void loop()
     processendReached = true;
   }
 
-  if(setNewDeviceType && finalMeasurementDone)
-  {
-    initDeviceType(newDeviceType.c_str(), true);
-    setNewDeviceType = false;
-    newDeviceType = "";
-
-    configuration.store();        
-    DLN("vor sendSetup");
-    sendSetup();    
-    DLN("nach sendSetup");
-  }
-
-
-  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty() && finalMeasurementDone && processendReached)
+  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty())
   {
     if(initReboot && !writeConfiguration)
     {
@@ -1978,23 +1918,30 @@ void loop()
   }
 }
 
+void gotoInfiniteSleep()
+{
+  Serial.printf("Up for %i ms, going to sleep forever because not paired so far... \n", millis());   
+  ESP.deepSleep(0);  
+  delay(100);  
+}
+
 void gotoSleep() 
 {  
   delete dev;  
   int sleepSecs;
 
-  if(configuration.get("devicetype") == "UNKNOWN") // goto sleep just for 5 seconds and flash 2 times
+  if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0) // goto sleep just for 5 seconds and flash 2 times
   {
     sleepSecs = 5;
 #ifdef LEDPIN
     pinMode(LEDPIN, OUTPUT);
 
     digitalWrite(LEDPIN, LOW);
-    delay(500);
+    delay(100);
     digitalWrite(LEDPIN, HIGH);
-    delay(500);
+    delay(100);
     digitalWrite(LEDPIN, LOW);
-    delay(500);
+    delay(100);
     digitalWrite(LEDPIN, HIGH);
 #endif
   }
