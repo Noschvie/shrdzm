@@ -18,9 +18,9 @@
 #include "StringSplitter.h"
 #include <SoftwareSerial.h>
 
-//#include <ESP8266WiFi.h>
-//#include <ESP8266WiFiMulti.h>
-//#include <ESP8266httpUpdate.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266httpUpdate.h>
 #include <ESP8266WebServer.h>
 
 #define TINY_GSM_MODEM_SIM800
@@ -121,7 +121,7 @@ li a {\
 }\
 \
 li a.active {\
-  background-color: #4CAF50;\
+  background-color: #9999ff;\
   color: white;\
 }\
 \
@@ -561,10 +561,21 @@ bool readConfig()
     serializeJson(configdoc, Serial);
     Serial.println();
 #endif    
+
+    if(!configdoc.containsKey("devices"))
+    {
+      configurationDevices = configdoc.createNestedObject("devices");
+      return writeConfig();
+    }
+
+    return true;
 }
 
 bool writeConfig()
 {
+#ifdef DEBUG
+    Serial.println("Open file for writing");
+#endif
     File configFile = SPIFFS.open("/shrdzm_config.json", "w");
     if (!configFile) 
     {
@@ -591,41 +602,8 @@ void OnSendError(uint8_t* ad)
 #endif  
 }
 
-void sendOpenESPMessages(String ad)
-{  
-  clientAddress = ad;
-  SetupObject::SetupItem *si = setupObject.GetItem(ad);
-
-  if(si != NULL)
-  {
-    String message = si->m_parameterName;
-
-    if(si->m_parameterValue != "")
-      message += ":"+ si->m_parameterValue;
-
-#ifdef DEBUG
-    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
-#endif
-    
-    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
-
-    setupObject.RemoveItem(si);
-
-    if(simEnabled)
-      reportDeviceStateInfo(ad, "Sent setup");
-  }  
-  else
-  {
-//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  }  
-}
-
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
-#ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
-#endif
-  
   if(String((char *)message) == "$PING$")
   {
     OnConnected(ad, simpleEspConnection.macToStr(ad));
@@ -634,14 +612,15 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {
-    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
-    
-    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
-//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
 
-//    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
+    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
+  
+#ifdef DEBUG  
+  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
+#endif
 
   String m = (char *)message;
 
@@ -785,7 +764,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 }
 
 void OnPaired(uint8_t *ga, String ad)
-{  
+{
 #ifdef DEBUG
   Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 #endif
@@ -810,23 +789,15 @@ void OnPaired(uint8_t *ga, String ad)
 
   // send via GSM    
   if(simEnabled)
-  {
-#ifdef DEBUG
-    Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
-#endif
     mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
-  }
 }
 
 void OnConnected(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
-  Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+ // Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
-//  sendOpenESPMessages(ad);
-
-/*
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
 
@@ -836,10 +807,6 @@ void OnConnected(uint8_t *ga, String ad)
 
     if(si->m_parameterValue != "")
       message += ":"+ si->m_parameterValue;
-
-#ifdef DEBUG
-    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
-#endif
     
     simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
@@ -850,7 +817,7 @@ void OnConnected(uint8_t *ga, String ad)
   else
   {
 //    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  } */
+  }
 }
 
 void OnPairingFinished()
@@ -1040,8 +1007,6 @@ void setup()
     writeConfig();
   }
 
-  APName = "SHRDZM-GW-"+deviceName;
-
   if(ap_pin != -1)
   {
     pinMode(ap_pin, INPUT_PULLUP);  
@@ -1052,6 +1017,7 @@ void setup()
   #endif        
       accesspointmodeEnabled = true;
 
+      APName = "SHRDZM-GW-"+deviceName;
       WiFi.hostname(APName.c_str());      
 
       WiFi.softAP(APName);
@@ -1189,79 +1155,12 @@ void updateFirmware(String parameter)
     Serial.println("firmwareUpdate enabled for SSID="+SSID+", Password="+password);
 #endif                    
 
-//    esp_now_deinit();
-//    delay(100);
+    esp_now_deinit();
+    delay(100);
   
     WiFi.mode(WIFI_STA);
   
-//    WiFiMulti.addAP(SSID.c_str(), password.c_str());   
-  WiFi.disconnect(true);
-
-  Serial.setDebugOutput(true);
-  WiFi.hostname(APName.c_str());
-  
-  Serial.println("after WIFI_STA ");
-
-  WiFi.begin(SSID.c_str(), password.c_str());
-
-  Serial.println(WiFi.waitForConnectResult());
-  Serial.setDebugOutput(false);
-  
-  Serial.println("after Wifi.begin");    
-//  executeUpdateFirmware();  
-}
-
-void executeUpdateFirmware()
-{
-  Serial.println("executeUpdateFirmware started ");
-  
-  if ((WiFi.status() == WL_CONNECTED)) 
-  {     
-    ESPhttpUpdate.onStart(update_started);
-    ESPhttpUpdate.onEnd(update_finished);
-    ESPhttpUpdate.onProgress(update_progress);
-    ESPhttpUpdate.onError(update_error);
-  
-    String versionStr = nam+" "+ver+" "+currVersion;
-    Serial.println("WLAN connected! ");
-
-    WiFiClient client;  
-    t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
-    
-    switch (ret) 
-    {
-      case HTTP_UPDATE_FAILED:
-        {
-          String s = "~000[U]$upgrade:failed";
-          Serial.write(s.c_str(), s.length());
-          Serial.write('\n');
-          delay(100);
-        
-          ESP.restart();
-        }
-        break;
-
-      case HTTP_UPDATE_NO_UPDATES:
-        {
-          String s = "~000[U]$upgrade:noupdate";
-          Serial.write(s.c_str(), s.length());
-          Serial.write('\n');
-          delay(100);
-
-          ESP.restart();
-        }
-        break;
-
-      case HTTP_UPDATE_OK:
-        {
-          String s = "~000[U]$upgrade:done";
-          Serial.write(s.c_str(), s.length());
-          Serial.write('\n');
-          delay(100);
-        }
-        break;
-    }
-  }    
+    WiFiMulti.addAP(SSID.c_str(), password.c_str());    
 }
 
 void loop() 
@@ -1273,7 +1172,7 @@ void loop()
   }
   
   simpleEspConnection.loop();
-
+  
   if (simEnabled) 
   {
     if(!mqtt.connected())
@@ -1316,7 +1215,6 @@ void loop()
   
   if(firmwareUpdate)
   {    
-//    executeUpdateFirmware();
     if ((WiFiMulti.run() == WL_CONNECTED)) 
     {     
       ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
@@ -1366,7 +1264,7 @@ void loop()
           }
           break;
       }
-    } 
+    }
   }
   else
   {
