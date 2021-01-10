@@ -54,6 +54,7 @@ bool configurationAPWaiting = false;
 bool configurationAPWaitOngoing = false;
 String newDeviceType = "";
 String deviceName;
+bool sleepEnabled = true;
 String lastRebootInfo = "";
 bool apConnectingOngoing = false;
 unsigned long apConnectionStartTime = 0;
@@ -1599,8 +1600,8 @@ void getMeasurementData()
       }
 
       // send message about last measurement;
-      simpleEspConnection.sendMessage("$F$");
-
+      if(!gatewayMode)
+        simpleEspConnection.sendMessage("$F$");
     }
   }  
 }
@@ -1690,11 +1691,7 @@ void handleGatewayLoop()
     preparing = false;
   }
       
-//  if(String(configuration.get("batterycheck")) == "ON" && !preparing)
-//  {
-    handleBatteryCheck();
-//    mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/battery").c_str(), String(analogRead(A0)).c_str());       
-//  }    
+  handleBatteryCheck();
 
   if(!isDeviceInitialized)
   {
@@ -1748,10 +1745,7 @@ void handleESPNowLoop()
   if(!configuration.containsKey("gateway") || String(configuration.get("gateway")) == "")
     return;
 
-  if(!batterycheckDone)
-    handleBatteryCheck();
-
-  if(!isDeviceInitialized)
+/*  if(!isDeviceInitialized)
   {
     if(configuration.get("devicetype") != "UNKNOWN")
     {
@@ -1761,8 +1755,66 @@ void handleESPNowLoop()
     }
     
     isDeviceInitialized = true;
+  } */
+
+  if(atoi(configuration.get("processtime")) + atoi(configuration.get("preparetime")) >= atoi(configuration.get("interval")))    
+    sleepEnabled = false;
+  else
+    sleepEnabled = true;
+
+  // only if interval is reached or if preparing ongoing
+  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
+    return;
+
+  firstMeasurement = false;
+
+  if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
+  {
+    preparestart = millis();
+    preparing = false;
   }
 
+  handleBatteryCheck();
+
+  if(!isDeviceInitialized)
+  {
+    if(configuration.get("devicetype") != "UNKNOWN")
+    {
+      initDeviceType(configuration.get("devicetype"), false);
+    }
+    
+    isDeviceInitialized = true;
+  }  
+
+  if(dev != NULL)
+  {
+    if(preparestart > 0 && !preparing)
+    {
+      dev->prepare();
+      DLN("Start prepare");
+      preparing = true;
+    }
+
+  // get measurement data
+    loopDone = dev->loop();
+    if(dev->isNewDataAvailable())
+    {
+      getMeasurementData();
+    } 
+  }  
+
+  if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
+  {
+    preparing = false;
+    preparestart = 0;
+
+    Serial.println("before getMeasurementData");
+    getMeasurementData();
+    Serial.println("after getMeasurementData");
+  }
+
+  if(!preparing)
+    lastIntervalTime = millis();    
 }
 
 void loop() 
@@ -1804,51 +1856,12 @@ void loop()
 //    return;
   }
   
-/*  if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
-    sendBufferFilled = simpleEspConnection.loop();
-*/
 
   if(pairingOngoing)
     return;  
   
-/*  if(firmwareUpdate)
-    upgradeFirmware();
-*/
-
-/*  if(!batterycheckDone && (configuration.containsKey("gateway")))
-  {
-    batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
-    if(!batterycheckDone)
-    {      
-      String reply = "battery:"+String(analogRead(A0));
-
-      DLN("battery : "+reply);
-
-      if(gatewayMode)
-      {
-        mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), reply.c_str());       
-      }
-      else
-      {
-        simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());  
-      }
-      batterycheckDone = true;
-    }
-  }
-
-
-  if(!isDeviceInitialized)
-  {
-    if(configuration.get("devicetype") != "UNKNOWN")
-    {
-      initDeviceType(configuration.get("devicetype"), false);
-      if(dev != NULL)
-        dev->prepare();
-    }
-    
-    isDeviceInitialized = true;
-  }
-*/
+  if(!sleepEnabled)
+    return;
   
   // get measurement data
   if(dev != NULL)
