@@ -86,6 +86,7 @@ char* getWebsite(char* content)
 "<!DOCTYPE html>\
 <html>\
 <head>\
+<link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_blue.svg\" sizes=\"any\">\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
