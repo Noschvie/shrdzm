@@ -95,7 +95,7 @@ char* getWebsite(char* content)
 {  
   int len = strlen(content);
 
-  Serial.println("Content len = "+String(len));
+  DLN("Content len = "+String(len));
 
   sprintf(websideBuffer,  
 "<!DOCTYPE html>\
@@ -491,7 +491,7 @@ void handleSettings()
 
   char * temp = getWebsite(content);
   DV(writeConfiguration);
-  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  DLN("after getWebsite size = "+String(strlen(temp)));
   
   server.send(200, "text/html", temp);  
 }
@@ -588,7 +588,7 @@ void handleGateway()
 
   char * temp = getWebsite(content);
 
-  Serial.println("after getWebsite size = "+String(strlen(temp)));
+  DLN("after getWebsite size = "+String(strlen(temp)));
   server.send(200, "text/html", temp);
 }
 
@@ -601,7 +601,7 @@ bool mqttreconnect()
   // Loop until we're reconnected
   if (!mqttclient.connected()) 
   {
-    Serial.println("Attempting MQTT connection...");
+    DLN("Attempting MQTT connection...");
     String clientId = "SHRDZMDevice-"+deviceName;
     // Attempt to connect
     if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
@@ -609,19 +609,19 @@ bool mqttreconnect()
       subcribeTopicSet = String(MQTT_TOPIC)+"/set";
       subscribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
       
-      Serial.println("connected");
+      DLN("connected");
       
-      Serial.println("MQTTHost : "+String(configuration.getWlanParameter("MQTTbroker")));
-      Serial.println("MQTTPort : "+String(configuration.getWlanParameter("MQTTport")));
-      Serial.println("MQTTUser : "+String(configuration.getWlanParameter("MQTTuser")));
-      Serial.println("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
-      Serial.println("MQTT_TOPIC : "+MQTT_TOPIC);
-      Serial.println("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
-      Serial.println("MQTT_TOPIC_SUBSCRIBE Config : "+String(subscribeTopicConfig));
+      DLN("MQTTHost : "+String(configuration.getWlanParameter("MQTTbroker")));
+      DLN("MQTTPort : "+String(configuration.getWlanParameter("MQTTport")));
+      DLN("MQTTUser : "+String(configuration.getWlanParameter("MQTTuser")));
+      DLN("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
+      DLN("MQTT_TOPIC : "+MQTT_TOPIC);
+      DLN("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
+      DLN("MQTT_TOPIC_SUBSCRIBE Config : "+String(subscribeTopicConfig));
             
       // ... and resubscribe
       if(!mqttclient.subscribe(subcribeTopicSet.c_str()))
-        Serial.println("Error at subscribe");
+        DLN("Error at subscribe");
         
       mqttclient.subscribe(subscribeTopicConfig.c_str());
 
@@ -648,11 +648,10 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
   String cmd = String(p);
   free(p);  
 
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("]: ");
-  Serial.write(payload, len);
-  Serial.println();
+  DLN("Message arrived [");
+  DLN(topic);
+  DLN("]: ");
+  DLN(String((char *)payload));
 
   if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
   {
@@ -828,7 +827,7 @@ DeviceBase * createDeviceObject(const char *deviceType)
   }
   else
   {
-    Serial.println("Device Type "+String(deviceType)+" not known");
+    DLN("Device Type "+String(deviceType)+" not known");
     return NULL;
   }
 
@@ -1203,12 +1202,12 @@ void update_finished()
 
 void update_progress(int cur, int total) 
 {
-  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
+  DLN("CALLBACK:  HTTP update process at "+String(cur)+" of "+String(total)+" bytes..");
 }
 
 void update_error(int err) 
 {
-  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+  DLN("CALLBACK:  HTTP update fatal error code "+ String(err));
 }
 
 void upgradeFirmware()
@@ -1226,13 +1225,13 @@ void upgradeFirmware()
     DLN("WLAN connected!");
   
     WiFiClient client; 
-    Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
+    // Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
     t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
     
     switch (ret) 
     {
       case HTTP_UPDATE_FAILED:
-        Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+     //   Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
         delay(100);
         ESP.restart();
         break;
@@ -1381,8 +1380,6 @@ Serial.begin(9600); Serial.println();
   nam = "SHRDZMDevice";  
 #endif
 
-  DV(nam);
-
   // set device name
   WiFi.mode(WIFI_STA);  
   uint8_t pmac[6];
@@ -1392,7 +1389,7 @@ Serial.begin(9600); Serial.println();
   deviceName.replace(":", "");
   deviceName.toUpperCase();
 
-  DV(deviceName);
+//  DV(deviceName);
 
 #ifdef LITTLEFS
   if(!LittleFS.begin())
@@ -1414,18 +1411,15 @@ Serial.begin(9600); Serial.println();
   }
   else
   {
-    DLN("SPIFFS accessed...");
+   // DLN("SPIFFS accessed...");
   }
 #endif
   
-  DLN("configuration loading...");    
   if(!configuration.load())
   {
     DLN("configuration.initialize...");    
     configuration.initialize();
   }
-
-  DLN("Configuration loaded...");    
 
   if(configuration.migrateToNewConfigurationStyle())
   {
@@ -1467,12 +1461,11 @@ Serial.begin(9600); Serial.println();
   String lastVersionNumber = configuration.readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
 
-  DLN("'"+lastVersionNumber+"':'"+currVersion+"'");
+//  DLN("'"+lastVersionNumber+"':'"+currVersion+"'");
 
   if(configuration.get("pairingpin") != NULL)
   {    
     pinMode(atoi(configuration.get("pairingpin")), INPUT_PULLUP);    
-    DLN("PairingPin = "+String(configuration.get("pairingpin")));    
   }
   else
   {
@@ -1492,7 +1485,6 @@ Serial.begin(9600); Serial.println();
   {
     pinMode(atoi(configuration.get("sensorpowerpin")), OUTPUT);
     digitalWrite(atoi(configuration.get("sensorpowerpin")),HIGH);          
-    DLN("sensor power on");
   }
 
   // check if pairing button pressed
@@ -1500,7 +1492,7 @@ Serial.begin(9600); Serial.println();
 
   // check last boot info
   lastRebootInfo = configuration.readLastRebootInfo();
-  DLN("Last Reboot Info = "+lastRebootInfo);    
+//  DLN("Last Reboot Info = "+lastRebootInfo);    
 
   configuration.storeLastRebootInfo("normal");
   
@@ -1513,8 +1505,6 @@ Serial.begin(9600); Serial.println();
   /// check whether to start in gateway mode
   if( String(configuration.getWlanParameter("enabled")) == "true" && !pairingOngoing)
     gatewayMode = true;
-
-  DV(gatewayMode);
 
   if(gatewayMode)
   {
@@ -1530,15 +1520,12 @@ Serial.begin(9600); Serial.println();
   // start ESPNow
   simpleEspConnection.begin();
 
-  DV(simpleEspConnection.myAddress);
-  
   simpleEspConnection.onPairingFinished(&OnPairingFinished);  
   simpleEspConnection.setPairingBlinkPort(LEDPIN);  
   simpleEspConnection.onSendError(&OnSendError);    
   if(configuration.containsKey("gateway") && !pairingOngoing)
   {
     simpleEspConnection.setServerMac(configuration.get("gateway")); 
-    DLN("set server mac to "+String(configuration.get("gateway")));
   }  
   simpleEspConnection.onSendDone(&OnSendDone);
   simpleEspConnection.onNewGatewayAddress(&OnNewGatewayAddress);    
@@ -1557,7 +1544,6 @@ Serial.begin(9600); Serial.println();
   else
   {
     prepareend = 1000 * atoi(configuration.get("preparetime"));      
-    DV(prepareend);
 
     if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
     {    
@@ -1583,15 +1569,13 @@ void getMeasurementData()
         
         for(int i = 0; i<sd->size; i++)
         {
-         // reply = "$D$";
-    
           reply = sd->di[i].nameI+":"+sd->di[i].valueI;
 
           DV(reply);
 
           if(gatewayMode)
           {
-            Serial.println("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
+            DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
           }
           else                
@@ -1604,7 +1588,6 @@ void getMeasurementData()
       // send message about last measurement;
       if(!gatewayMode)
       {
-        DLN("sende $F$ zum server");
         simpleEspConnection.sendMessage("$F$");
 
         if(!preparing)
@@ -1733,9 +1716,7 @@ void handleGatewayLoop()
     preparing = false;
     preparestart = 0;
 
-    Serial.println("before getMeasurementData");
     getMeasurementData();
-    Serial.println("after getMeasurementData");
   }
 
   if(!preparing)
@@ -1747,8 +1728,28 @@ void handleESPNowLoop()
   if((!firmwareUpdate && configuration.containsKey("gateway")) || pairingOngoing)
     sendBufferFilled = simpleEspConnection.loop();
 
+
+  if(setNewDeviceType)
+  {
+    initDeviceType(newDeviceType.c_str(), true);
+    setNewDeviceType = false;
+    newDeviceType = "";
+
+    configuration.store();        
+    DLN("vor sendSetup");
+    sendSetup();    
+    DLN("nach sendSetup");
+
+    delay(100);
+    ESP.restart();
+    delay(500);
+  }
+
   if(firmwareUpdate)
     upgradeFirmware();
+
+  if (finalMeasurementDone)
+    return;
 
   if(!configuration.containsKey("gateway") || String(configuration.get("gateway")) == "")
     return;
@@ -1759,14 +1760,15 @@ void handleESPNowLoop()
     sleepEnabled = true;  
 
   // only if interval is reached or if preparing ongoing
-  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
-    return;
+/*  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000)
+    return; */
 
   firstMeasurement = false;
 
   if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
   {
     preparestart = millis();
+    DV(preparestart);
     preparing = false;
   }
 
@@ -1798,21 +1800,27 @@ void handleESPNowLoop()
       getMeasurementData();
     } */
 
-    if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
+    if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000 && !finalMeasurementDone)
     {
       preparing = false;
       preparestart = 0;
   
-      Serial.println("before getMeasurementData");
       getMeasurementData();
-      Serial.println("after getMeasurementData");
+      finalMeasurementDone = true;
     }
   }  
   else
     simpleEspConnection.sendMessage("$F$");
 
-  if(!preparing)
-    lastIntervalTime = millis();    
+  if(preparing)
+  {
+    if(millis() < atoi(configuration.get("preparetime")) *1000 + lastIntervalTime)
+      return;
+/*    else
+      preparing = false; */
+  }
+/*  else
+    lastIntervalTime = millis();   */ 
 }
 
 void loop() 
@@ -1857,7 +1865,7 @@ void loop()
 //    return;
   }
   
-  if(setNewDeviceType)
+/*  if(setNewDeviceType)
   {
     initDeviceType(newDeviceType.c_str(), true);
     setNewDeviceType = false;
@@ -1871,22 +1879,18 @@ void loop()
     delay(100);
     ESP.restart();
     delay(500);
-  }
+  } */
   
   if(!sleepEnabled)
     return;
   
-  if(forceSleep && !setNewDeviceType)
+  if(forceSleep || millis() > MAXCONTROLWAIT+lastIntervalTime)
   {
-    gotoSleep();    
-  }
-
-  if(millis() > MAXCONTROLWAIT+lastIntervalTime)
-  {
-      canGoDown = true;
+    if(!preparing && !setNewDeviceType)
+      gotoSleep();    
   }  
 
-  if(!processendReached && millis() > processend)
+/*  if(!processendReached && millis() > processend)
   {
     if(dev != NULL)
     {
@@ -1916,11 +1920,20 @@ void loop()
       gotoSleep();    
     }
   }
+*/
+
+  if(initReboot && !writeConfiguration)
+  {
+    ESP.restart();
+    delay(500);
+
+    return;
+  }  
 }
 
 void gotoInfiniteSleep()
 {
-  Serial.printf("Up for %i ms, going to sleep forever because not paired so far... \n", millis());   
+  DLN("Up for "+String(millis())+" ms, going to sleep forever because not paired so far... \n");   
   ESP.deepSleep(0);  
   delay(100);  
 }
@@ -1950,7 +1963,7 @@ void gotoSleep()
     sleepSecs = atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"));
   }
 
-  Serial.printf("Up for %i ms, going to sleep for %i secs... \n", millis(), sleepSecs); 
+  DLN("Up for "+String(millis())+" ms, going to sleep for "+String(sleepSecs)+" secs... \n"); 
 
   if(sleepSecs > 0)
   {

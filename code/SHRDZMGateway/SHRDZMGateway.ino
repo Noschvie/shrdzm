@@ -597,8 +597,12 @@ void sendOpenESPMessages(String ad)
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
 
+#ifdef DEBUG  
+  Serial.println("Send open messages to "+ad);
+#endif    
+
   if(si != NULL)
-  {
+  {    
     String message = si->m_parameterName;
 
     if(si->m_parameterValue != "")
@@ -617,6 +621,7 @@ void sendOpenESPMessages(String ad)
   }  
   else
   {
+    Serial.println("si is NULL!");
 //    simpleEspConnection.sendMessage("$SLEEP$", ad);        
   }  
 }

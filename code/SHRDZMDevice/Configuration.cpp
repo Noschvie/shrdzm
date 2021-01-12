@@ -35,7 +35,7 @@ bool Configuration::initialize()
 
 bool Configuration::store()
 {
-  Serial.println("Strore configuration...");
+  Serial.println("Store configuration...");
   serializeJson(g_configdoc, Serial);
 
   Serial.println();
@@ -182,8 +182,6 @@ bool Configuration::containsWlanKey(char *name)
 
 void Configuration::set(char *name, char *value)
 {
-  Serial.println("Configuration set :'"+String(name)+"'-'"+String(value)+"'");  
-  
   g_configdoc[name] = value;
 }
 
