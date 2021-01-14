@@ -1,5 +1,8 @@
 void handleBatteryCheck()
 {
+  if(batterycheckDone)
+    return;
+    
   batterycheckDone = String(configuration.get("batterycheck")) == "ON" ? false : true;
 
   if(!batterycheckDone)

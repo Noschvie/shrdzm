@@ -595,35 +595,38 @@ void OnSendError(uint8_t* ad)
 void sendOpenESPMessages(String ad)
 {  
   clientAddress = ad;
-  SetupObject::SetupItem *si = setupObject.GetItem(ad);
-
+  SetupObject::SetupItem *si = NULL;
+  String message;
+  
 #ifdef DEBUG  
   Serial.println("Send open messages to "+ad);
 #endif    
 
-  if(si != NULL)
-  {    
-    String message = si->m_parameterName;
-
-    if(si->m_parameterValue != "")
-      message += ":"+ si->m_parameterValue;
-
-#ifdef DEBUG
-    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
-#endif
-    
-    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
-
-    setupObject.RemoveItem(si);
-
-    if(simEnabled)
-      reportDeviceStateInfo(ad, "Sent setup");
-  }  
-  else
+  do
   {
-    Serial.println("si is NULL!");
-//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  }  
+    si = setupObject.GetItem(ad);
+  
+    if(si != NULL)
+    {    
+      message = si->m_parameterName;
+  
+      if(si->m_parameterValue != "")
+        message += ":"+ si->m_parameterValue;
+  
+#ifdef DEBUG
+      Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+#endif
+      
+      simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
+  
+      setupObject.RemoveItem(si);
+  
+      if(simEnabled)
+        reportDeviceStateInfo(ad, "Sent setup");
+    }
+  } while(si != NULL);
+
+  simpleEspConnection.sendMessage("$SLEEP$", ad);
 }
 
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
@@ -639,9 +642,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
-  {
-    setupObject.AddItem(simpleEspConnection.macToStr(ad), "$SLEEP$");
-    
+  {    
     sendOpenESPMessages(simpleEspConnection.macToStr(ad));
 //    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
 

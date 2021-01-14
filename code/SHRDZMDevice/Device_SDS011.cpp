@@ -285,7 +285,11 @@ SensorData* Device_SDS011::readParameter()
     }
 
     if(millis() > w+1500)
+    {
       done = true;
+      al->di[0].nameI = "LastError";
+      al->di[0].valueI = "No data read";        
+    }
   }
 
   dataAvailable = false;

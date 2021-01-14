@@ -1816,11 +1816,7 @@ void handleESPNowLoop()
   {
     if(millis() < atoi(configuration.get("preparetime")) *1000 + lastIntervalTime)
       return;
-/*    else
-      preparing = false; */
   }
-/*  else
-    lastIntervalTime = millis();   */ 
 }
 
 void loop() 
@@ -1886,7 +1882,7 @@ void loop()
   
   if(forceSleep || millis() > MAXCONTROLWAIT+lastIntervalTime)
   {
-    if(!preparing && !setNewDeviceType)
+    if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
       gotoSleep();    
   }  
 
