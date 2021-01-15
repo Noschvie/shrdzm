@@ -1419,6 +1419,11 @@ Serial.begin(9600); Serial.println();
   {
     DLN("configuration.initialize...");    
     configuration.initialize();
+    
+    configuration.store();    
+
+    delay(100);    
+    ESP.restart();      
   }
 
   if(configuration.migrateToNewConfigurationStyle())
