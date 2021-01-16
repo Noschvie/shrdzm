@@ -392,13 +392,9 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
   String cmd = String(p);
   free(p);
 
-#ifdef DEBUG   
-  Serial.println("MQTT topic : "+String(topic));
-  Serial.println("MQTT command : "+cmd);
-#endif
+  DLN("MQTT topic : "+String(topic));
+  DLN("MQTT command : "+cmd);
 
-/*
-#ifdef RCSENDPIN
   if(String(topic) == (String(MQTT_TOPIC)+"/RCSend"))
   {
     StringSplitter *splitter = new StringSplitter(cmd, ',', 3);
@@ -426,26 +422,20 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
     else
     {
       mySwitch.send(cmd.toInt(), 24);
-#ifdef DEBUG   
-      Serial.println("RCSend : "+cmd.toInt());
-#endif
+      DLN("RCSend : "+cmd.toInt());
     }
   }
-#endif
   
   if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd == "reset")
   {
-    client.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
+    mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "reset");
     delay(1);
 
     ESP.reset();
   }
-  else if(String(topic) == subcribeTopicConfig)
+  else if(String(topic) == subscribeTopicConfig)
   {
-#ifdef DEBUG   
-      Serial.println("Config with parameter : "+cmd);
-#endif
-
+      DLN("Config with parameter : "+cmd);
       // check if upgrade
       StringSplitter *splitter = new StringSplitter(cmd, ' ', 4);
       int itemCount = splitter->getItemCount();
@@ -456,18 +446,14 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
         {
           String upgradeText = String("$upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
           
-#ifdef DEBUG   
-          Serial.println("Send upgrade of GATEWAY called : '"+upgradeText+"'");
-#endif      
+          DLN("Send upgrade of GATEWAY called : '"+upgradeText+"'");
 
           swSer.write(upgradeText.c_str());
           swSer.write('\n');           
         }
         else if(splitter->getItemAtIndex(0) == "GATEWAYMQTT") // upgrade yourself
         {
-#ifdef DEBUG   
-          Serial.println("Upgrade myself..");
-#endif      
+          DLN("Upgrade myself..");
 
           updateFirmware(splitter->getItemAtIndex(2));
         }
@@ -475,9 +461,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
         {
           String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
   
-#ifdef DEBUG   
-          Serial.println("Send upgrade : '"+upgradeText+"'");
-#endif      
+          DLN("Send upgrade : '"+upgradeText+"'");
           
           swSer.write(upgradeText.c_str());
           swSer.write('\n'); 
@@ -508,5 +492,5 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
       swSer.write("$pair");
       swSer.write('\n');    
   }
-  */
+  
 }

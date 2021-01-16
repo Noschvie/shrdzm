@@ -108,6 +108,12 @@ Serial.begin(9600); Serial.println();
     ESP.restart();          
   }
 
+#ifdef SERIALBAUD
+  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+#else
+  swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
+#endif
+
   String lastRebootInfo = configuration.readLastRebootInfo();
 
   // set config pin
@@ -128,18 +134,17 @@ Serial.begin(9600); Serial.println();
   {
     startGatewayWebserver();
   }
+
+#ifdef RESET_PIN
+  digitalWrite(RESET_PIN,LOW);
+  delay(100);
+  digitalWrite(RESET_PIN,HIGH);
+#endif  
   
 }
 
 void loop() 
-{
-/*  if(checkAPModeRequest())
-  {
-    startConfigurationAP();
-    
-    return;    
-  } */
-  
+{  
   if(configurationMode)
   {
     webserver.handleClient();
@@ -162,15 +167,6 @@ void loop()
         delay(500);
         ESP.restart();
       }
-/*      if(millis() > 20000) // max. 20 seconds before reboot and start configuration gateway
-      {
-        DLN("Connection timeout. Will start a local AP to reconfigure.");
-
-        configuration.storeLastRebootInfo("connectiontimeout");
-
-        delay(500);
-        ESP.restart();
-      } */
     }
   }
   else
@@ -204,6 +200,8 @@ void loop()
   }
   else
     return;
-  
+
+  SwSerLoop();
+  OTALoop();
   
 }
