@@ -50,10 +50,10 @@ class SetupObject
       }
     }
 
-    if(m_simpleEspConnection != NULL)
+/*    if(m_simpleEspConnection != NULL)
     {
       m_simpleEspConnection->sendMessage("$PING$", deviceName);  
-    }
+    } */
   };
 
   void AddItem( String deviceName, String command )
@@ -67,10 +67,10 @@ class SetupObject
       }
     }
 
-    if(m_simpleEspConnection != NULL)
+/*    if(m_simpleEspConnection != NULL)
     {
       m_simpleEspConnection->sendMessage("$PING$", deviceName);  
-    }    
+    }    */
   };
   
   void AddInitItem( String deviceName )

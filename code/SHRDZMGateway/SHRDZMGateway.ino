@@ -86,6 +86,7 @@ char* getWebsite(char* content)
 "<!DOCTYPE html>\
 <html>\
 <head>\
+<link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_blue.svg\" sizes=\"any\">\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
@@ -121,7 +122,7 @@ li a {\
 }\
 \
 li a.active {\
-  background-color: #4CAF50;\
+  background-color: #0080FF;\
   color: white;\
 }\
 \
@@ -591,8 +592,49 @@ void OnSendError(uint8_t* ad)
 #endif  
 }
 
+void sendOpenESPMessages(String ad)
+{  
+  clientAddress = ad;
+  SetupObject::SetupItem *si = NULL;
+  String message;
+  
+#ifdef DEBUG  
+  Serial.println("Send open messages to "+ad);
+#endif    
+
+  do
+  {
+    si = setupObject.GetItem(ad);
+  
+    if(si != NULL)
+    {    
+      message = si->m_parameterName;
+  
+      if(si->m_parameterValue != "")
+        message += ":"+ si->m_parameterValue;
+  
+#ifdef DEBUG
+      Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+#endif
+      
+      simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
+  
+      setupObject.RemoveItem(si);
+  
+      if(simEnabled)
+        reportDeviceStateInfo(ad, "Sent setup");
+    }
+  } while(si != NULL);
+
+  simpleEspConnection.sendMessage("$SLEEP$", ad);
+}
+
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
+#ifdef DEBUG  
+  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
+#endif
+  
   if(String((char *)message) == "$PING$")
   {
     OnConnected(ad, simpleEspConnection.macToStr(ad));
@@ -600,14 +642,13 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   }
 
   if(String((char *)message) == "$F$") // client ask for shutdown signal
-  {
-    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+  {    
+    sendOpenESPMessages(simpleEspConnection.macToStr(ad));
+//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
+
+//    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
-  
-#ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
-#endif
 
   String m = (char *)message;
 
@@ -776,15 +817,23 @@ void OnPaired(uint8_t *ga, String ad)
 
   // send via GSM    
   if(simEnabled)
+  {
+#ifdef DEBUG
+    Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
+#endif
     mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
+  }
 }
 
 void OnConnected(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
- // Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
+  Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
+//  sendOpenESPMessages(ad);
+
+/*
   clientAddress = ad;
   SetupObject::SetupItem *si = setupObject.GetItem(ad);
 
@@ -794,6 +843,10 @@ void OnConnected(uint8_t *ga, String ad)
 
     if(si->m_parameterValue != "")
       message += ":"+ si->m_parameterValue;
+
+#ifdef DEBUG
+    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+#endif
     
     simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
@@ -804,7 +857,7 @@ void OnConnected(uint8_t *ga, String ad)
   else
   {
 //    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  }
+  } */
 }
 
 void OnPairingFinished()
@@ -1139,7 +1192,7 @@ void updateFirmware(String parameter)
     firmwareUpdate = true;
 
 #ifdef DEBUG
-    Serial.println("firmwareUpdate enabled for SSID="+SSID+", Password="+password);
+    Serial.println("firmwareUpdate enabled for SSID = "+SSID+", Password="+password);
 #endif                    
 
     esp_now_deinit();
@@ -1159,42 +1212,45 @@ void loop()
   }
   
   simpleEspConnection.loop();
-  
-  if (!mqtt.connected() && simEnabled) 
+
+  if (simEnabled) 
   {
-    // Reconnect every 10 seconds
-    uint32_t t = millis();
-    if (t - lastReconnectAttempt > 10000L) 
+    if(!mqtt.connected())
     {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) 
+      // Reconnect every 10 seconds
+      uint32_t t = millis();
+      if (t - lastReconnectAttempt > 10000L) 
       {
-        lastReconnectAttempt = 0;
-        
-        mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
-        mqtt.publish((String(MQTT_TOPIC)+"/IP").c_str(), localIP.c_str());
-  
-  #ifdef VERSION
-        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
-  #else      
-        mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
-  #endif
-  
-        mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
+        lastReconnectAttempt = t;
+        if (mqttConnect()) 
+        {
+          lastReconnectAttempt = 0;
+          
+          mqtt.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
+          mqtt.publish((String(MQTT_TOPIC)+"/IP").c_str(), localIP.c_str());
+    
+    #ifdef VERSION
+          mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
+    #else      
+          mqtt.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
+    #endif
+    
+          mqtt.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());      
+        }
       }
     }
-  }
-  else if(simEnabled)
-  {
-    // send open mqtt messages
-    MQTTBufferObject::BufferItem *i = mqttBufferObject.GetNextItem();
-    if(i != NULL)
+    else
     {
-      mqtt.publish(i->m_subject.c_str(), i->m_text.c_str());          
-      mqttBufferObject.RemoveItem(i);
-    }
-    
-    mqtt.loop();
+      // send open mqtt messages
+      MQTTBufferObject::BufferItem *i = mqttBufferObject.GetNextItem();
+      if(i != NULL)
+      {
+        mqtt.publish(i->m_subject.c_str(), i->m_text.c_str());          
+        mqttBufferObject.RemoveItem(i);
+      }
+      
+      mqtt.loop();
+    }    
   }
   
   if(firmwareUpdate)

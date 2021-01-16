@@ -24,8 +24,6 @@ static const byte SLEEPCMD[19] =
   0x05, // checksum
   0xAB  // tail
 };
-<<<<<<< HEAD
-=======
  
 static const byte REPORTINGMODE[19] = 
 {
@@ -94,16 +92,12 @@ uint8_t Device_SDS011::calculateWORKINGPERIODCheckSum()
   checksum &= 0xFF;
   return checksum;
 }
->>>>>>> dev
 
 Device_SDS011::Device_SDS011()
 {    
   deviceTypeName = "SDS011";
   done = false;
-<<<<<<< HEAD
-=======
   dataAvailable = true;  
->>>>>>> dev
 }
 
 Device_SDS011::~Device_SDS011()
@@ -111,15 +105,12 @@ Device_SDS011::~Device_SDS011()
   Serial.println("SDS011 Instance deleted");
 }
 
-<<<<<<< HEAD
-=======
 bool Device_SDS011::isNewDataAvailable()
 {
   return false;
 //  return dataAvailable;
 }
 
->>>>>>> dev
 bool Device_SDS011::setDeviceParameter(JsonObject obj)
 {
   DeviceBase::setDeviceParameter(obj);
@@ -133,14 +124,11 @@ bool Device_SDS011::setDeviceParameter(JsonObject obj)
 void Device_SDS011::prepare()
 {
   wakeup(); 
-<<<<<<< HEAD
-=======
   delay(200);
   setActiveMode();
   delay(200);
   setWorkingPeriod();
   delay(300);
->>>>>>> dev
 }
 
 bool Device_SDS011::initialize()
@@ -175,14 +163,8 @@ SensorData* Device_SDS011::readInitialSetupParameter()
   return al;
 }
 
-<<<<<<< HEAD
-void Device_SDS011::wakeup() 
-{
-=======
 void Device_SDS011::setActiveMode() 
 {   
-  Serial.println("setActiveMode checksum : "+String(calculateREPORTINGMODECheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
     if(i == 17)
@@ -194,17 +176,11 @@ void Device_SDS011::setActiveMode()
   }
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-    Serial.print(swSer.read());
-  }  
-
-  Serial.println();
+    swSer.read();
 }
 
 void Device_SDS011::setWorkingPeriod() 
 {   
-  Serial.println("setWorkingPeriod checksum : "+String(calculateWORKINGPERIODCheckSum()));
-  
   for (uint8_t i = 0; i < 19; i++) 
   {
     if(i == 17)
@@ -216,11 +192,7 @@ void Device_SDS011::setWorkingPeriod()
   }
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-    Serial.print(swSer.read());
-  }  
-
-  Serial.println();
+    swSer.read();
 }
 
 
@@ -228,7 +200,6 @@ void Device_SDS011::wakeup()
 {
   Serial.println("will wake up...");
   
->>>>>>> dev
   for (uint8_t i = 0; i < 19; i++) 
   {
     if (i == 4 || i == 17) 
@@ -243,16 +214,7 @@ void Device_SDS011::wakeup()
   
   swSer.flush();
   while (swSer.available() > 0) 
-  {
-<<<<<<< HEAD
     swSer.read();
-  }
-=======
-    Serial.print(swSer.read());
-  }
-
-  Serial.println();
->>>>>>> dev
 }
 
 void Device_SDS011::gotoSleep()
@@ -323,14 +285,16 @@ SensorData* Device_SDS011::readParameter()
     }
 
     if(millis() > w+1500)
+    {
       done = true;
+      al->di[0].nameI = "LastError";
+      al->di[0].valueI = "No data read";        
+    }
   }
 
-<<<<<<< HEAD
-=======
   dataAvailable = false;
+  done = false;
 
->>>>>>> dev
   gotoSleep();
   
   return al;

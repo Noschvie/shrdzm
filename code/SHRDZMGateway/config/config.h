@@ -1,4 +1,4 @@
-#define VERSION		"0.3.0"
+#define VERSION		"0.4.0"
 #define NAME		"SHRDZMGateway"
 
 
@@ -10,3 +10,7 @@
 #define ACCESSPOINT_PIN	13
 
 #define SERIALBAUD 	9600
+
+#include <ESP8266WiFi.h>
+#include <ESP8266httpUpdate.h>
+#include <ESP8266WiFiMulti.h>
