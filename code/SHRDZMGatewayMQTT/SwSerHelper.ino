@@ -7,10 +7,6 @@ void SwSerLoop()
     
     if ( r == '*' ) 
     {
-      while ( ! swSer.available() ) 
-      { 
-        delay(1); 
-      }
       String cmd = readSerialSS();
 
       DLN("Command : "+cmd);
@@ -22,10 +18,6 @@ void SwSerLoop()
     }
     else if(r == '~' ) 
     {
-      while ( ! swSer.available() ) 
-      { 
-        delay(1); 
-      }
       String cmd = readSerialSS();
 
       DLN("Gateway message : "+cmd);
@@ -40,32 +32,28 @@ String readSerialSS()
   byte inByte = 0;
   int counter = 0;
   bool finished = false;
+  unsigned int timeoutStart = millis();
 
-  while (!finished)
+  while (!finished) 
   {
-    while (swSer.available() == 0 && counter < 20) 
-    { 
-      delay(1); 
-      counter++;
-    }
-    if(counter == 20)
+    if(swSer.available())
     {
-      finished = true;
-    }
-    else
-    {
-      counter = 0;
-      inByte = swSer.read();
-      
-      if (inByte == '\n')
+      char inChar = (char)swSer.read();
+      if (inChar == '\n') 
       {
         finished = true;
       }
       else
       {
-        cmd += (char)inByte;
-      }
-    }    
+        cmd += inChar;
+        timeoutStart = millis();
+      }    
+    }
+    else if(timeoutStart + 1000 < millis())
+    {
+      finished = true;
+    }
+    
   }
       
   return cmd.substring(3);
@@ -167,8 +155,10 @@ void sendSensorData(String data)
 
       if(splitter->getItemAtIndex(0) == "[D]")
       {
-        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
-          splitter->getItemAtIndex(2).c_str());
+/*        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
+          splitter->getItemAtIndex(2).c_str()); */
+        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+v).c_str(), 
+          t.c_str());
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {

@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define VERSION		"0.3.3"
+#define VERSION		"0.4.0"
 #define NAME		"SHRDZMGatewayMQTT"
 
 #define LITTLEFS

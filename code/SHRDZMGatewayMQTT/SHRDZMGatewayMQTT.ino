@@ -136,6 +136,8 @@ Serial.begin(9600); Serial.println();
   }
 
 #ifdef RESET_PIN
+  pinMode(RESET_PIN, OUTPUT);
+
   digitalWrite(RESET_PIN,LOW);
   delay(100);
   digitalWrite(RESET_PIN,HIGH);

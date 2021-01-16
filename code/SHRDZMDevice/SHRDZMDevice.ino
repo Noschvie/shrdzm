@@ -876,6 +876,8 @@ void sendSetup()
   if(!gatewayMode && !configuration.containsKey("gateway"))
     return;
 
+  avoidSleeping = true;
+
   if(!gatewayMode)
   {
     simpleEspConnection.sendMessage((char *)"$I$");
@@ -947,6 +949,8 @@ void sendSetup()
     simpleEspConnection.sendMessage((char *)s.c_str());  
   else
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensors").c_str(), (String(SUPPORTED_DEVICES)).c_str());
+
+  avoidSleeping = false;    
 }
 
 // Upgrade firmware via inbuild gateway
@@ -1866,21 +1870,6 @@ void loop()
 //    return;
   }
   
-/*  if(setNewDeviceType)
-  {
-    initDeviceType(newDeviceType.c_str(), true);
-    setNewDeviceType = false;
-    newDeviceType = "";
-
-    configuration.store();        
-    DLN("vor sendSetup");
-    sendSetup();    
-    DLN("nach sendSetup");
-
-    delay(100);
-    ESP.restart();
-    delay(500);
-  } */
   
   if(!sleepEnabled)
     return;
@@ -1890,38 +1879,6 @@ void loop()
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
       gotoSleep();    
   }  
-
-/*  if(!processendReached && millis() > processend)
-  {
-    if(dev != NULL)
-    {
-      dev->setPostAction();
-  
-      if(dev->isNewDataAvailable())
-      {    
-        getMeasurementData();
-      }
-    }
-    
-    processendReached = true;
-  }
-
-  if(canGoDown && !avoidSleeping && simpleEspConnection.isSendBufferEmpty())
-  {
-    if(initReboot && !writeConfiguration)
-    {
-      ESP.restart();
-      delay(500);
-
-      return;
-    }
-    if(atoi(configuration.get("interval")) > 0)
-    {
-      // send uptime
-      gotoSleep();    
-    }
-  }
-*/
 
   if(initReboot && !writeConfiguration)
   {

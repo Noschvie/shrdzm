@@ -793,7 +793,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
 void OnPaired(uint8_t *ga, String ad)
 {
-  Serial.println("***************************************----");
+//  Serial.println("***************************************----");
   
 #ifdef DEBUG
   Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
@@ -1194,7 +1194,7 @@ void updateFirmware(String parameter)
     firmwareUpdate = true;
 
 #ifdef DEBUG
-    Serial.println("firmwareUpdate enabled for SSID="+SSID+", Password="+password);
+    Serial.println("firmwareUpdate enabled for SSID = "+SSID+", Password="+password);
 #endif                    
 
     esp_now_deinit();

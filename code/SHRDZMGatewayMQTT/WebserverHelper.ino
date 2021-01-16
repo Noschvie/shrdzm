@@ -457,7 +457,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int length)
 
           updateFirmware(splitter->getItemAtIndex(2));
         }
-        else // Gateway upgrade called
+        else // Device upgrade called
         {
           String upgradeText = String("$set "+splitter->getItemAtIndex(0)+" upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+splitter->getItemAtIndex(2));
   
