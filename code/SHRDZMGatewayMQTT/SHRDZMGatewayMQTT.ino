@@ -110,7 +110,16 @@ Serial.begin(9600); Serial.println();
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 
-  if(lastRebootInfo == "" || lastRebootInfo == "connectiontimeout")
+  // set config pin
+  int s = 13;
+#ifdef CONFIG_PIN    
+    s = CONFIG_PIN;
+#endif  
+  pinMode(s, INPUT_PULLUP);    
+
+  WiFi.disconnect(true);
+
+  if(!digitalRead(s))
   {
     configurationMode = true;
     startConfigurationAP();
@@ -124,6 +133,13 @@ Serial.begin(9600); Serial.println();
 
 void loop() 
 {
+/*  if(checkAPModeRequest())
+  {
+    startConfigurationAP();
+    
+    return;    
+  } */
+  
   if(configurationMode)
   {
     webserver.handleClient();
@@ -141,7 +157,12 @@ void loop()
     } 
     else
     {
-      if(millis() > 20000) // max. 20 seconds before reboot and start configuration gateway
+      if(millis() > 300000) // reboot every 5 minutes if no connection can be made
+      {
+        delay(500);
+        ESP.restart();
+      }
+/*      if(millis() > 20000) // max. 20 seconds before reboot and start configuration gateway
       {
         DLN("Connection timeout. Will start a local AP to reconfigure.");
 
@@ -149,12 +170,20 @@ void loop()
 
         delay(500);
         ESP.restart();
-      }
+      } */
     }
   }
   else
   {
-    webserver.handleClient();    
+    if (WiFi.status() == WL_CONNECTED) 
+    {
+      webserver.handleClient();    
+    }
+    else
+    {
+      // WLAN AP disconnected
+      // start reconnection process
+    }
   }
 
   if(WiFi.status() == WL_CONNECTED)

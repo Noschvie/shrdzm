@@ -37,6 +37,7 @@
 #define DEBUG
 #define LEDPIN 2
 #define RESET_PIN 16
+#define CONFIG_PIN 13
 
 #define SERIALBAUD 	9600
 
