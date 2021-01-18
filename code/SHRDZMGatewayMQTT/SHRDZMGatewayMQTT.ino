@@ -60,6 +60,14 @@ Serial.begin(9600); Serial.println();
 
   setDeviceName();
 
+  lastVersionNumber = configuration.readLastVersionNumber();  
+  currVersion = ESP.getSketchMD5();
+
+  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+  {
+    configuration.storeVersionNumber();
+  }
+  
 #ifdef MQTT_SUBSCRIBE_TOPIC
   MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
 #else

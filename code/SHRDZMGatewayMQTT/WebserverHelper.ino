@@ -372,6 +372,13 @@ bool mqttreconnect()
       mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "up");
       mqttclient.publish((String(MQTT_TOPIC)+"/IP").c_str(), WiFi.localIP().toString().c_str()); 
 
+#ifdef VERSION
+      mqttclient.publish((String(MQTT_TOPIC)+"/version").c_str(), String(VERSION).c_str());
+#else      
+      mqttclient.publish((String(MQTT_TOPIC)+"/version").c_str(), "0.00");
+#endif
+      mqttclient.publish((String(MQTT_TOPIC)+"/gatewaymqttversion").c_str(), String(ver+"-"+currVersion).c_str());
+
       return true;
     } 
     else
