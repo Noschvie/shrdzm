@@ -67,6 +67,9 @@ class SetupObject
 
     if(!bFoundSpace && oldestItem != NULL) // search for the oldest one and take that
     {
+#ifdef DEBUG
+      Serial.printf("Oldest Item %s for %s removed.\n", oldestItem->m_parameterName.c_str(), oldestItem->m_deviceName.c_str());
+#endif      
       RemoveItem(oldestItem);
       AddItem(deviceName, parameterName, parameterValue);
     }
@@ -97,6 +100,9 @@ class SetupObject
     
     if(!bFoundSpace && oldestItem != NULL) // search for the oldest one and take that
     {
+#ifdef DEBUG
+      Serial.printf("Oldest Item %s for %s removed.\n", oldestItem->m_parameterName.c_str(), oldestItem->m_deviceName.c_str());
+#endif
       RemoveItem(oldestItem);
       AddItem(deviceName, command);
     }

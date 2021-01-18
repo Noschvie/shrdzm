@@ -157,8 +157,8 @@ void sendSensorData(String data)
       {
 /*        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
           splitter->getItemAtIndex(2).c_str()); */
-        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+v).c_str(), 
-          t.c_str());
+        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+t).c_str(), 
+          v.c_str());
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {
