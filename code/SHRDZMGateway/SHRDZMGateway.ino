@@ -831,33 +831,15 @@ void OnConnected(uint8_t *ga, String ad)
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
-//  sendOpenESPMessages(ad);
-
-/*
-  clientAddress = ad;
-  SetupObject::SetupItem *si = setupObject.GetItem(ad);
-
-  if(si != NULL)
+  // check auto paining
+  if(!configurationDevices.containsKey(ad))
   {
-    String message = si->m_parameterName;
-
-    if(si->m_parameterValue != "")
-      message += ":"+ si->m_parameterValue;
-
 #ifdef DEBUG
-    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+    Serial.printf("Unknown device %s connected. Will start auto pair mechanism.",ad.c_str());
 #endif
-    
-    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
-    setupObject.RemoveItem(si);
-
-    reportDeviceStateInfo(ad, "Sent setup");
-  }  
-  else
-  {
-//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
-  } */
+    OnPaired(ga, ad);
+  }
 }
 
 void OnPairingFinished()
