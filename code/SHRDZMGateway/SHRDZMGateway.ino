@@ -831,7 +831,7 @@ void OnConnected(uint8_t *ga, String ad)
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
-  // check auto paining
+  // check auto pairing
   if(!configurationDevices.containsKey(ad))
   {
 #ifdef DEBUG

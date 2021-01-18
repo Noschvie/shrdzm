@@ -39,6 +39,7 @@ void executeUpdateFirmware()
   {     
     firmwareUpdate = false;
     
+    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);         
     ESPhttpUpdate.onStart(update_started);
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
