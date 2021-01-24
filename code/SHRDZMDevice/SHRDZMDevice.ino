@@ -250,8 +250,7 @@ void handleRoot()
       </body>\
       </html>\
       ");
-    
-    
+        
       server.send(200, "text/html", content);
 
 #ifdef LITTLEFS
@@ -265,9 +264,45 @@ void handleRoot()
       ESP.restart();        
     }
   }
+
+  if(server.hasArg("upgrade") && server.hasArg("upgradepath"))
+  {
+    if(String(server.arg("upgrade")) == "true") // Upgrade was pressed
+    {
+      DLN("Upgrade from "+String(server.arg("upgradepath"))+" will be started...");
+      if(updateFirmwareByMQTT(server.arg("upgradepath")))
+      {        
+        firmwareUpdate = true;
+
+        snprintf(content, 300,
+        "<!DOCTYPE html>\
+        <html>\
+        <head>\
+        </head>\
+        <body>\
+        <h1>Upgrade started. SHRDZMDevice will reboot after upgrade.</h1>\
+        </body>\
+        </html>\
+        ");
+          
+        server.send(200, "text/html", content);  
+        return;      
+      }
+    }    
+  }
   
   String informationTable = "<br><br>";  
+  String upgradeText = "";
 
+  if(gatewayMode)
+  {
+    upgradeText = "<br/><br/><input type='hidden' id='upgrade' name='upgrade' value='false'/><br/>\
+        <input class='factoryresetbutton' type='submit' onclick='submitFormUpgrade()' value='OTA Upgrade' />\
+        <input type='text' id='upgradepath' name='upgradepath' size='35' value='http://shrdzm.pintarweb.net/upgrade.php'>\
+        <br/>";
+  }
+
+  informationTable += "Firmware Version : "+ver+"-"+ESP.getSketchMD5()+"<br><br>";
   informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
   informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
   informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
@@ -283,16 +318,22 @@ void handleRoot()
       <br/><br/>\
       <form method='post' id='factoryReset'>\
       <input type='hidden' id='factoryreset' name='factoryreset' value='false'/>\
-      <input class='factoryresetbutton' type='submit' onclick='submitForm()' value='Factory Reset!' />\
+      <input class='factoryresetbutton' type='submit' onclick='submitFormFactoryReset()' value='Factory Reset!' />\
+      %s\
       <script>\
-       function submitForm()\
+       function submitFormFactoryReset()\
        {\
           document.getElementById('factoryreset').value = 'true';\
+       }\
+       function submitFormUpgrade()\
+       {\
+          document.getElementById('upgrade').value = 'true';\
        }\
       </script>\
       </form>\
       ",
-      informationTable.c_str()
+      informationTable.c_str(),
+      upgradeText.c_str()
   );  
 
   char * temp = getWebsite(content);
@@ -1220,13 +1261,14 @@ void upgradeFirmware()
   
   if ((WiFi.status() == WL_CONNECTED)) 
   {     
+    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
     ESPhttpUpdate.onStart(update_started);
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
   
     String versionStr = nam+" "+ver+" "+ESP.getSketchMD5();
-    DLN("WLAN connected!");
+    DLN("WLAN connected! ");
   
     WiFiClient client; 
     // Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
