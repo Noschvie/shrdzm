@@ -67,7 +67,7 @@ PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
-char websideBuffer[5000];
+char websideBuffer[5500];
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -234,7 +234,7 @@ button {\
 
 void handleRoot() 
 {
-  char content[2000];
+  char content[2500];
 
   if(server.hasArg("factoryreset"))
   {
@@ -384,7 +384,7 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[2500];
+  char content[2700];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String deviceType;
@@ -853,6 +853,10 @@ DeviceBase * createDeviceObject(const char *deviceType)
   else if(strcmp(deviceType, "SDS011_BME280") == 0)
   {
     return new Device_SDS011_BME280();
+  }  
+  else if(strcmp(deviceType, "SDS011_BH1750") == 0)
+  {
+    return new Device_SDS011_BH1750();
   }  
   else if(strcmp(deviceType, "DIGITALGROUND") == 0)
   {
@@ -1355,6 +1359,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   else if(strcmp(deviceType, "SDS011_BME280") == 0)
   {
     dev = new Device_SDS011_BME280();
+  }  
+  else if(strcmp(deviceType, "SDS011_BH1750") == 0)
+  {
+    dev = new Device_SDS011_BH1750();
   }  
   else if(strcmp(deviceType, "DIGITALGROUND") == 0)
   {
