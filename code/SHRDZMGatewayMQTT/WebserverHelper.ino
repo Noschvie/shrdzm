@@ -337,6 +337,13 @@ void startServerListener()
   mqttclient.setCallback(mqttcallback);  
 }  
 
+void sendRCData(String data)
+{
+  DLN("Publish : topic : "+(String(MQTT_TOPIC)+"/RCData")+" Value: "+data);
+
+  mqttclient.publish((String(MQTT_TOPIC)+"/RCData").c_str(), data.c_str());
+}
+
 bool mqttreconnect() 
 {
   // Loop until we're reconnected

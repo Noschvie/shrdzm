@@ -22,9 +22,8 @@ WiFiClient espClient;
 PubSubClient mqttclient(espClient);
 
 RCSwitch mySwitch = RCSwitch();
-
 unsigned long lastRCMillis = 0;
-String subcribeTopicRCSEND;
+
 char websideBuffer[5000];
 String deviceName;
 String ver, nam;
@@ -60,13 +59,6 @@ Serial.begin(9600); Serial.println();
 
   setDeviceName();
 
-  lastVersionNumber = configuration.readLastVersionNumber();  
-  currVersion = ESP.getSketchMD5();
-
-  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
-  {
-    configuration.storeVersionNumber();
-  }
   
 #ifdef MQTT_SUBSCRIBE_TOPIC
   MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
@@ -102,6 +94,14 @@ Serial.begin(9600); Serial.println();
    // DLN("SPIFFS accessed...");
   }
 #endif
+
+  lastVersionNumber = configuration.readLastVersionNumber();  
+  currVersion = ESP.getSketchMD5();
+
+  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+  {
+    configuration.storeVersionNumber();
+  }
 
   if(!configuration.load())
   {
@@ -150,6 +150,16 @@ Serial.begin(9600); Serial.println();
   delay(100);
   digitalWrite(RESET_PIN,HIGH);
 #endif  
+
+  // Enable RCSwitch
+#ifdef RCSWITCHPIN
+  mySwitch.enableReceive(RCSWITCHPIN);
+#endif
+
+#ifdef RCSENDPIN
+  mySwitch.enableTransmit(RCSENDPIN);
+#endif
+    
   
 }
 
@@ -213,5 +223,6 @@ void loop()
 
   SwSerLoop();
   OTALoop();
+  RCSwitchLoop();
   
 }
