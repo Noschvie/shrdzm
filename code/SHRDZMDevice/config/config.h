@@ -13,7 +13,7 @@
 #define LEDPIN 		2
 #define PAIRING_PIN	13
 #define SENSORPOWERPIN 14  // sensor is powerd by this pin
-#define MAXCONTROLWAIT 2000	// wait 2000 millisecond in case gateway wants to control
+#define MAXCONTROLWAIT 2500	// wait 2000 millisecond in case gateway wants to control
 
 #ifdef DEBUG_SHRDZM
 #define D(...)   Serial.print (__VA_ARGS__); Serial.print(F(" "))

@@ -14,6 +14,7 @@
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
+#include "SerialBufferObject.h"
 #include "MQTTBufferObject.h"
 #include "StringSplitter.h"
 #include <SoftwareSerial.h>
@@ -69,6 +70,7 @@ String APName;
 
 SetupObject setupObject;
 MQTTBufferObject mqttBufferObject;
+SerialBufferObject serialBufferObject;
 
 // AP WebServer
 char* getWebsite(char* content)
@@ -632,7 +634,7 @@ void sendOpenESPMessages(String ad)
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
 #ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
+ // Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
 #endif
   
   if(String((char *)message) == "$PING$")
@@ -644,9 +646,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   if(String((char *)message) == "$F$") // client ask for shutdown signal
   {    
     sendOpenESPMessages(simpleEspConnection.macToStr(ad));
-//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
-
-//    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
   }
 
@@ -654,9 +653,17 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(m.substring(0,3) == "$D$")       // Data
   {
-    String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-    Serial.write(s.c_str(), s.length());
-    Serial.print('\n');
+/*    char msg[len+20];
+    sprintf(msg, "*000[D]$%02X%02X%02X%02X%02X%02X$%s\n\0", ad[0], ad[1], ad[2], ad[3], ad[4], ad[5], m.substring(3).c_str());
+*/
+//    Serial.write(msg, strlen(msg));
+  
+
+    
+    String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3)+"\n";
+//    Serial.write(s.c_str(), s.length());
+//    Serial.print('\n');
+    serialBufferObject.AddItem(s);
 
     // send via GSM    
     if(simEnabled)
@@ -973,7 +980,7 @@ void setup()
 {
   bool writeConfigAndReboot = false;
   
-  Serial.begin(9600);
+  Serial.begin(SERIALBAUD);
   Serial.println();
 
 #ifdef VERSION
@@ -1194,6 +1201,8 @@ void loop()
   }
   
   simpleEspConnection.loop();
+  serialBufferObject.executeSerialSend();
+  
 
   if (simEnabled) 
   {

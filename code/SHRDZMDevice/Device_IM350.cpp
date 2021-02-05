@@ -86,15 +86,15 @@ bool Device_IM350::initialize()
 
 SensorData* Device_IM350::readParameterTypes()
 {
-  SensorData *al = new SensorData(7);
+  SensorData *al = new SensorData(6);
 
-  al->di[0].nameI = "encoded";
-  al->di[1].nameI = "counter_reading_p_in";
-  al->di[2].nameI = "counter_reading_p_out";
-  al->di[3].nameI = "counter_reading_q_in";
-  al->di[4].nameI = "counter_reading_q_out";
-  al->di[5].nameI = "current_power_usage_in";
-  al->di[6].nameI = "current_power_usage_out";
+//  al->di[0].nameI = "encoded";
+  al->di[0].nameI = "counter_reading_p_in";
+  al->di[1].nameI = "counter_reading_p_out";
+  al->di[2].nameI = "counter_reading_q_in";
+  al->di[3].nameI = "counter_reading_q_out";
+  al->di[4].nameI = "current_power_usage_in";
+  al->di[5].nameI = "current_power_usage_out";
 
   return al;
 }
@@ -163,20 +163,13 @@ SensorData* Device_IM350::readParameter()
     code += String(hexCode);    
   }
 
-  if(code != "" && code != "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-  {
-    al = new SensorData(7);
-
-    al->di[0].nameI = "encoded";
-    al->di[0].valueI = code;  
-  }
-  else
+  if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
   {
     al = new SensorData(1);
     
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "no data read";  
-
+    
     Serial.flush();
     Serial.begin(9600);
         
@@ -185,23 +178,35 @@ SensorData* Device_IM350::readParameter()
 
   if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
   {    
-    al->di[1].nameI = "counter_reading_p_in";
-    al->di[1].valueI = String(getCounter_reading_p_in());  
+    al = new SensorData(6);
 
-    al->di[2].nameI = "counter_reading_p_out";
-    al->di[2].valueI = String(getCounter_reading_p_out());  
+    al->di[0].nameI = "counter_reading_p_in";
+    al->di[0].valueI = String(getCounter_reading_p_in());  
 
-    al->di[3].nameI = "counter_reading_q_in";
-    al->di[3].valueI = String(getCounter_reading_q_in());  
+    al->di[1].nameI = "counter_reading_p_out";
+    al->di[1].valueI = String(getCounter_reading_p_out());  
+
+    al->di[2].nameI = "counter_reading_q_in";
+    al->di[2].valueI = String(getCounter_reading_q_in());  
   
-    al->di[4].nameI = "counter_reading_q_out";
-    al->di[4].valueI = String(getCounter_reading_q_out());  
+    al->di[3].nameI = "counter_reading_q_out";
+    al->di[3].valueI = String(getCounter_reading_q_out());  
 
-    al->di[5].nameI = "counter_power_usage_in";
-    al->di[5].valueI = String(getCurrent_power_usage_in());  
+    al->di[4].nameI = "counter_power_usage_in";
+    al->di[4].valueI = String(getCurrent_power_usage_in());  
 
-    al->di[6].nameI = "counter_power_usage_out";
-    al->di[6].valueI = String(getCurrent_power_usage_out());  
+    al->di[5].nameI = "counter_power_usage_out";
+    al->di[5].valueI = String(getCurrent_power_usage_out()); 
+  }
+  else
+  {
+    al = new SensorData(2);
+    
+    al->di[0].nameI = "lasterror";
+    al->di[0].valueI = "Translation of data not possible";      
+
+    al->di[1].nameI = "data";
+    al->di[1].valueI = code;      
   }
 
   Serial.flush();

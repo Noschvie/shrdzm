@@ -105,6 +105,26 @@ bool Configuration::migrateToNewConfigurationStyle()
     setWlanParameter("password", "");
     update = true;
   }
+  if(!containsWlanKey("ip"))
+  {
+    setWlanParameter("ip", "");
+    update = true;
+  }
+  if(!containsWlanKey("dns"))
+  {
+    setWlanParameter("dns", "");
+    update = true;
+  }
+  if(!containsWlanKey("gateway"))
+  {
+    setWlanParameter("gateway", "");
+    update = true;
+  }
+  if(!containsWlanKey("subnet"))
+  {
+    setWlanParameter("subnet", "");
+    update = true;
+  }
   if(!containsWlanKey("MQTTbroker"))
   {
     setWlanParameter("MQTTbroker", "test.mosquitto.org");

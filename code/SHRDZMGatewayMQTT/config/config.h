@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define VERSION		"0.4.0"
+#define VERSION		"0.5.0"
 #define NAME		"SHRDZMGatewayMQTT"
 
 #define LITTLEFS
@@ -39,6 +39,7 @@
 #define RESET_PIN 16
 #define CONFIG_PIN 13
 
+//#define SERIALBAUD 	115200
 #define SERIALBAUD 	9600
 
 #define RCSWITCHPIN 0

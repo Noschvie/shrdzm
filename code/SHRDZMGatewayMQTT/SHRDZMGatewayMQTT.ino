@@ -42,7 +42,7 @@ unsigned long mqttNextTry = 0;
 void setup() 
 {  
 #ifdef DEBUG_SHRDZM
-Serial.begin(9600); Serial.println();
+Serial.begin(SERIALBAUD); Serial.println();
 #endif
 
 #ifdef VERSION
@@ -116,11 +116,9 @@ Serial.begin(9600); Serial.println();
     ESP.restart();          
   }
 
-#ifdef SERIALBAUD
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-#else
-  swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
-#endif
+
+  DV(SERIALBAUD);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 

@@ -67,7 +67,8 @@ PubSubClient mqttclient(espClient);
 String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
-char websideBuffer[5500];
+char websideBuffer[6500];
+char menuContextBuffer[4200];
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -291,7 +292,7 @@ void handleRoot()
     }    
   }
   
-  String informationTable = "<br><br>";  
+  String informationTable = "<br>";  
   String upgradeText = "";
 
   if(gatewayMode)
@@ -308,7 +309,15 @@ void handleRoot()
   informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
   informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
   informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
-  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br>";
+  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
+
+  if(WiFi.localIP().toString() != "(IP unset)")
+  {
+    informationTable += "IP : "+WiFi.localIP().toString()+"<br>";
+    informationTable += "DNS : "+WiFi.dnsIP().toString()+"<br>";
+    informationTable += "Gateway : "+WiFi.gatewayIP().toString()+"<br>";
+    informationTable += "Subnet : "+WiFi.subnetMask().toString()+"<br>";
+  }
 
   sprintf(content,  
       "<h1>General</h1>\
@@ -384,7 +393,7 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[2700];
+//  char content[2700];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String deviceType;
@@ -448,7 +457,8 @@ void handleSettings()
 
   if(settingDev != NULL)
   {
-    if(deviceType == configuration.get("devicetype"))
+    if(strcmp(configuration.get("devicetype"), deviceType.c_str()) == 0)    
+//    if(deviceType == configuration.get("devicetype"))
     {
       deviceParameter = configuration.getDeviceParameter();
     }
@@ -505,7 +515,7 @@ void handleSettings()
       break;
   }
 
-  sprintf(content,  
+  sprintf(menuContextBuffer,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post' id='settingsForm'>\
       <label>Device Type :\
@@ -530,7 +540,7 @@ void handleSettings()
       parameterBuffer.c_str()
   );  
 
-  char * temp = getWebsite(content);
+  char * temp = getWebsite(menuContextBuffer);
   DV(writeConfiguration);
   DLN("after getWebsite size = "+String(strlen(temp)));
   
@@ -539,7 +549,7 @@ void handleSettings()
 
 void handleGateway()
 {
-  char content[2300];
+//  char content[2300];
 
   if(server.args() != 0)
   {
@@ -560,6 +570,27 @@ void handleGateway()
       configuration.setWlanParameter("password", server.arg("password").c_str());
     else
       configuration.setWlanParameter("password", "");    
+
+    if(server.hasArg("ip"))
+      configuration.setWlanParameter("ip", server.arg("ip").c_str());
+    else
+      configuration.setWlanParameter("ip", "");    
+    
+    if(server.hasArg("dns"))
+      configuration.setWlanParameter("dns", server.arg("dns").c_str());
+    else
+      configuration.setWlanParameter("dns", "");    
+    
+    if(server.hasArg("gateway"))
+      configuration.setWlanParameter("gateway", server.arg("gateway").c_str());
+    else
+      configuration.setWlanParameter("gateway", "");    
+    
+    if(server.hasArg("subnet"))
+      configuration.setWlanParameter("subnet", server.arg("subnet").c_str());
+    else
+      configuration.setWlanParameter("subnet", "");    
+    
     if(server.hasArg("MQTTbroker"))
       configuration.setWlanParameter("MQTTbroker", server.arg("MQTTbroker").c_str());
     if(server.hasArg("MQTTport"))
@@ -572,10 +603,9 @@ void handleGateway()
     writeConfiguration = true;    
   }
    
-  sprintf(content,  
+  sprintf(menuContextBuffer,  
       "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
-      <p>WLAN Settings if Device acts as it's own gateway.</p>\
-      </p>\
+      WLAN Settings if Device acts as it's own gateway.\
       <br/><br/>\
       <form method='post'>\
       <input type='checkbox' id='wlanenabled' name='wlanenabled' value='1' %s/>\
@@ -590,6 +620,18 @@ void handleGateway()
       <label for='password'>Password</label></div><br/><br/>\
       <div><input type='checkbox' onclick='showWLANPassword()'>Show Password\
       </div><br/>\
+      <div><input type='text' id='ip' name='ip' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+      <label for='ip'>Static IP</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='dns' name='dns' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+      <label for='ip'>DNS</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='gateway' name='gateway' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+      <label for='gateway'>Gateway</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='subnet' name='subnet' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+      <label for='gateway'>Subnet</label></div><br/>\
+      <br/><br/>\
       <div><input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
       <label for='MQTTbroker'>MQTT Broker</label></div><br/>\
       <br/>\
@@ -619,15 +661,17 @@ void handleGateway()
       String(configuration.getWlanParameter("enabled")) == "true" ? "checked" : "",
       configuration.getWlanParameter("ssid"),
       configuration.getWlanParameter("password"),
+      configuration.getWlanParameter("ip"),
+      configuration.getWlanParameter("dns"),
+      configuration.getWlanParameter("gateway"),
+      configuration.getWlanParameter("subnet"),
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
       configuration.getWlanParameter("MQTTpassword") 
   );  
 
-//  Serial.println("configuration.getWlanParameter(\"enabled\") = "+String(configuration.getWlanParameter("enabled")));
-
-  char * temp = getWebsite(content);
+  char * temp = getWebsite(menuContextBuffer);
 
   DLN("after getWebsite size = "+String(strlen(temp)));
   server.send(200, "text/html", temp);
@@ -774,11 +818,26 @@ void startGatewayWebserver()
   delay(100);
   WiFi.mode(WIFI_STA);
   DLN("after WIFI_STA ");
+  IPAddress ip;
+  IPAddress dns;
+  IPAddress gateway;
+  IPAddress subnet;
 
   String APName = "SHRDZMDevice-"+deviceName;
   MQTT_TOPIC = "SHRDZM/"+deviceName;
   
   WiFi.hostname(APName.c_str());
+
+  StringSplitter *ipparts = new StringSplitter(configuration.getWlanParameter("ip"), '.', 4);
+  if(ipparts->getItemCount() == 4)
+  {
+    ip.fromString(configuration.getWlanParameter("ip"));
+    dns.fromString(configuration.getWlanParameter("dns"));
+    gateway.fromString(configuration.getWlanParameter("gateway"));
+    subnet.fromString(configuration.getWlanParameter("subnet"));
+    
+    WiFi.config(ip, dns, gateway, subnet);
+  }
   WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
   DLN("after Wifi.begin");
 
@@ -1508,7 +1567,6 @@ Serial.begin(9600); Serial.println();
     writeConfigAndReboot = true;
   }  
 
-
   if(writeConfigAndReboot)
   {
     configuration.store();    
@@ -1519,8 +1577,6 @@ Serial.begin(9600); Serial.println();
 
   String lastVersionNumber = configuration.readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
-
-//  DLN("'"+lastVersionNumber+"':'"+currVersion+"'");
 
   if(configuration.get("pairingpin") != NULL)
   {    
@@ -1573,7 +1629,7 @@ Serial.begin(9600); Serial.println();
     return;
   }  
 
-  if(configuration.get("gateway") == NULL && !pairingOngoing)
+  if((configuration.get("gateway") == NULL || configuration.get("gateway") == "") && !pairingOngoing)
     gotoInfiniteSleep();
 
   // start ESPNow
@@ -1609,6 +1665,14 @@ Serial.begin(9600); Serial.println();
       sendSetup();
       configuration.storeVersionNumber();
     }      
+  }
+
+  DV(configuration.get("devicetype"));
+
+  if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0)  
+  {
+    DLN("Send $F$");
+    simpleEspConnection.sendMessage("$F$");
   }
 
   clockmillis = millis();  
@@ -1648,7 +1712,8 @@ void getMeasurementData()
       if(!gatewayMode)
       {
         simpleEspConnection.sendMessage("$F$");
-
+        DLN("Send $F$");
+        
         if(!preparing)
           lastIntervalTime = millis();            
       }
@@ -1667,6 +1732,12 @@ void handleGatewayLoop()
     {
       apConnectingOngoing = false;
       DLN("Connected to AP. Starting Webserver...");
+
+      DV(WiFi.localIP());
+      DV(WiFi.dnsIP());
+      DV(WiFi.gatewayIP());
+      DV(WiFi.subnetMask());
+      
       
       server.on("/", handleRoot);
       server.on("/reboot", handleReboot);
@@ -1745,7 +1816,8 @@ void handleGatewayLoop()
 
   if(!isDeviceInitialized)
   {
-    if(configuration.get("devicetype") != "UNKNOWN")
+//    if(configuration.get("devicetype") != "UNKNOWN")
+    if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0)
     {
       initDeviceType(configuration.get("devicetype"), false);
     }
@@ -1818,10 +1890,6 @@ void handleESPNowLoop()
   else
     sleepEnabled = true;  
 
-  // only if interval is reached or if preparing ongoing
-/*  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000)
-    return; */
-
   firstMeasurement = false;
 
   if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
@@ -1835,7 +1903,7 @@ void handleESPNowLoop()
 
   if(!isDeviceInitialized)
   {
-    if(configuration.get("devicetype") != "UNKNOWN")
+    if(strcmp(configuration.get("devicetype"), "UNKNOWN") != 0)
     {
       initDeviceType(configuration.get("devicetype"), false);
     }
@@ -1852,24 +1920,16 @@ void handleESPNowLoop()
       preparing = true;
     }
 
-  // get measurement data
-/*    loopDone = dev->loop();
-    if(dev->isNewDataAvailable())
-    {
-      getMeasurementData();
-    } */
-
     if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000 && !finalMeasurementDone)
     {
       preparing = false;
       preparestart = 0;
-  
+
+      DLN("Will start measurement");
       getMeasurementData();
       finalMeasurementDone = true;
     }
   }  
-  else
-    simpleEspConnection.sendMessage("$F$");
 
   if(preparing)
   {
@@ -1917,14 +1977,13 @@ void loop()
   else
   {
     handleESPNowLoop();
-//    return;
   }
   
   
   if(!sleepEnabled)
     return;
   
-  if(forceSleep || millis() > MAXCONTROLWAIT+lastIntervalTime)
+  if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
       gotoSleep();    
