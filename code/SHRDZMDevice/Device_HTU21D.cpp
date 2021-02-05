@@ -93,6 +93,7 @@ SensorData* Device_HTU21D::readParameter()
   al->di[3].valueI = String(Td);  
 
   // heat index
+  temperature = toFahrenheit(temperature);
   hi = 0.5 * (temperature + 61.0 + ((temperature - 68.0) * 1.2) + (percentHumidity * 0.094));
   
   if (hi > 79)
@@ -115,7 +116,7 @@ SensorData* Device_HTU21D::readParameter()
   }  
 
   al->di[4].nameI = "heatindex";
-  al->di[4].valueI = String(hi);  
+  al->di[4].valueI = String(toCelsius(hi));  
 
   dataAvailable = false;  
 

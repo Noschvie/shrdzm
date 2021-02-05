@@ -22,6 +22,8 @@ class Device_HTU21D : public DeviceBase
     
   protected:
     HTU21D myHTU21D;
+    float toFahrenheit(float fromCelcius) { return 1.8 * fromCelcius + 32.0; };
+    float toCelsius(float fromFahrenheit) { return (fromFahrenheit - 32.0) / 1.8; };
 
   private:
     bool dataAvailable;
