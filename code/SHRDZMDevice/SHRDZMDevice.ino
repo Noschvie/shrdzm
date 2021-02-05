@@ -1816,8 +1816,7 @@ void handleGatewayLoop()
 
   if(!isDeviceInitialized)
   {
-//    if(configuration.get("devicetype") != "UNKNOWN")
-    if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0)
+    if(strcmp(configuration.get("devicetype"), "UNKNOWN") != 0)
     {
       initDeviceType(configuration.get("devicetype"), false);
     }
