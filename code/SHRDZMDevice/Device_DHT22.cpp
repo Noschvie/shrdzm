@@ -32,10 +32,14 @@ bool Device_DHT22::initialize()
 
 SensorData* Device_DHT22::readParameterTypes()
 {
-  SensorData *al = new SensorData(2);
+  SensorData *al = new SensorData(5);
 
   al->di[0].nameI = "temperature";
   al->di[1].nameI = "humidity";
+  al->di[2].nameI = "dewpoint";
+  al->di[3].nameI = "absolutehumidity";
+  al->di[4].nameI = "heatindex";  
+  
 
   return al;
 }
@@ -63,7 +67,7 @@ SensorData* Device_DHT22::readParameter()
 
   if(!isnan(temperature) || !isnan(humidity))
   {
-    al = new SensorData(4);
+    al = new SensorData(5);
     
     al->di[0].nameI = "temperature";
     al->di[0].valueI = String(temperature);
@@ -76,6 +80,9 @@ SensorData* Device_DHT22::readParameter()
 
     al->di[3].nameI = "absolutehumidity";
     al->di[3].valueI = String(dht.computeAbsoluteHumidity(temperature, humidity));    
+
+    al->di[4].nameI = "heatindex";
+    al->di[4].valueI = String(dht.computeHeatIndex(temperature, humidity));    
   }
   
   dataAvailable = false;
