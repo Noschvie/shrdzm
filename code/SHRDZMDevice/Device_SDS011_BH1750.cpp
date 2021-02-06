@@ -139,7 +139,6 @@ bool Device_SDS011_BH1750::initialize()
   deviceParameter["RX"] = "12";
   deviceParameter["TX"] = "2";
   deviceParameter["address"] = "0x23"; // default is GND to address pin, 0x5C means address pin is connetced to VCC
-  deviceParameter["sealevel"] = "537";
 
   return true;
 }
