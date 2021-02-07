@@ -9,7 +9,6 @@
   https://github.com/saghonfly
 
 */
-
 #include "config/config.h"
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
@@ -601,7 +600,7 @@ void sendOpenESPMessages(String ad)
   String message;
   
 #ifdef DEBUG  
-  Serial.println("Send open messages to "+ad);
+ // Serial.println("Send open messages to "+ad);
 #endif    
 
   do
@@ -616,7 +615,7 @@ void sendOpenESPMessages(String ad)
         message += ":"+ si->m_parameterValue;
   
 #ifdef DEBUG
-      Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+ //     Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
 #endif
       
       simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
@@ -653,16 +652,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 
   if(m.substring(0,3) == "$D$")       // Data
   {
-/*    char msg[len+20];
-    sprintf(msg, "*000[D]$%02X%02X%02X%02X%02X%02X$%s\n\0", ad[0], ad[1], ad[2], ad[3], ad[4], ad[5], m.substring(3).c_str());
-*/
-//    Serial.write(msg, strlen(msg));
-  
-
-    
     String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3)+"\n";
-//    Serial.write(s.c_str(), s.length());
-//    Serial.print('\n');
     serialBufferObject.AddItem(s);
 
     // send via GSM    
@@ -801,7 +791,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 void OnPaired(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
-  Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
+//  Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 #endif
 
   if(!configurationDevices.containsKey(ad))
@@ -826,7 +816,7 @@ void OnPaired(uint8_t *ga, String ad)
   if(simEnabled)
   {
 #ifdef DEBUG
-    Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
+ //   Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
 #endif
     mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
   }
@@ -852,7 +842,7 @@ void OnConnected(uint8_t *ga, String ad)
 void OnPairingFinished()
 {
 #ifdef DEBUG  
-  Serial.println("Pairing finished");
+//  Serial.println("Pairing finished");
 #endif  
 }
 

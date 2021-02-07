@@ -379,7 +379,7 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
   
   for (JsonPair kv : documentRoot) 
   {
-    if(String(kv.key().c_str()) != "device")
+    if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan")
       reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
   }
 
