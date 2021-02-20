@@ -2001,7 +2001,8 @@ void gotoInfiniteSleep()
 {
   if(atoi(configuration.get("sensorpowerpin")) != 99)
   {
-    digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW);          
+    digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW); 
+    pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);                   
   }
   
   DLN("Up for "+String(millis())+" ms, going to sleep forever because not paired so far... \n");   
@@ -2039,8 +2040,9 @@ void gotoSleep()
   if(sleepSecs > 0)
   {
     if(atoi(configuration.get("sensorpowerpin")) != 99)
-    {
+    {      
       digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW);          
+      pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);      
     }
     
     ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
