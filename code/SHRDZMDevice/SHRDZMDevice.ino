@@ -929,6 +929,10 @@ DeviceBase * createDeviceObject(const char *deviceType)
   {
     return new Device_GW60();
   }
+  else if(strcmp(deviceType, "DOORSENSOR") == 0)
+  {
+    return new Device_DOORSENSOR();
+  }  
   else
   {
     DLN("Device Type "+String(deviceType)+" not known");
@@ -1435,6 +1439,10 @@ void initDeviceType(const char *deviceType, bool firstInit)
   {
     dev = new Device_GW60();
   }
+  else if(strcmp(deviceType, "DOORSENSOR") == 0)
+  {
+    dev = new Device_DOORSENSOR();
+  }  
   else
   {
     return;

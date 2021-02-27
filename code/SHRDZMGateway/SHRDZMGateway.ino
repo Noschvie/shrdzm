@@ -30,7 +30,7 @@
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 DynamicJsonDocument configdoc(1024);
-JsonObject configurationDevices  = configdoc.createNestedObject("devices");
+//JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
 
 SoftwareSerial SerialAT(14, 12); // RX, TX for SIM800
@@ -517,7 +517,7 @@ void update_error(int err)
 bool deleteConfig()
 {
   configdoc.clear();
-  configurationDevices = configdoc.createNestedObject("devices");
+//  configurationDevices = configdoc.createNestedObject("devices");
 
   return writeConfig();
 }
@@ -794,12 +794,12 @@ void OnPaired(uint8_t *ga, String ad)
 //  Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 #endif
 
-  if(!configurationDevices.containsKey(ad))
+/*  if(!configurationDevices.containsKey(ad))
   {
     JsonObject newDevice  = configurationDevices.createNestedObject(ad);
     
     writeConfig();
-  }
+  } */
   
   String s = "*000[P]$"+ad+"$paired:OK";
   Serial.write(s.c_str(), s.length());
@@ -829,14 +829,14 @@ void OnConnected(uint8_t *ga, String ad)
 #endif
 
   // check auto pairing
-  if(!configurationDevices.containsKey(ad))
+/*  if(!configurationDevices.containsKey(ad))
   {
 #ifdef DEBUG
     Serial.printf("Unknown device %s connected. Will start auto pair mechanism.",ad.c_str());
 #endif
 
     OnPaired(ga, ad);
-  }
+  } */
 }
 
 void OnPairingFinished()
@@ -1003,6 +1003,15 @@ void setup()
   {    
     writeConfig();
   }   
+
+  if(!configdoc.containsKey("devices"))
+  {
+    // delete old devices. Risk of too less buffer!
+     deleteConfig();
+     delay(100);
+
+     ESP.restart();     
+  }
 
   if(!configdoc.containsKey("wlan"))
   {
