@@ -46,7 +46,7 @@ SensorData* Device_DOORSENSOR::readInitialSetupParameter()
   SensorData *al = new SensorData(2);
 
   al->di[0].nameI = "interval";
-  al->di[0].valueI = "120";
+  al->di[0].valueI = "-1";
   al->di[1].nameI = "preparetime";
   al->di[1].valueI = "0";
 
