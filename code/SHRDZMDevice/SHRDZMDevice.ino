@@ -1638,7 +1638,10 @@ Serial.begin(9600); Serial.println();
   }  
 
   if((configuration.get("gateway") == NULL || configuration.get("gateway") == "") && !pairingOngoing)
+  {
+    DLN("Up for "+String(millis())+" ms, going to sleep forever because not paired so far... \n");       
     gotoInfiniteSleep();
+  }
 
   // start ESPNow
   simpleEspConnection.begin();
@@ -1892,7 +1895,9 @@ void handleESPNowLoop()
   if(!configuration.containsKey("gateway") || String(configuration.get("gateway")) == "")
     return;
 
-  if(atoi(configuration.get("processtime")) + atoi(configuration.get("preparetime")) >= atoi(configuration.get("interval")))    
+  else if(atoi(configuration.get("interval")) < 0)
+    sleepEnabled = true;    
+  else if(atoi(configuration.get("processtime")) + atoi(configuration.get("preparetime")) >= atoi(configuration.get("interval")))   
     sleepEnabled = false;
   else
     sleepEnabled = true;  
@@ -1993,7 +1998,12 @@ void loop()
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
-      gotoSleep();    
+    {      
+      if(atoi(configuration.get("interval")) < 0)    
+        gotoInfiniteSleep();
+      else
+        gotoSleep();
+    }
   }  
 
   if(initReboot && !writeConfiguration)
@@ -2012,8 +2022,9 @@ void gotoInfiniteSleep()
     digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW); 
     pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);                   
   }
+
+  DLN("Up for "+String(millis())+" ms, going down for infinit sleep... \n"); 
   
-  DLN("Up for "+String(millis())+" ms, going to sleep forever because not paired so far... \n");   
   ESP.deepSleep(0);  
   delay(100);  
 }
