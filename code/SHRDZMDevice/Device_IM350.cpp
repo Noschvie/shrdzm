@@ -3,7 +3,7 @@
 const int messageLength = 123;
 const byte firstByte = 0x7E; 
 const byte lastByte = 0x7E; 
-const int waitTime = 1100;
+const int waitTime = 1500;
 
 Device_IM350::Device_IM350()
 {    
@@ -127,15 +127,17 @@ SensorData* Device_IM350::readParameter()
 
   digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
   
-  const int waitTime = 1100;
   unsigned char incomingByte = 0;
   String code;
   bool dataWaitDone = false;
   bool dataError = false;
   byte message[messageLength];
   char hexCode[3];
+  int cnt = 0;
 
   hexCode[2] = 0;
+
+  memset(message, 0, messageLength);
   
   Serial.flush();
   Serial.begin(115200);
@@ -145,22 +147,49 @@ SensorData* Device_IM350::readParameter()
     byte trash = Serial.read();
   }
 
+  pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
+
   // enable request
   digitalWrite(atoi(deviceParameter["requestpin"]), HIGH); 
-   
-  unsigned long requestMillis = millis();
-  while(Serial.available() < messageLength && millis()-requestMillis <= waitTime){}
-  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
+  digitalWrite(LED_BUILTIN, LOW);
 
-  for(int i = 0; i<messageLength; i++)
+  delay(1000);
+  unsigned long requestMillis = millis();
+
+  while ((Serial.available()) && (cnt < messageLength) && (millis()-requestMillis <= waitTime)) 
   {
-    message[i] = Serial.read();
+    message[cnt] = Serial.read();
+    if (message[0] != firstByte && cnt == 0) 
+      continue;
+    else 
+      cnt++;
   }
+
+  // disable request
+  digitalWrite(atoi(deviceParameter["requestpin"]), LOW); 
+  digitalWrite(LED_BUILTIN, HIGH);
+
 
   for(int i = 0; i<messageLength; i++)
   {
     sprintf(hexCode, "%02X", message[i]);
     code += String(hexCode);    
+  }
+  
+  if (message[0] != firstByte and message[sizeof(message)-1] != lastByte)
+  {
+    al = new SensorData(2);
+    
+    al->di[0].nameI = "lasterror";
+    al->di[0].valueI = "data format is wrong";  
+
+    al->di[1].nameI = "data";
+    al->di[1].valueI = code;      
+    
+    Serial.flush();
+    Serial.begin(9600);
+        
+    return al;
   }
 
   if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
