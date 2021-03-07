@@ -1362,7 +1362,7 @@ void upgradeFirmware()
   }  
 }
 
-void initDeviceType(const char *deviceType, bool firstInit)
+void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
 {
   delete dev;
 
@@ -1475,7 +1475,8 @@ void initDeviceType(const char *deviceType, bool firstInit)
         delete initParam;
       }      
 
-      initReboot = true;
+      if(reboot)
+        initReboot = true;
     }
 
     dev->setDeviceParameter(configuration.getDeviceParameter());    
@@ -1848,6 +1849,9 @@ void handleGatewayLoop()
     loopDone = dev->loop();
     if(dev->isNewDataAvailable())
     {
+//      initDeviceType(
+//      initDeviceType(configuration.get("devicetype"), true, false);
+      
       getMeasurementData();
     } 
   }  

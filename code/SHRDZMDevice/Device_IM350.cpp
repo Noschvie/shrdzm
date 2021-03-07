@@ -1,9 +1,18 @@
 #include "Device_IM350.h"
 
+//#define SIMULATION
+
 const int messageLength = 123;
 const byte firstByte = 0x7E; 
 const byte lastByte = 0x7E; 
 const int waitTime = 1500;
+
+#ifdef SIMULATION
+  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92916FC1EF62AB5F476F8A59772745CC99365500ACF5EBEEA82F95581762C2D18804A1E7F7700FB10752F04D9344779C6A332C973EAF3CF375095D1821E87C68909EE47759AD925976C42E4D92FF9727E4213FDEE5F1ABE45D9D97F5E5E7E";
+  String c1 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";  
+
+  int number = 1;
+#endif
 
 Device_IM350::Device_IM350()
 {    
@@ -113,6 +122,8 @@ SensorData* Device_IM350::readParameter()
 {  
   SensorData *al;
 
+  ResetData();
+
   String ck = deviceParameter["cipherkey"];
 
   if(ck == "00000000000000000000000000000000" || ck.length() != 32)
@@ -138,7 +149,19 @@ SensorData* Device_IM350::readParameter()
   hexCode[2] = 0;
 
   memset(message, 0, messageLength);
-  
+
+#ifdef SIMULATION
+  if(number == 1)
+  {
+    code = c1;
+    number = 2;
+  }
+  else
+  {
+    code = c2;
+    number = 1;
+  }
+#else
   Serial.flush();
   Serial.begin(115200);
     
@@ -169,13 +192,16 @@ SensorData* Device_IM350::readParameter()
   digitalWrite(atoi(deviceParameter["requestpin"]), LOW); 
   digitalWrite(LED_BUILTIN, HIGH);
 
+    Serial.flush();
+    Serial.begin(9600);
+
 
   for(int i = 0; i<messageLength; i++)
   {
     sprintf(hexCode, "%02X", message[i]);
     code += String(hexCode);    
   }
-  
+
   if (message[0] != firstByte and message[sizeof(message)-1] != lastByte)
   {
     al = new SensorData(2);
@@ -191,6 +217,8 @@ SensorData* Device_IM350::readParameter()
         
     return al;
   }
+#endif
+
 
   if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
   {
@@ -244,13 +272,19 @@ SensorData* Device_IM350::readParameter()
   return al;  
 }
 
+void Device_IM350::ResetData()
+{
+ // m_data.ResetData(); 
+}
+
 ////////////////////////////////
 bool Device_IM350::Translate(const char* code, const char *data)
-{  
+{    
   String codeBuffer(code);
   codeBuffer.replace( " ", "" );
-  
+
   m_position = 0;
+  m_cipher.ResetData();
   
   if(codeBuffer.length() != 32)
     return false;
@@ -259,8 +293,10 @@ bool Device_IM350::Translate(const char* code, const char *data)
   m_cipher.setBlockCipherKey(m_blockCipherKey);
   
   if(m_pMessage != NULL)
+  {
     free(m_pMessage);
-
+    m_pMessage = NULL;
+  }
   String dataBuffer(data);
   dataBuffer.replace( " ", "" );
   
@@ -277,7 +313,7 @@ bool Device_IM350::Translate(const char* code, const char *data)
     int frame = handleHDLC();
     
     getDataFromFrame(m_pMessage, m_interfaceType);
-    
+        
     extractData();
   }
   else
@@ -331,15 +367,21 @@ uint32_t Device_IM350::getCurrent_power_usage_out()
 void Device_IM350::extractData()
 {
   byte cmd = m_data.getUInt8(-1);
-  
+
+
   if(cmd == GENERAL_GLO_CIPHERING)
   {
     int originalPosition = m_data.getPosition();
-    
+
     Data d;
     d.set(m_data.m_pData, m_data.m_dataSize);
-    
+
     decryptAesGcm(&d);
+  }
+  else
+  {
+    Serial.println("no GENERAL_GLO_CIPHERING");    
+    Serial.println(m_data.m_position);
   }
 }
 
@@ -363,7 +405,10 @@ void Device_IM350::decryptAesGcm(Data *data)
     uint32_t invocationCounter = data->getUInt32(-1);
     
     if(security != ENCRYPTION)
+    {
+      Serial.println("No Encryption!");
       return;
+    }
 
     len_ = data->m_dataSize - data->m_position;
     len_ = 90;
@@ -385,16 +430,15 @@ void Device_IM350::decryptAesGcm(Data *data)
     byte h[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     byte hr[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     
-    m_cipher.processBlock(h, 0, hr, 0);
-    m_cipher.setJ0(iv);
-  
-    m_cipher.initArray(hr);     
+    m_cipher.processBlock(h, 0, hr, 0);   
+    m_cipher.setJ0(iv);   
+    m_cipher.initArray(hr);   
+      
     m_cipher.getGHash();
-    
-    m_cipher.initC();
 
+    m_cipher.initC();
     m_cipher.write(&aad);
-    
+
     m_cipher.flushFinalBlock(&aad);
     
     // output
@@ -412,6 +456,10 @@ void Device_IM350::decryptAesGcm(Data *data)
     
     // extract data
     extractValues(&aad);
+  }
+  else
+  {
+    Serial.println("No GENERAL_GLO_CIPHERING!");
   }
 }
 
@@ -451,6 +499,7 @@ void Device_IM350::getDataFromFrame(byte *reply, InterfaceType hdlc)
   if (cnt != 0)
   {
     m_dataCapacity = offset + cnt;
+    
     dataSet(reply, m_position, cnt);
     m_position = m_position + 3;
   }
@@ -472,8 +521,17 @@ void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
   if(count != 0)
   {
     m_data.m_dataSize = count;
+
+    if(m_data.m_pData != NULL)
+      free(m_data.m_pData);
+      
+    m_data.m_position = 0;
     m_data.m_pData = (byte *)malloc(m_data.m_dataSize);
+    Serial.println(m_data.m_position);
+    
     memcpy(m_data.m_pData, value+index, count-index);
+
+    
   }
 }
 
@@ -734,6 +792,28 @@ Device_IM350::Cipher::Cipher()
   m_position = 0;
 }
 
+void Device_IM350::Cipher::ResetData()
+{
+  free(m_pArray1);
+  
+  for(int i = 0; i<16; i++)
+  {
+    m_authenticationKey[i] = 208+i;
+    m_s[i] = 0;
+  }
+  
+  m_invocationCounter = 0;
+  m_rounds = 0;
+  m_bytesRemaining = 0;
+  m_totalLength = 0;
+  m_blockSize = 16;
+  
+  for(int i = 0; i<8; i++)
+    m_systemTitle[i] = i+65;
+  
+  m_position = 0;  
+}
+
 int Device_IM350::Cipher::gCTRBlock(byte *buf, Data *data, int bufCount, int hhPos)
 {
   int i = 15;
@@ -767,8 +847,6 @@ int Device_IM350::Cipher::gCTRBlock(byte *buf, Data *data, int bufCount, int hhP
     pos += 1;
     hhPos++;
   }
-
-  Serial.println();
   
   mxor(m_s, hashBytes);
   multiplyH(m_s);
@@ -782,8 +860,6 @@ void Device_IM350::Cipher::flushFinalBlock(Data *data)
   {   
     byte tmp[m_bytesRemaining];
     memcpy(tmp, m_bufBlock, m_bytesRemaining);
-
-    Serial.println(String(tmp[0]));
   
     gCTRBlock(tmp, data, m_bytesRemaining, 80);
   }
@@ -1203,8 +1279,7 @@ void Device_IM350::Cipher::generateWorkingkeys()
     }
     Serial.println();
   } */
-  
-  Serial.println();
+
 }
 
 void Device_IM350::Cipher::unPackBlock(byte *bytes_, uint32_t offset)
@@ -1404,7 +1479,21 @@ int Device_IM350::Data::getPosition()
 void Device_IM350::Data::set(byte *value, int count)
 {
   m_dataSize = count;
+
+  if(m_pData != NULL)
+  {
+    free(m_pData);
+    m_pData = NULL;
+  }
+  
   m_pData = (byte *)malloc(m_dataSize);
+  
+  if(m_pOutput != NULL)
+  {
+    free(m_pOutput);
+    m_pOutput = NULL;
+  }
+  
   m_pOutput = (byte *)malloc(m_dataSize);
   
   memcpy(m_pData, value, count);
