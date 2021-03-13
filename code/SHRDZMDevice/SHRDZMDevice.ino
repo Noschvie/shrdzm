@@ -1692,6 +1692,10 @@ Serial.begin(9600); Serial.println();
 
 void getMeasurementData()
 {
+  DLN("getMeasurementData");
+//  lastIntervalTime = millis();
+//  return;
+  
   if(configuration.containsKey("gateway") || gatewayMode)
   {      
     if(dev != NULL)
@@ -1941,7 +1945,8 @@ void handleESPNowLoop()
       preparing = false;
       preparestart = 0;
 
-      DLN("Will start measurement");
+//      delay(200);
+//      DLN("Will start measurement");
       getMeasurementData();
       finalMeasurementDone = true;
     }
@@ -2001,6 +2006,7 @@ void loop()
   
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
+    DLN("..."); 
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
     {      
       if(atoi(configuration.get("interval")) < 0)    
@@ -2021,13 +2027,13 @@ void loop()
 
 void gotoInfiniteSleep()
 {
+  DLN("Up for "+String(millis())+" ms, going down for infinit sleep... \n"); 
+
   if(atoi(configuration.get("sensorpowerpin")) != 99)
   {
     digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW); 
     pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);                   
   }
-
-  DLN("Up for "+String(millis())+" ms, going down for infinit sleep... \n"); 
   
   ESP.deepSleep(0);  
   delay(100);  
