@@ -1919,7 +1919,7 @@ void handleESPNowLoop()
     preparing = false;
   }
 
-  handleBatteryCheck();
+//  handleBatteryCheck();
 
   if(!isDeviceInitialized)
   {
@@ -1948,6 +1948,9 @@ void handleESPNowLoop()
 //      delay(200);
 //      DLN("Will start measurement");
       getMeasurementData();
+
+      handleBatteryCheck();
+      
       finalMeasurementDone = true;
     }
   }  
