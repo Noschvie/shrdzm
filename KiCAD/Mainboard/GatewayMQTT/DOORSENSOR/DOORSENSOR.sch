@@ -1,0 +1,291 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L power:+3.3V #PWR07
+U 1 1 6059D75B
+P 2750 1550
+F 0 "#PWR07" H 2750 1400 50  0001 C CNN
+F 1 "+3.3V" H 2750 1700 50  0000 C CNN
+F 2 "" H 2750 1550 50  0001 C CNN
+F 3 "" H 2750 1550 50  0001 C CNN
+	1    2750 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Switch:SW_Reed SW3
+U 1 1 6059F82E
+P 5700 2450
+F 0 "SW3" V 5650 2600 50  0000 L CNN
+F 1 "Open/Close" V 5750 2600 50  0000 L CNN
+F 2 "SHRDZM:Magnetic Reed Relay" H 5700 2450 50  0001 C CNN
+F 3 "~" H 5700 2450 50  0001 C CNN
+	1    5700 2450
+	0    1    1    0   
+$EndComp
+$Comp
+L Transistor_FET:IRLZ44N Q1
+U 1 1 605A127B
+P 2100 3350
+F 0 "Q1" H 2050 3600 50  0000 L CNN
+F 1 "IRLZ44N" H 1850 3500 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" H 2350 3275 50  0001 L CIN
+F 3 "http://www.irf.com/product-info/datasheets/data/irlz44n.pdf" H 2100 3350 50  0001 L CNN
+	1    2100 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR06
+U 1 1 605A5E2A
+P 2550 3850
+F 0 "#PWR06" H 2550 3600 50  0001 C CNN
+F 1 "GND" H 2555 3677 50  0000 C CNN
+F 2 "" H 2550 3850 50  0001 C CNN
+F 3 "" H 2550 3850 50  0001 C CNN
+	1    2550 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2550 3150 2550 3850
+Wire Wire Line
+	2550 3150 2200 3150
+$Comp
+L Switch:SW_Reed SW1
+U 1 1 605A70E9
+P 1550 3050
+F 0 "SW1" V 1300 3200 50  0000 L CNN
+F 1 "Trigger" V 1400 3150 50  0000 L CNN
+F 2 "SHRDZM:Magnetic Reed Relay" H 1550 3050 50  0001 C CNN
+F 3 "~" H 1550 3050 50  0001 C CNN
+	1    1550 3050
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1550 3250 1550 3350
+Wire Wire Line
+	1550 3350 1900 3350
+$Comp
+L power:+3.3V #PWR03
+U 1 1 605AEF23
+P 1550 2350
+F 0 "#PWR03" H 1550 2200 50  0001 C CNN
+F 1 "+3.3V" H 1565 2523 50  0000 C CNN
+F 2 "" H 1550 2350 50  0001 C CNN
+F 3 "" H 1550 2350 50  0001 C CNN
+	1    1550 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1550 2850 1550 2350
+$Comp
+L Device:CP C1
+U 1 1 605B0492
+P 1550 3600
+F 0 "C1" H 1668 3646 50  0000 L CNN
+F 1 "CP" H 1668 3555 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm" H 1588 3450 50  0001 C CNN
+F 3 "~" H 1550 3600 50  0001 C CNN
+	1    1550 3600
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR04
+U 1 1 605B098C
+P 1550 3850
+F 0 "#PWR04" H 1550 3600 50  0001 C CNN
+F 1 "GND" H 1555 3677 50  0000 C CNN
+F 2 "" H 1550 3850 50  0001 C CNN
+F 3 "" H 1550 3850 50  0001 C CNN
+	1    1550 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1550 3750 1550 3850
+Wire Wire Line
+	1550 3450 1550 3350
+Connection ~ 1550 3350
+$Comp
+L Device:R R1
+U 1 1 605B1A6F
+P 2200 3700
+F 0 "R1" H 2270 3746 50  0000 L CNN
+F 1 "R" H 2270 3655 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 2130 3700 50  0001 C CNN
+F 3 "~" H 2200 3700 50  0001 C CNN
+	1    2200 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR05
+U 1 1 605B237C
+P 2200 3850
+F 0 "#PWR05" H 2200 3600 50  0001 C CNN
+F 1 "GND" H 2205 3677 50  0000 C CNN
+F 2 "" H 2200 3850 50  0001 C CNN
+F 3 "" H 2200 3850 50  0001 C CNN
+	1    2200 3850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x02_Female J4
+U 1 1 605FDF5B
+P 850 2750
+F 0 "J4" H 742 2425 50  0000 C CNN
+F 1 "Power" H 750 2550 50  0000 C CNN
+F 2 "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal" H 850 2750 50  0001 C CNN
+F 3 "~" H 850 2750 50  0001 C CNN
+	1    850  2750
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:+3.3V #PWR01
+U 1 1 605FEFFB
+P 1050 2350
+F 0 "#PWR01" H 1050 2200 50  0001 C CNN
+F 1 "+3.3V" H 1065 2523 50  0000 C CNN
+F 2 "" H 1050 2350 50  0001 C CNN
+F 3 "" H 1050 2350 50  0001 C CNN
+	1    1050 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR02
+U 1 1 605FF57D
+P 1050 3850
+F 0 "#PWR02" H 1050 3600 50  0001 C CNN
+F 1 "GND" H 1055 3677 50  0000 C CNN
+F 2 "" H 1050 3850 50  0001 C CNN
+F 3 "" H 1050 3850 50  0001 C CNN
+	1    1050 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1050 2650 1050 2350
+Wire Wire Line
+	1050 2750 1050 3850
+$Comp
+L Device:C C2
+U 1 1 606198F9
+P 3550 3250
+F 0 "C2" V 3298 3250 50  0000 C CNN
+F 1 "C" V 3389 3250 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3588 3100 50  0001 C CNN
+F 3 "~" H 3550 3250 50  0001 C CNN
+	1    3550 3250
+	0    1    1    0   
+$EndComp
+$Comp
+L RF_Module:ESP-12F U1
+U 1 1 606216D0
+P 4050 2350
+F 0 "U1" H 4050 3331 50  0000 C CNN
+F 1 "ESP-12F" H 4050 3240 50  0000 C CNN
+F 2 "RF_Module:ESP-12E" H 4050 2350 50  0001 C CNN
+F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf" H 3700 2450 50  0001 C CNN
+	1    4050 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4650 2750 4800 2750
+Wire Wire Line
+	4800 2750 4800 1250
+Wire Wire Line
+	4800 1250 3450 1250
+Wire Wire Line
+	3450 1250 3450 1750
+Wire Wire Line
+	4050 1550 3200 1550
+Wire Wire Line
+	3200 1550 3200 1700
+Wire Wire Line
+	3200 1950 3450 1950
+Wire Wire Line
+	3200 1700 2750 1700
+Wire Wire Line
+	2750 1700 2750 1550
+Connection ~ 3200 1700
+Wire Wire Line
+	3200 1700 3200 1950
+Wire Wire Line
+	4650 2450 4900 2450
+$Comp
+L power:GND #PWR08
+U 1 1 6062D75E
+P 4050 3850
+F 0 "#PWR08" H 4050 3600 50  0001 C CNN
+F 1 "GND" H 4055 3677 50  0000 C CNN
+F 2 "" H 4050 3850 50  0001 C CNN
+F 3 "" H 4050 3850 50  0001 C CNN
+	1    4050 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4050 3050 4050 3250
+Wire Wire Line
+	4650 2650 4750 2650
+Wire Wire Line
+	4750 2650 4750 3250
+Wire Wire Line
+	4750 3250 4050 3250
+Connection ~ 4050 3250
+Wire Wire Line
+	4050 3250 4050 3850
+$Comp
+L Switch:SW_Push SW2
+U 1 1 6059E80C
+P 4900 2900
+F 0 "SW2" V 4854 3048 50  0000 L CNN
+F 1 "Pairing" V 4945 3048 50  0000 L CNN
+F 2 "Button_Switch_THT:SW_PUSH_6mm" H 4900 3100 50  0001 C CNN
+F 3 "~" H 4900 3100 50  0001 C CNN
+	1    4900 2900
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4900 2700 4900 2450
+Wire Wire Line
+	4900 3100 4900 3250
+Wire Wire Line
+	4900 3250 4750 3250
+Connection ~ 4750 3250
+Wire Wire Line
+	3400 3250 3200 3250
+Wire Wire Line
+	3200 3250 3200 1950
+Connection ~ 3200 1950
+Wire Wire Line
+	3700 3250 4050 3250
+Connection ~ 4900 3250
+Wire Wire Line
+	4650 2250 5700 2250
+Wire Wire Line
+	5700 3250 5700 2650
+NoConn ~ 3450 2150
+NoConn ~ 3450 2350
+NoConn ~ 3450 2450
+NoConn ~ 3450 2550
+NoConn ~ 3450 2650
+NoConn ~ 3450 2750
+NoConn ~ 3450 2850
+NoConn ~ 4650 2550
+NoConn ~ 4650 2350
+NoConn ~ 4650 2150
+NoConn ~ 4650 1950
+NoConn ~ 4650 1750
+Wire Wire Line
+	4900 3250 5700 3250
+NoConn ~ 4650 1850
+NoConn ~ 4650 2050
+$EndSCHEMATC

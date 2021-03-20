@@ -12,6 +12,7 @@
 
 #define DEBUG_SHRDZM
 
+
 #include "config/config.h"
 
 Configuration configuration;
@@ -69,6 +70,7 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4200];
+
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -1501,6 +1503,7 @@ Serial.begin(9600); Serial.println();
 #else
   nam = "SHRDZMDevice";  
 #endif
+
 
   // set device name
   WiFi.mode(WIFI_STA);  

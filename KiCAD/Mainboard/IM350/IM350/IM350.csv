@@ -1,0 +1,9 @@
+Comment,Designator,Footprint,LCSC
+22uF,"C1,C2",603,C59461
+USB_B_Micro,J1,Connector_USB:USB_Micro-B_GCT_USB3076-30-A,
+Conn_02x03_Odd_Even,J2,Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Horizontal,
+BC547,Q1,Package_TO_SOT_THT:TO-92_Inline_Horizontal1,
+10k,"R1,R2,R3",402,C25744
+SW_Push,SW1,Button_Switch_THT:SW_PUSH_6mm,
+AMS1117-3.3,U1,SOT-223,C6186
+ESP-12F,U2,RF_Module:ESP-12E,
