@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6)
-    (drawings 8)
+    (drawings 9)
     (tracks 69)
     (zones 0)
     (modules 11)
@@ -730,6 +730,11 @@
       (net 3 "Net-(C1-Pad1)"))
     (pad 1 thru_hole circle (at -10 0) (size 1.524 1.524) (drill 0.762) (layers *.Cu *.Mask)
       (net 2 +3V3))
+    (model C:/Users/Erich/Documents/MagneticSwitch.wrl
+      (offset (xyz 0 0 3))
+      (scale (xyz 0.1 0.1 0.1))
+      (rotate (xyz 0 0 0))
+    )
   )
 
   (module Button_Switch_THT:SW_PUSH_6mm (layer F.Cu) (tedit 5A02FE31) (tstamp 6053D228)
@@ -800,8 +805,25 @@
       (net 6 "Net-(SW3-Pad1)"))
     (pad 2 thru_hole circle (at 10 0) (size 1.524 1.524) (drill 0.762) (layers *.Cu *.Mask)
       (net 1 GND))
+    (model C:/Users/Erich/Documents/MagneticSwitch.wrl
+      (offset (xyz 0 0 1))
+      (scale (xyz 0.1 0.1 0.1))
+      (rotate (xyz 0 0 0))
+    )
   )
 
+  (dimension 20 (width 0.15) (layer Dwgs.User)
+    (gr_text "20,000 mm" (at 126 79.3) (layer Dwgs.User)
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (feature1 (pts (xy 136 72) (xy 136 78.586421)))
+    (feature2 (pts (xy 116 72) (xy 116 78.586421)))
+    (crossbar (pts (xy 116 78) (xy 136 78)))
+    (arrow1a (pts (xy 136 78) (xy 134.873496 78.586421)))
+    (arrow1b (pts (xy 136 78) (xy 134.873496 77.413579)))
+    (arrow2a (pts (xy 116 78) (xy 117.126504 78.586421)))
+    (arrow2b (pts (xy 116 78) (xy 117.126504 77.413579)))
+  )
   (gr_line (start 139 73) (end 69 73) (layer Edge.Cuts) (width 0.05) (tstamp 60562913))
   (gr_line (start 69 53) (end 139 53) (layer Edge.Cuts) (width 0.05) (tstamp 605628F0))
   (gr_line (start 139 53) (end 139 73) (layer Edge.Cuts) (width 0.05))
