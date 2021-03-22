@@ -1,4 +1,4 @@
-update=21.03.2021 22:47:27
+update=22.03.2021 05:54:50
 version=1
 last_client=pcbnew
 [general]
@@ -15,7 +15,7 @@ LibDir=
 [pcbnew]
 version=1
 PageLayoutDescrFile=
-LastNetListRead=IM350.net
+LastNetListRead=IM350_Multi.net
 CopperLayerCount=2
 BoardThickness=1.6
 AllowMicroVias=0

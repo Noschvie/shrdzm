@@ -25,67 +25,29 @@ F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manua
 	1    0    0    -1  
 $EndComp
 $Comp
-L Regulator_Linear:AMS1117-3.3 U1
-U 1 1 6053B5FB
-P 2850 2000
-F 0 "U1" H 2850 2242 50  0000 C CNN
-F 1 "AMS1117-3.3" H 2850 2151 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 2850 2200 50  0001 C CNN
-F 3 "http://www.advanced-monolithic.com/pdf/ds1117.pdf" H 2950 1750 50  0001 C CNN
-F 4 "C6186" H 2850 2000 50  0001 C CNN "LCSC"
-	1    2850 2000
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2350 2000 2550 2000
-$Comp
 L power:GND #PWR01
 U 1 1 6053D4D6
-P 1950 3700
-F 0 "#PWR01" H 1950 3450 50  0001 C CNN
-F 1 "GND" H 1955 3527 50  0000 C CNN
-F 2 "" H 1950 3700 50  0001 C CNN
-F 3 "" H 1950 3700 50  0001 C CNN
-	1    1950 3700
+P 1300 3900
+F 0 "#PWR01" H 1300 3650 50  0001 C CNN
+F 1 "GND" H 1305 3727 50  0000 C CNN
+F 2 "" H 1300 3900 50  0001 C CNN
+F 3 "" H 1300 3900 50  0001 C CNN
+	1    1300 3900
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1950 3300 1950 3450
+	1300 3500 1300 3650
+Connection ~ 1300 3650
 Wire Wire Line
-	2850 2300 2850 2400
-Wire Wire Line
-	2850 3450 1950 3450
-Connection ~ 1950 3450
-Wire Wire Line
-	1950 3450 1950 3700
-Wire Wire Line
-	2850 3450 2850 3650
-Connection ~ 2850 3450
-Wire Wire Line
-	2450 2400 2350 2400
-Wire Wire Line
-	2350 2400 2350 2000
-Wire Wire Line
-	2750 2400 2850 2400
-Connection ~ 2850 2400
-Wire Wire Line
-	2850 2400 2850 3450
+	1300 3650 1300 3900
 Wire Wire Line
 	4350 3650 4350 3600
 Wire Wire Line
 	4350 2000 4350 2100
 Wire Wire Line
-	3150 2000 3250 2000
-Wire Wire Line
-	3250 2400 3250 2000
-Connection ~ 3250 2000
-Wire Wire Line
-	2950 2400 2850 2400
-Wire Wire Line
 	3500 2000 3500 2500
 Wire Wire Line
 	3500 2500 3750 2500
-Connection ~ 3500 2000
 Wire Wire Line
 	3500 2000 3650 2000
 Wire Wire Line
@@ -94,15 +56,14 @@ Connection ~ 4350 3650
 $Comp
 L power:+5V #PWR02
 U 1 1 6054595C
-P 2350 1450
-F 0 "#PWR02" H 2350 1300 50  0001 C CNN
-F 1 "+5V" H 2365 1623 50  0000 C CNN
-F 2 "" H 2350 1450 50  0001 C CNN
-F 3 "" H 2350 1450 50  0001 C CNN
-	1    2350 1450
+P 1700 1650
+F 0 "#PWR02" H 1700 1500 50  0001 C CNN
+F 1 "+5V" H 1715 1823 50  0000 C CNN
+F 2 "" H 1700 1650 50  0001 C CNN
+F 3 "" H 1700 1650 50  0001 C CNN
+	1    1700 1650
 	1    0    0    -1  
 $EndComp
-Connection ~ 2350 2000
 Wire Wire Line
 	5700 2300 5700 3650
 $Comp
@@ -111,7 +72,7 @@ U 1 1 6054CE2E
 P 7000 2000
 F 0 "J2" H 7050 2317 50  0000 C CNN
 F 1 "Conn_02x03_Odd_Even" H 7050 2226 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Horizontal" H 7000 2000 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical" H 7000 2000 50  0001 C CNN
 F 3 "~" H 7000 2000 50  0001 C CNN
 	1    7000 2000
 	1    0    0    -1  
@@ -146,8 +107,6 @@ F 3 "" H 3650 1450 50  0001 C CNN
 	1    3650 1450
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	2350 2000 2350 1450
 Wire Wire Line
 	3650 1450 3650 2000
 Connection ~ 3650 2000
@@ -249,10 +208,7 @@ NoConn ~ 4950 3100
 NoConn ~ 4950 3300
 NoConn ~ 7300 2000
 Wire Wire Line
-	2350 2400 2350 2700
-Wire Wire Line
-	2350 2700 2250 2700
-Connection ~ 2350 2400
+	1700 2900 1600 2900
 Wire Wire Line
 	4350 3650 5100 3650
 Connection ~ 5100 3650
@@ -271,32 +227,6 @@ F 3 "https://www.onsemi.com/pub/Collateral/BC550-D.pdf" H 5800 2100 50  0001 L C
 $EndComp
 Connection ~ 5700 1900
 $Comp
-L Device:C C1
-U 1 1 605964A3
-P 2600 2400
-F 0 "C1" V 2348 2400 50  0000 C CNN
-F 1 "22uF" V 2439 2400 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2638 2250 50  0001 C CNN
-F 3 "~" H 2600 2400 50  0001 C CNN
-	1    2600 2400
-	0    1    1    0   
-$EndComp
-$Comp
-L Device:C C2
-U 1 1 60596E7D
-P 3100 2400
-F 0 "C2" V 2848 2400 50  0000 C CNN
-F 1 "22uF" V 2939 2400 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3138 2250 50  0001 C CNN
-F 3 "~" H 3100 2400 50  0001 C CNN
-	1    3100 2400
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	3250 2000 3500 2000
-Wire Wire Line
-	2850 3650 4350 3650
-$Comp
 L Device:R R3
 U 1 1 60596A0F
 P 5100 3450
@@ -314,12 +244,96 @@ Wire Wire Line
 $Comp
 L Erich:USB_B_Micro_Power J1
 U 1 1 605D392E
-P 1950 2900
-F 0 "J1" H 2007 3367 50  0000 C CNN
-F 1 "USB_B_Micro_Power" H 2007 3276 50  0000 C CNN
-F 2 "SHRDZM:USB_Micro-B_Power" H 2100 2850 50  0001 C CNN
-F 3 "~" H 2100 2850 50  0001 C CNN
-	1    1950 2900
+P 1300 3100
+F 0 "J1" H 1357 3567 50  0000 C CNN
+F 1 "USB_B_Micro_Power" H 1357 3476 50  0000 C CNN
+F 2 "SHRDZM:USB_Micro-B_Power" H 1450 3050 50  0001 C CNN
+F 3 "~" H 1450 3050 50  0001 C CNN
+	1    1300 3100
 	1    0    0    -1  
 $EndComp
+$Comp
+L ME6211C33M5G:ME6211C33M5G IC1
+U 1 1 6059B393
+P 2050 2400
+F 0 "IC1" H 2600 2665 50  0000 C CNN
+F 1 "ME6211C33M5G" H 2600 2574 50  0000 C CNN
+F 2 "ErichCollection:SOT95P282X145-5N" H 3000 2500 50  0001 L CNN
+F 3 "http://xinhuidianzi.com.cn/UploadSysFiles/files/LDO-series/ME6211-Series_E15.0.pdf" H 3000 2400 50  0001 L CNN
+F 4 "High Speed LDO Regulators, High PSRR, Low noise, ME6211 Series" H 3000 2300 50  0001 L CNN "Description"
+F 5 "1.45" H 3000 2200 50  0001 L CNN "Height"
+F 6 "Microne" H 3000 2100 50  0001 L CNN "Manufacturer_Name"
+F 7 "ME6211C33M5G" H 3000 2000 50  0001 L CNN "Manufacturer_Part_Number"
+F 8 "" H 3000 1900 50  0001 L CNN "Mouser Part Number"
+F 9 "" H 3000 1800 50  0001 L CNN "Mouser Price/Stock"
+F 10 "" H 3000 1700 50  0001 L CNN "Arrow Part Number"
+F 11 "" H 3000 1600 50  0001 L CNN "Arrow Price/Stock"
+	1    2050 2400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1700 1650 1700 2400
+Wire Wire Line
+	2050 2400 1700 2400
+Connection ~ 1700 2400
+Wire Wire Line
+	1700 2400 1700 2600
+Connection ~ 1700 2600
+Wire Wire Line
+	1700 2600 1700 2900
+$Comp
+L Device:C C1
+U 1 1 605A350B
+P 1850 3150
+F 0 "C1" H 1600 3150 50  0000 L CNN
+F 1 "1uF" H 1650 3050 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 1888 3000 50  0001 C CNN
+F 3 "~" H 1850 3150 50  0001 C CNN
+	1    1850 3150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1700 2600 1850 2600
+Wire Wire Line
+	1300 3650 1850 3650
+Wire Wire Line
+	1850 2600 1850 3000
+Connection ~ 1850 2600
+Wire Wire Line
+	1850 2600 2050 2600
+Wire Wire Line
+	1850 3300 1850 3650
+Connection ~ 1850 3650
+Wire Wire Line
+	1850 3650 2050 3650
+Connection ~ 2050 3650
+Wire Wire Line
+	2050 3650 3250 3650
+Wire Wire Line
+	3150 2500 3250 2500
+Connection ~ 3500 2500
+$Comp
+L Device:C C2
+U 1 1 605A8CD5
+P 3250 3100
+F 0 "C2" H 3000 3100 50  0000 L CNN
+F 1 "1uF" H 3050 3000 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3288 2950 50  0001 C CNN
+F 3 "~" H 3250 3100 50  0001 C CNN
+	1    3250 3100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3250 2950 3250 2500
+Connection ~ 3250 2500
+Wire Wire Line
+	3250 3250 3250 3650
+Connection ~ 3250 3650
+Wire Wire Line
+	3250 3650 4350 3650
+NoConn ~ 3150 2400
+Wire Wire Line
+	2050 2500 2050 3650
+Wire Wire Line
+	3250 2500 3500 2500
 $EndSCHEMATC

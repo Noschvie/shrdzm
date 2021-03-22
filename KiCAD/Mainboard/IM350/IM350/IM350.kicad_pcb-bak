@@ -153,7 +153,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -203,7 +203,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -253,7 +253,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -303,7 +303,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -353,7 +353,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -403,7 +403,7 @@
     (descr "Through hole straight pin header, 2x03, 2.54mm pitch, double rows")
     (tags "Through hole pin header THT 2x03 2.54mm double row")
     (path /6054CE2E)
-    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS)
+    (fp_text reference J2 (at 1.27 -2.33 90) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value Conn_02x03_Odd_Even (at 1.27 7.41 90) (layer F.Fab)
@@ -454,7 +454,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -490,7 +490,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -933,7 +933,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -1099,7 +1099,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -1616,7 +1616,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -1652,7 +1652,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -2197,7 +2197,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -2327,7 +2327,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -2778,7 +2778,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -2814,7 +2814,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -3404,7 +3404,7 @@
     (tags "capacitor handsolder")
     (path /60596E7D)
     (attr smd)
-    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C2 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
@@ -3440,7 +3440,7 @@
     (tags "capacitor handsolder")
     (path /605964A3)
     (attr smd)
-    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS)
+    (fp_text reference C1 (at 0 -1.85) (layer F.SilkS) hide
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value 22uF (at 0 1.85) (layer F.Fab)
