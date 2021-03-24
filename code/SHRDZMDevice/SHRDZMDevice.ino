@@ -2033,15 +2033,18 @@ void loop()
 
 void gotoInfiniteSleep()
 {
-  DLN("Up for "+String(millis())+" ms, going down for infinit sleep... \n"); 
+  int sleepSecs;
+  DLN("Up for "+String(millis())+" ms, going down for sleep and hope will not be waked up by myself... \n"); 
 
+  sleepSecs = atoi(configuration.get("interval"))*(-1);
   if(atoi(configuration.get("sensorpowerpin")) != 99)
-  {
-    digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW); 
-    pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);                   
+  {      
+    digitalWrite(atoi(configuration.get("sensorpowerpin")),LOW);          
+    pinMode(atoi(configuration.get("sensorpowerpin")), INPUT);      
   }
   
-  ESP.deepSleep(0);  
+  ESP.deepSleep(sleepSecs * 1000000, RF_NO_CAL);
+  
   delay(100);  
 }
 

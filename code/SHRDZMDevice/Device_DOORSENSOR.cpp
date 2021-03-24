@@ -1,5 +1,15 @@
 #include "Device_DOORSENSOR.h"
 
+struct rst_info {
+  uint32 reason;
+  uint32 exccause;
+  uint32 epc1;
+  uint32 epc2;
+  uint32 epc3;
+  uint32 excvaddr;
+  uint32 depc;
+};      
+
 Device_DOORSENSOR::Device_DOORSENSOR()
 {  
   dataAvailable = false;  
@@ -28,7 +38,16 @@ bool Device_DOORSENSOR::initialize()
   deviceParameter = doc.to<JsonObject>();
   
   deviceParameter["pin"] = "5";
-  
+
+/*  if (g_configdoc.containsKey("interval"))
+  {
+    int interval = atoi(g_configdoc["interval"]);
+
+    if(interval < 0)
+    {
+    }
+  }
+  */
   return true;
 }
 

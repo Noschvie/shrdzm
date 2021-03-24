@@ -38,7 +38,7 @@ U 1 1 6057A176
 P 3950 3450
 F 0 "Q1" H 4126 3496 50  0000 L CNN
 F 1 "2N2222" H 4126 3405 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-92_Inline_Horizontal1" H 3950 3450 60  0001 C CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 3950 3450 60  0001 C CNN
 F 3 "" H 3950 3450 60  0000 C CNN
 	1    3950 3450
 	1    0    0    -1  
@@ -255,7 +255,6 @@ F 3 "" H 7100 5100 50  0001 C CNN
 	1    7100 5100
 	1    0    0    -1  
 $EndComp
-NoConn ~ 4800 3250
 NoConn ~ 4800 3650
 NoConn ~ 4800 3850
 NoConn ~ 4800 3950
@@ -263,7 +262,6 @@ NoConn ~ 4800 4050
 NoConn ~ 4800 4150
 NoConn ~ 4800 4250
 NoConn ~ 4800 4350
-NoConn ~ 6000 4250
 NoConn ~ 6000 3850
 NoConn ~ 6000 3650
 NoConn ~ 6000 3550
@@ -320,4 +318,12 @@ Wire Wire Line
 Wire Wire Line
 	5400 4850 5400 5100
 Connection ~ 5400 4850
+Wire Wire Line
+	6000 4250 6000 4700
+Wire Wire Line
+	6000 4700 4650 4700
+Wire Wire Line
+	4650 4700 4650 3250
+Wire Wire Line
+	4650 3250 4800 3250
 $EndSCHEMATC
