@@ -60,6 +60,14 @@ bool Configuration::store()
   return true;
 }
 
+bool Configuration::checkCompatibility()
+{
+  if(g_configdoc.containsKey("devices"))
+    return false;
+
+  return true;
+}
+
 bool Configuration::migrateToNewConfigurationStyle()
 {
   bool update = false;
@@ -144,6 +152,20 @@ bool Configuration::migrateToNewConfigurationStyle()
   {
     setWlanParameter("MQTTpassword", "");
     update = true;
+  }
+
+  if(!g_configdoc.containsKey("sensorpowerpin"))
+  {
+    g_configdoc["sensorpowerpin"] = String(SENSORPOWERPIN);
+    update = true;
+  }
+  else
+  {
+    if(!g_configdoc["sensorpowerpin"].is<const char*>())
+    {
+      g_configdoc["sensorpowerpin"] = String(SENSORPOWERPIN);
+      update = true;
+    }
   }
 
   return update;

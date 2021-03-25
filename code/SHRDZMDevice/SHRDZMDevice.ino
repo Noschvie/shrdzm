@@ -418,7 +418,7 @@ void handleSettings()
 
   if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
   {
-    settingDev = createDeviceObject(deviceType.c_str());     
+    settingDev = createDeviceObject(deviceType.c_str());        
     settingDev->initialize();
   }
     
@@ -1453,7 +1453,6 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
   if(dev != NULL)
   {
     configuration.set("devicetype", (char *)deviceType);
-    dev->setConfigurationObject(configuration.getConfigDocument());
     
     if(firstInit)
     {     
@@ -1515,7 +1514,7 @@ Serial.begin(9600); Serial.println();
   deviceName.replace(":", "");
   deviceName.toUpperCase();
 
-//  DV(deviceName);
+  DV(deviceName);
 
 #ifdef LITTLEFS
   if(!LittleFS.begin())
@@ -1551,6 +1550,20 @@ Serial.begin(9600); Serial.println();
     delay(100);    
     ESP.restart();      
   }
+
+  if(!configuration.checkCompatibility())
+  {    
+#ifdef LITTLEFS
+    LittleFS.format();
+#else
+    SPIFFS.format();
+#endif    
+//    configuration.initialize();
+//    configuration.store();    
+
+    delay(100);    
+    ESP.restart();      
+  }  
 
   if(configuration.migrateToNewConfigurationStyle())
   {
@@ -1607,7 +1620,7 @@ Serial.begin(9600); Serial.println();
     delay(100);    
     ESP.restart();      
   }
-
+    
   // enable sensor power if configured
   if(atoi(configuration.get("sensorpowerpin")) != 99)
   {
@@ -1618,9 +1631,12 @@ Serial.begin(9600); Serial.println();
   // check if pairing button pressed
   pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
 
+DLN("before readLastRebootInfo...");
+
   // check last boot info
   lastRebootInfo = configuration.readLastRebootInfo();
 //  DLN("Last Reboot Info = "+lastRebootInfo);    
+
 
   configuration.storeLastRebootInfo("normal");
   
@@ -1629,6 +1645,7 @@ Serial.begin(9600); Serial.println();
     startConfigurationAP();
     return;
   }
+
 
   /// check whether to start in gateway mode
   if( String(configuration.getWlanParameter("enabled")) == "true" && !pairingOngoing)
@@ -2013,6 +2030,7 @@ void loop()
   
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
+    DLN("..."); 
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
     {      
       if(atoi(configuration.get("interval")) < 0)    

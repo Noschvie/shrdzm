@@ -235,7 +235,7 @@ SensorData* Device_IM350::readParameter()
 
   if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
   {    
-    al = new SensorData(6);
+    al = new SensorData(7);
 
     al->di[0].nameI = "counter_reading_p_in";
     al->di[0].valueI = String(getCounter_reading_p_in());  
@@ -254,6 +254,9 @@ SensorData* Device_IM350::readParameter()
 
     al->di[5].nameI = "counter_power_usage_out";
     al->di[5].valueI = String(getCurrent_power_usage_out()); 
+
+    al->di[6].nameI = "encoded";
+    al->di[6].valueI = String(code.c_str());    
   }
   else
   {

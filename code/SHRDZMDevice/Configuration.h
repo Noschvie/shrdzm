@@ -16,6 +16,7 @@ class Configuration
     bool containsKey(char *name);
     bool containsDeviceKey(char *name);
     bool containsWlanKey(char *name);
+    bool checkCompatibility();
     JsonObject getDeviceParameter();
     JsonObject getWlanParameter();
     DynamicJsonDocument *getConfigDocument();
