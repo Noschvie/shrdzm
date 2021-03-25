@@ -418,7 +418,7 @@ void handleSettings()
 
   if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
   {
-    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev = createDeviceObject(deviceType.c_str());     
     settingDev->initialize();
   }
     
@@ -1453,6 +1453,7 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
   if(dev != NULL)
   {
     configuration.set("devicetype", (char *)deviceType);
+    dev->setConfigurationObject(configuration.getConfigDocument());
     
     if(firstInit)
     {     
@@ -2012,7 +2013,6 @@ void loop()
   
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
-    DLN("..."); 
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
     {      
       if(atoi(configuration.get("interval")) < 0)    

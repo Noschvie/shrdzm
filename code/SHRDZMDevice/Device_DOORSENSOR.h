@@ -19,7 +19,7 @@ class Device_DOORSENSOR : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:
-
+    
   private:
     bool dataAvailable;
   

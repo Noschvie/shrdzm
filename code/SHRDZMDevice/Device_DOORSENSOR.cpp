@@ -14,6 +14,9 @@ Device_DOORSENSOR::Device_DOORSENSOR()
 {  
   dataAvailable = false;  
   deviceTypeName = "DOORSENSOR";
+  m_pConfigurationObject = NULL;    
+
+//  Serial.printf("Constructor Device_DOORSENSOR\n");
 }
 
 Device_DOORSENSOR::~Device_DOORSENSOR()
@@ -39,15 +42,6 @@ bool Device_DOORSENSOR::initialize()
   
   deviceParameter["pin"] = "5";
 
-/*  if (g_configdoc.containsKey("interval"))
-  {
-    int interval = atoi(g_configdoc["interval"]);
-
-    if(interval < 0)
-    {
-    }
-  }
-  */
   return true;
 }
 
@@ -75,16 +69,44 @@ SensorData* Device_DOORSENSOR::readInitialSetupParameter()
 SensorData* Device_DOORSENSOR::readParameter()
 {  
   SensorData *al = new SensorData(1);
+  bool unclearState = false;
 
-  if(deviceParameter["pin"].as<uint8_t>() < 16)
+  if(m_pConfigurationObject != NULL)
+  {
+    if (m_pConfigurationObject->containsKey("interval"))
+    {
+      JsonObject documentRoot = m_pConfigurationObject->as<JsonObject>(); 
+      int interval = atoi(documentRoot["interval"]);
+    
+      if(interval < 0)
+      {
+        rst_info *xyz;
+      
+        xyz = ESP.getResetInfoPtr();        
+
+        if((*xyz).reason == 5) // in case of 5, the device was not going down and is in an unknown state
+        {
+          unclearState = true;
+        }
+      }
+    }  
+  }
+
+
+  if(unclearState == true)
+  {
+    al->di[0].nameI = "error";
+    al->di[0].valueI = "sensor state unclear";
+  }
+  else if(deviceParameter["pin"].as<uint8_t>() < 16)
   {
     al->di[0].nameI = "state";
     al->di[0].valueI = digitalRead(deviceParameter["pin"].as<uint8_t>()) ? "OPEN" : "CLOSED";
   }
   else
   {
-    al->di[0].nameI = "state";
-    al->di[0].valueI = "error";
+    al->di[0].nameI = "error";
+    al->di[0].valueI = "sensor pin configuration wrong";
   }
 
   dataAvailable = false;
