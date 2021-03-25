@@ -68,7 +68,7 @@ SensorData* Device_DOORSENSOR::readInitialSetupParameter()
 
 SensorData* Device_DOORSENSOR::readParameter()
 {  
-  SensorData *al = new SensorData(1);
+  SensorData *al;
   bool unclearState = false;
 
   if(m_pConfigurationObject != NULL)
@@ -95,18 +95,30 @@ SensorData* Device_DOORSENSOR::readParameter()
 
   if(unclearState == true)
   {
+    al = new SensorData(2);
+    
     al->di[0].nameI = "error";
     al->di[0].valueI = "sensor state unclear";
+
+    al->di[1].nameI = "state";
+    al->di[1].valueI = "UNCLEAR";    
   }
   else if(deviceParameter["pin"].as<uint8_t>() < 16)
   {
+    al = new SensorData(1);
+
     al->di[0].nameI = "state";
     al->di[0].valueI = digitalRead(deviceParameter["pin"].as<uint8_t>()) ? "OPEN" : "CLOSED";
   }
   else
   {
+    al = new SensorData(2);
+
     al->di[0].nameI = "error";
     al->di[0].valueI = "sensor pin configuration wrong";
+
+    al->di[1].nameI = "state";
+    al->di[1].valueI = "UNCLEAR";    
   }
 
   dataAvailable = false;
