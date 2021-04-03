@@ -1,6 +1,6 @@
 #include "Device_IM350.h"
 
-//#define SIMULATION
+#define SIMULATION
 
 const int messageLength = 123;
 const byte firstByte = 0x7E; 
@@ -8,15 +8,24 @@ const byte lastByte = 0x7E;
 const int waitTime = 1500;
 
 #ifdef SIMULATION
-  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92916FC1EF62AB5F476F8A59772745CC99365500ACF5EBEEA82F95581762C2D18804A1E7F7700FB10752F04D9344779C6A332C973EAF3CF375095D1821E87C68909EE47759AD925976C42E4D92FF9727E4213FDEE5F1ABE45D9D97F5E5E7E";
-  String c1 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";  
 
+  // IM350
+//  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92916FC1EF62AB5F476F8A59772745CC99365500ACF5EBEEA82F95581762C2D18804A1E7F7700FB10752F04D9344779C6A332C973EAF3CF375095D1821E87C68909EE47759AD925976C42E4D92FF9727E4213FDEE5F1ABE45D9D97F5E5E7E";
+//  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";
+//  String c1 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";  
+
+  // AM550
+  String c1 = "7EA077CF022313BB45E6E700DB0849534B69745CF6C95F200000046BB45F8F43980519E16E36BC0C7198EB0E9CF1E0DF6A227D63C3F24852486F4A0CE8AA187991BF1C44544F62BBBB75BEEB4CDB549D7CF525CD95E6D82D2BE1C7F2ED84505402317F84AEB2A285508EC1B072553C39CD928F1F492941F67E0000";  
+  String c2 = "7EA077CF022313BB45E6E700DB0849534B69745CF6C95F200000046BB45F8F43980519E16E36BC0C7198EB0E9CF1E0DF6A227D63C3F24852486F4A0CE8AA187991BF1C44544F62BBBB75BEEB4CDB549D7CF525CD95E6D82D2BE1C7F2ED84505402317F84AEB2A285508EC1B072553C39CD928F1F492941F67E0000";  
+
+  
   int number = 1;
 #endif
 
 Device_IM350::Device_IM350()
 {    
   deviceTypeName = "IM350";
+  dt = unknown;
   
   done = false;
   dataAvailable = false;  
@@ -40,6 +49,11 @@ Device_IM350::Device_IM350()
   LLC_REPLY_BYTES[0] = 0xE6;
   LLC_REPLY_BYTES[1] = 0xE7;
   LLC_REPLY_BYTES[2] = 0x00;  
+
+#ifdef SIMULATION
+    dt = am550;
+  //  dt = im350;
+#endif
 }
 
 Device_IM350::~Device_IM350()
@@ -192,9 +206,8 @@ SensorData* Device_IM350::readParameter()
   digitalWrite(atoi(deviceParameter["requestpin"]), LOW); 
   digitalWrite(LED_BUILTIN, HIGH);
 
-    Serial.flush();
-    Serial.begin(9600);
-
+  Serial.flush();
+  Serial.begin(9600);
 
   for(int i = 0; i<messageLength; i++)
   {
@@ -202,7 +215,7 @@ SensorData* Device_IM350::readParameter()
     code += String(hexCode);    
   }
 
-  if (message[0] != firstByte and message[sizeof(message)-1] != lastByte)
+  if (message[0] != firstByte && message[sizeof(message)-1] != lastByte)
   {
     al = new SensorData(2);
     
@@ -217,8 +230,28 @@ SensorData* Device_IM350::readParameter()
         
     return al;
   }
+
+  if(message[sizeof(message)-1] == lastByte)
+    dt = im350;
+   else if (message[sizeof(message)-3] == lastByte)
+    dt = am550;
 #endif
 
+  if (dt == unknown)
+  {
+    al = new SensorData(2);
+    
+    al->di[0].nameI = "lasterror";
+    al->di[0].valueI = "data format is wrong";  
+
+    al->di[1].nameI = "data";
+    al->di[1].valueI = code;      
+    
+    Serial.flush();
+    Serial.begin(9600);
+        
+    return al;
+  }    
 
   if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
   {
@@ -232,6 +265,13 @@ SensorData* Device_IM350::readParameter()
         
     return al;
   }
+
+  if(dt == am550)
+  {
+    code = code.substring(0, code.length()-4);
+  }
+
+  Serial.println("code = "+code);
 
   if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
   {    
@@ -307,6 +347,8 @@ bool Device_IM350::Translate(const char* code, const char *data)
     return false;
 
   m_pMessageLength = dataBuffer.length() / 2;
+
+  Serial.println("MessageLen = "+String(m_pMessageLength));
   m_pMessage = (byte *)malloc(m_pMessageLength);
   hexToBytes(data, m_pMessage); 
   
@@ -314,6 +356,8 @@ bool Device_IM350::Translate(const char* code, const char *data)
   {
     m_interfaceType = InterfaceType::HDLC;
     int frame = handleHDLC();
+
+    Serial.println("Frame = "+String(frame));
     
     getDataFromFrame(m_pMessage, m_interfaceType);
         
@@ -379,6 +423,8 @@ void Device_IM350::extractData()
     Data d;
     d.set(m_data.m_pData, m_data.m_dataSize);
 
+Serial.println("extractData DataSize = "+String(m_data.m_dataSize));    
+
     decryptAesGcm(&d);
   }
   else
@@ -402,6 +448,17 @@ void Device_IM350::decryptAesGcm(Data *data)
     int len_ = data->getObjectCount(); // ciphered content len
     byte cipheredContent[data->m_dataSize-data->m_position];    
     memcpy(cipheredContent, data->m_pData+(data->m_position), data->m_dataSize-data->m_position);
+
+Serial.println("cipheredContent len = "+String(data->m_dataSize-data->m_position) );
+
+
+Serial.print(String(cipheredContent[0]) + String(" "));
+Serial.print(String(cipheredContent[1]) + String(" "));
+Serial.print(String(cipheredContent[2]) + String(" "));
+Serial.print(String(cipheredContent[3]) + String(" ... "));
+Serial.print(String(cipheredContent[93]) + String(" "));
+Serial.println(String(cipheredContent[94]) + String(" "));
+
     
     byte security = data->getUInt8(-1) & 0x30;
     
@@ -498,6 +555,8 @@ void Device_IM350::getDataFromFrame(byte *reply, InterfaceType hdlc)
 {
   int offset = 0;
   int cnt = m_packetLength - m_position;
+
+Serial.println("m_Position before = "+String(m_position));
   
   if (cnt != 0)
   {
@@ -507,6 +566,12 @@ void Device_IM350::getDataFromFrame(byte *reply, InterfaceType hdlc)
     m_position = m_position + 3;
   }
   m_dataPosition = offset;
+
+Serial.println("cnt = "+String(cnt));
+Serial.println("m_dataCapacity = "+String(m_dataCapacity));
+Serial.println("m_dataPosition = "+String(m_dataPosition));
+Serial.println("m_position = "+String(m_position));
+  
 }
 
 void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
@@ -521,6 +586,9 @@ void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
     count = m_pMessageLength - index;
   }
 
+Serial.println("index = "+String(index));
+Serial.println("count = "+String(count));
+
   if(count != 0)
   {
     m_data.m_dataSize = count;
@@ -534,7 +602,22 @@ void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
     
     memcpy(m_data.m_pData, value+index, count-index);
 
-    
+Serial.print(m_data.m_pData[0]);
+Serial.print(" ");
+Serial.print(m_data.m_pData[1]);
+Serial.print(" ");
+Serial.print(m_data.m_pData[2]);
+Serial.print(" ");
+Serial.print(m_data.m_pData[3]);
+Serial.print(" ");
+Serial.print(m_data.m_pData[4]);
+Serial.print(" ... ");
+Serial.print(m_data.m_pData[119]);
+Serial.print(" ");
+Serial.print(m_data.m_pData[120]);
+Serial.print(" ");
+Serial.println("count = "+String(count));
+       
   }
 }
 
@@ -630,7 +713,7 @@ byte Device_IM350::getHdlcData(byte *reply)
   int frameLen = 0;
   int crc = 0;
   int crcRead = 0;
-  
+
   if (m_pMessageLength - m_position < 9)
   {
     m_data.m_complete = false;
@@ -662,6 +745,7 @@ byte Device_IM350::getHdlcData(byte *reply)
   if ((frame_ & 0xF0) != 0xA0)
   {
     m_position = m_position - 1;
+
     return getHdlcData(reply);
   }
   
@@ -691,6 +775,7 @@ byte Device_IM350::getHdlcData(byte *reply)
   
   int addresses[] = {0,0};
   
+  Serial.println("!!!");
   bool ret = checkHdlcAddress(reply, eopPos, addresses);
   
   cf = getUInt8(reply);

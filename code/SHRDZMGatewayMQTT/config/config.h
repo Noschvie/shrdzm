@@ -4,7 +4,7 @@
 #define VERSION		"0.5.0"
 #define NAME		"SHRDZMGatewayMQTT"
 
-#define LITTLEFS
+//#define LITTLEFS
 
 #include <ArduinoJson.h>
 #include <SoftwareSerial.h>

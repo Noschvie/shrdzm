@@ -167,6 +167,12 @@ bool Configuration::migrateToNewConfigurationStyle()
       update = true;
     }
   }
+  
+  if(g_configdoc["devicetype"] == "IM350")
+  {
+    g_configdoc["devicetype"] = "IM350/AM550";
+    update = true;
+  }
 
   return update;
 }

@@ -531,12 +531,18 @@ bool readConfig()
       if (configFile) 
       {
         // Allocate a buffer to store contents of the file.
-
         String content;
-        
+
         for(int i=0;i<configFile.size();i++) //Read upto complete file size
         {
           content += (char)configFile.read();
+        }
+
+        if(content.isEmpty())
+        {
+          Serial.println("Content file will be deleted bacause it is corrupt");
+          SPIFFS.remove("/shrdzm_config.json");
+          return false;
         }
 
         DeserializationError error = deserializeJson(configdoc, content);
@@ -550,6 +556,12 @@ bool readConfig()
 
         configFile.close();
       }
+      else
+      {
+        Serial.println("configFile does not exist");
+
+        return false;
+      }
     }
     else
     {
@@ -562,7 +574,9 @@ bool readConfig()
 #ifdef DEBUG
     serializeJson(configdoc, Serial);
     Serial.println();
-#endif    
+#endif   
+
+    return true;
 }
 
 bool writeConfig()
@@ -1001,10 +1015,11 @@ void setup()
 #endif        
   if(!readConfig())
   {    
+    Serial.println("write new config");
     writeConfig();
   }   
 
-  if(!configdoc.containsKey("devices"))
+  if(configdoc.containsKey("devices"))
   {
     // delete old devices. Risk of too less buffer!
      deleteConfig();
@@ -1012,6 +1027,7 @@ void setup()
 
      ESP.restart();     
   }
+
 
   if(!configdoc.containsKey("wlan"))
   {
@@ -1034,6 +1050,7 @@ void setup()
 
     writeConfig();
   }
+
 
   if(ap_pin != -1)
   {

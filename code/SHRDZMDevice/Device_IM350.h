@@ -9,6 +9,8 @@
 
 #include "DeviceBase.h"
 
+
+
 class Device_IM350 : public DeviceBase
 {   
   public:
@@ -22,9 +24,17 @@ class Device_IM350 : public DeviceBase
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
+
+    enum devicetype {
+      unknown,
+      im350,
+      am550
+    };
     
   protected:
     void ResetData();
+    devicetype dt;
+    
     char m_cipherkey[33];
     bool Translate(const char* code, const char *data);
     String getTimestamp();

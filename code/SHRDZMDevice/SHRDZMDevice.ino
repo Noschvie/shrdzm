@@ -903,7 +903,7 @@ DeviceBase * createDeviceObject(const char *deviceType)
   {
     return new Device_SDS011();
   }
-  else if(strcmp(deviceType, "IM350") == 0)
+  else if(strcmp(deviceType, "IM350/AM550") == 0)
   {
     return new Device_IM350();
   }
@@ -1413,7 +1413,7 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
   {
     dev = new Device_SDS011();
   }
-  else if(strcmp(deviceType, "IM350") == 0)
+  else if(strcmp(deviceType, "IM350/AM550") == 0)
   {
     dev = new Device_IM350();
   }
