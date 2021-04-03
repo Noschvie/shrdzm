@@ -1,6 +1,6 @@
 #include "Device_IM350.h"
 
-#define SIMULATION
+//#define SIMULATION
 
 const int messageLength = 123;
 const byte firstByte = 0x7E; 
@@ -215,18 +215,15 @@ SensorData* Device_IM350::readParameter()
     code += String(hexCode);    
   }
 
-  if (message[0] != firstByte && message[sizeof(message)-1] != lastByte)
+  if (message[0] != firstByte)
   {
     al = new SensorData(2);
     
     al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "data format is wrong";  
+    al->di[0].valueI = "No supported SmartMeter Type identified";  
 
     al->di[1].nameI = "data";
     al->di[1].valueI = code;      
-    
-    Serial.flush();
-    Serial.begin(9600);
         
     return al;
   }
@@ -242,16 +239,17 @@ SensorData* Device_IM350::readParameter()
     al = new SensorData(2);
     
     al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "data format is wrong";  
+    al->di[0].valueI = "No supported SmartMeter Type identified";  
 
     al->di[1].nameI = "data";
-    al->di[1].valueI = code;      
-    
-    Serial.flush();
-    Serial.begin(9600);
-        
+    al->di[1].valueI = code;
+            
     return al;
-  }    
+  }  
+  else
+  {    
+    Serial.println( "SmartMeter Type = "+String(dt));  
+  }
 
   if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
   {
@@ -260,8 +258,8 @@ SensorData* Device_IM350::readParameter()
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "no data read";  
     
-    Serial.flush();
-    Serial.begin(9600);
+//    Serial.flush();
+//    Serial.begin(9600);
         
     return al;
   }
@@ -348,7 +346,6 @@ bool Device_IM350::Translate(const char* code, const char *data)
 
   m_pMessageLength = dataBuffer.length() / 2;
 
-  Serial.println("MessageLen = "+String(m_pMessageLength));
   m_pMessage = (byte *)malloc(m_pMessageLength);
   hexToBytes(data, m_pMessage); 
   
@@ -357,8 +354,6 @@ bool Device_IM350::Translate(const char* code, const char *data)
     m_interfaceType = InterfaceType::HDLC;
     int frame = handleHDLC();
 
-    Serial.println("Frame = "+String(frame));
-    
     getDataFromFrame(m_pMessage, m_interfaceType);
         
     extractData();
@@ -423,8 +418,6 @@ void Device_IM350::extractData()
     Data d;
     d.set(m_data.m_pData, m_data.m_dataSize);
 
-Serial.println("extractData DataSize = "+String(m_data.m_dataSize));    
-
     decryptAesGcm(&d);
   }
   else
@@ -449,20 +442,11 @@ void Device_IM350::decryptAesGcm(Data *data)
     byte cipheredContent[data->m_dataSize-data->m_position];    
     memcpy(cipheredContent, data->m_pData+(data->m_position), data->m_dataSize-data->m_position);
 
-Serial.println("cipheredContent len = "+String(data->m_dataSize-data->m_position) );
-
-
-Serial.print(String(cipheredContent[0]) + String(" "));
-Serial.print(String(cipheredContent[1]) + String(" "));
-Serial.print(String(cipheredContent[2]) + String(" "));
-Serial.print(String(cipheredContent[3]) + String(" ... "));
-Serial.print(String(cipheredContent[93]) + String(" "));
-Serial.println(String(cipheredContent[94]) + String(" "));
-
     
     byte security = data->getUInt8(-1) & 0x30;
     
     uint32_t invocationCounter = data->getUInt32(-1);
+
     
     if(security != ENCRYPTION)
     {
@@ -477,7 +461,10 @@ Serial.println(String(cipheredContent[94]) + String(" "));
     data->get(ciphertext, len_);
   
     Data aad;
-    aad.set(m_pMessage+30, len_);
+    if(dt == im350)
+       aad.set(m_pMessage+30, len_);
+    else
+      aad.set(m_pMessage+28, len_);
 
     byte iv[13];
     memcpy(iv, title, 8);
@@ -502,7 +489,7 @@ Serial.println(String(cipheredContent[94]) + String(" "));
     m_cipher.flushFinalBlock(&aad);
     
     // output
-    Serial.println("decrypted = ");
+ //   Serial.println("decrypted = ");
     char buffer[3];
     buffer[2] = 0;
     for(int i = 0; i<aad.m_dataSize; i++) 
@@ -555,8 +542,6 @@ void Device_IM350::getDataFromFrame(byte *reply, InterfaceType hdlc)
 {
   int offset = 0;
   int cnt = m_packetLength - m_position;
-
-Serial.println("m_Position before = "+String(m_position));
   
   if (cnt != 0)
   {
@@ -566,12 +551,6 @@ Serial.println("m_Position before = "+String(m_position));
     m_position = m_position + 3;
   }
   m_dataPosition = offset;
-
-Serial.println("cnt = "+String(cnt));
-Serial.println("m_dataCapacity = "+String(m_dataCapacity));
-Serial.println("m_dataPosition = "+String(m_dataPosition));
-Serial.println("m_position = "+String(m_position));
-  
 }
 
 void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
@@ -585,10 +564,7 @@ void Device_IM350::dataSet(byte *value, int index = -1, int count = -1)
   {
     count = m_pMessageLength - index;
   }
-
-Serial.println("index = "+String(index));
-Serial.println("count = "+String(count));
-
+  
   if(count != 0)
   {
     m_data.m_dataSize = count;
@@ -598,26 +574,8 @@ Serial.println("count = "+String(count));
       
     m_data.m_position = 0;
     m_data.m_pData = (byte *)malloc(m_data.m_dataSize);
-    Serial.println(m_data.m_position);
     
-    memcpy(m_data.m_pData, value+index, count-index);
-
-Serial.print(m_data.m_pData[0]);
-Serial.print(" ");
-Serial.print(m_data.m_pData[1]);
-Serial.print(" ");
-Serial.print(m_data.m_pData[2]);
-Serial.print(" ");
-Serial.print(m_data.m_pData[3]);
-Serial.print(" ");
-Serial.print(m_data.m_pData[4]);
-Serial.print(" ... ");
-Serial.print(m_data.m_pData[119]);
-Serial.print(" ");
-Serial.print(m_data.m_pData[120]);
-Serial.print(" ");
-Serial.println("count = "+String(count));
-       
+    memcpy(m_data.m_pData, value+index, count-index);       
   }
 }
 
@@ -774,8 +732,7 @@ byte Device_IM350::getHdlcData(byte *reply)
   }
   
   int addresses[] = {0,0};
-  
-  Serial.println("!!!");
+
   bool ret = checkHdlcAddress(reply, eopPos, addresses);
   
   cf = getUInt8(reply);
@@ -918,7 +875,6 @@ int Device_IM350::Cipher::gCTRBlock(byte *buf, Data *data, int bufCount, int hhP
   
   processBlock(m_counter, 0, tmp, 0);
 
-
   for(int i = bufCount; i< BLOCK_SIZE; i++)
     tmp[i] = 0;
   
@@ -943,7 +899,7 @@ int Device_IM350::Cipher::gCTRBlock(byte *buf, Data *data, int bufCount, int hhP
 }
 
 void Device_IM350::Cipher::flushFinalBlock(Data *data)
-{
+{  
   if (m_bytesRemaining > 0)
   {   
     byte tmp[m_bytesRemaining];
@@ -961,7 +917,7 @@ void Device_IM350::Cipher::write(Data *data)
     m_bufBlock[i] = 0;
   
   int m_hhPos = 0;
-  
+
   for(int i = 0; i<data->m_dataSize; i++)
   {
     m_bufBlock[m_bytesRemaining] = data->m_pData[i];
