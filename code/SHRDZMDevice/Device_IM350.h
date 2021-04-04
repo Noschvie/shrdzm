@@ -10,7 +10,7 @@
 #include "DeviceBase.h"
 
 #include <SoftwareSerial.h>
-
+#include "uart.h"
 
 class Device_IM350 : public DeviceBase
 {   
@@ -37,6 +37,7 @@ class Device_IM350 : public DeviceBase
     devicetype dt;
     SoftwareSerial mySoftwareSerial;
     bool softwareSerialUsed;
+    bool inverted;
     
     char m_cipherkey[33];
     bool Translate(const char* code, const char *data);

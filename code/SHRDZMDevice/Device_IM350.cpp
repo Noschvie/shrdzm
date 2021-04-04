@@ -1,6 +1,7 @@
 #include "Device_IM350.h"
 
 //#define SIMULATION
+#define UART_RXD_INV (BIT(19)) 
 
 const int messageLength = 123;
 const byte firstByte = 0x7E; 
@@ -27,6 +28,7 @@ Device_IM350::Device_IM350()
   deviceTypeName = "IM350";
   dt = unknown;
   softwareSerialUsed = false;
+  inverted = false;
   
   done = false;
   dataAvailable = false;  
@@ -69,7 +71,7 @@ bool Device_IM350::isNewDataAvailable()
 
 bool Device_IM350::setDeviceParameter(JsonObject obj)
 { 
-  bool inverted = false;
+  inverted = false;
   
   if(obj.containsKey("requestpin"))
   {
@@ -118,6 +120,15 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
 
       mySoftwareSerial.begin(115200, SWSERIAL_8N1, obj["rxpin"].as<uint8_t>(), -1, inverted, 140);
       softwareSerialUsed = true;
+    }
+    else
+    {
+      if(inverted)
+      {
+//        U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);
+        U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
+//        UART_SetLineInverse(UART0, UART_RXD_INV);
+      }      
     }
   }  
 
@@ -224,7 +235,14 @@ SensorData* Device_IM350::readParameter()
   else
   {
     Serial.flush();
+    
+    if(inverted)
+      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
+  
     Serial.begin(115200);
+
+    if(inverted)
+      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
 
     while(Serial.available() > 0)
     {
