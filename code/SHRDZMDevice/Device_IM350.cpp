@@ -26,6 +26,7 @@ Device_IM350::Device_IM350()
 {    
   deviceTypeName = "IM350";
   dt = unknown;
+  softwareSerialUsed = false;
   
   done = false;
   dataAvailable = false;  
@@ -68,6 +69,8 @@ bool Device_IM350::isNewDataAvailable()
 
 bool Device_IM350::setDeviceParameter(JsonObject obj)
 { 
+  bool inverted = false;
+  
   if(obj.containsKey("requestpin"))
   {
     pinMode(atoi(obj["requestpin"]), OUTPUT);
@@ -87,6 +90,36 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
     else
       return false;
   }  
+  if(obj.containsKey("invertrx"))
+  {
+    String codeBuffer(obj["invertrx"].as<char*>());
+    
+    if(codeBuffer[0] == 'Y' || 
+       codeBuffer[0] == 'y' ||
+       codeBuffer[0] == '1' ||
+       codeBuffer[0] == 'T' ||
+       codeBuffer[0] == 't'
+       )
+    {
+      obj["invertrx"] = "YES";
+      inverted = true;
+    }
+    else
+    {
+      obj["invertrx"] = "NO";
+    }    
+  }  
+
+  if(obj.containsKey("rxpin"))
+  {
+    if(obj["rxpin"].as<uint8_t>() != 3) // if not pin 3, software serial is needed
+    {
+      Serial.println("Device is running with SoftwareSerial");
+
+      mySoftwareSerial.begin(115200, SWSERIAL_8N1, obj["rxpin"].as<uint8_t>(), -1, inverted, 140);
+      softwareSerialUsed = true;
+    }
+  }  
 
   DeviceBase::setDeviceParameter(obj);
   
@@ -103,6 +136,8 @@ bool Device_IM350::initialize()
   deviceParameter = doc.to<JsonObject>();
   deviceParameter["requestpin"] = "5";
   deviceParameter["cipherkey"] = "00000000000000000000000000000000";
+  deviceParameter["rxpin"] = "3";
+  deviceParameter["invertrx"] = "NO";
 
   return true;
 }
@@ -176,14 +211,27 @@ SensorData* Device_IM350::readParameter()
     number = 1;
   }
 #else
-  Serial.flush();
-  Serial.begin(115200);
-    
-  while(Serial.available() > 0)
-  {
-    byte trash = Serial.read();
-  }
 
+  if(softwareSerialUsed)
+  {
+    mySoftwareSerial.flush();
+
+    while(mySoftwareSerial.available() > 0)
+    {
+      byte trash = mySoftwareSerial.read();
+    }
+  }
+  else
+  {
+    Serial.flush();
+    Serial.begin(115200);
+
+    while(Serial.available() > 0)
+    {
+      byte trash = Serial.read();
+    }
+  }
+   
   pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
 
   // enable request
@@ -193,22 +241,40 @@ SensorData* Device_IM350::readParameter()
   delay(1000);
   unsigned long requestMillis = millis();
 
-  while ((Serial.available()) && (cnt < messageLength) && (millis()-requestMillis <= waitTime)) 
+  if(softwareSerialUsed)
   {
-    message[cnt] = Serial.read();
-    if (message[0] != firstByte && cnt == 0) 
-      continue;
-    else 
-      cnt++;
+    while ((mySoftwareSerial.available()) && (cnt < messageLength) && (millis()-requestMillis <= waitTime)) 
+    {
+      message[cnt] = mySoftwareSerial.read();
+      if (message[0] != firstByte && cnt == 0) 
+        continue;
+      else 
+        cnt++;
+    }
+  }
+  else
+  {
+    while ((Serial.available()) && (cnt < messageLength) && (millis()-requestMillis <= waitTime)) 
+    {
+      message[cnt] = Serial.read();
+      if (message[0] != firstByte && cnt == 0) 
+        continue;
+      else 
+        cnt++;
+    }
   }
 
   // disable request
   digitalWrite(atoi(deviceParameter["requestpin"]), LOW); 
   digitalWrite(LED_BUILTIN, HIGH);
 
-  Serial.flush();
-  Serial.begin(9600);
 
+  if(!softwareSerialUsed)
+  {
+    Serial.flush();
+    Serial.begin(9600);
+  }
+  
   for(int i = 0; i<messageLength; i++)
   {
     sprintf(hexCode, "%02X", message[i]);

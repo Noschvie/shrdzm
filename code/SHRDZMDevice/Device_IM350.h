@@ -9,6 +9,7 @@
 
 #include "DeviceBase.h"
 
+#include <SoftwareSerial.h>
 
 
 class Device_IM350 : public DeviceBase
@@ -34,6 +35,8 @@ class Device_IM350 : public DeviceBase
   protected:
     void ResetData();
     devicetype dt;
+    SoftwareSerial mySoftwareSerial;
+    bool softwareSerialUsed;
     
     char m_cipherkey[33];
     bool Translate(const char* code, const char *data);

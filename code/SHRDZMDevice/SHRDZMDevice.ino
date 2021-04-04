@@ -2030,7 +2030,6 @@ void loop()
   
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
-    DLN("..."); 
     if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
     {      
       if(atoi(configuration.get("interval")) < 0)    

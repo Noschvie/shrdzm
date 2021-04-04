@@ -65,6 +65,9 @@ bool Configuration::checkCompatibility()
   if(g_configdoc.containsKey("devices"))
     return false;
 
+  if(g_configdoc.containsKey("sim800"))
+    return false;
+
   return true;
 }
 
