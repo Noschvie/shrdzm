@@ -192,6 +192,11 @@
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
     )
+    (model C:/Users/erich/Nextcloud/Diverses/KiCAD/model/95501-2661.wrl
+      (offset (xyz 3.2 -17 5.75))
+      (scale (xyz 400 400 400))
+      (rotate (xyz -90 0 0))
+    )
   )
 
   (module Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder (layer B.Cu) (tedit 5F68FEEF) (tstamp 606DC00C)
@@ -231,7 +236,7 @@
   )
 
   (module SHRDZM:USB_Micro-B_Power (layer B.Cu) (tedit 6055B067) (tstamp 606DC02B)
-    (at 69.5 39.25 270)
+    (at 78.5 39.1 270)
     (tags "Micro-USB Power")
     (path /606C9F07)
     (attr smd)
@@ -612,10 +617,10 @@
     )
   )
 
-  (gr_line (start 38.1 29.8) (end 73.1 29.8) (layer Edge.Cuts) (width 0.05) (tstamp 60721BDE))
+  (gr_line (start 81.1 29.8) (end 81.1 48.8) (layer Edge.Cuts) (width 0.05) (tstamp 60721CBD))
+  (gr_line (start 38.1 29.8) (end 81.1 29.8) (layer Edge.Cuts) (width 0.05) (tstamp 60721BDE))
   (gr_line (start 38.1 48.8) (end 38.1 29.8) (layer Edge.Cuts) (width 0.05))
-  (gr_line (start 73.1 48.8) (end 38.1 48.8) (layer Edge.Cuts) (width 0.05))
-  (gr_line (start 73.1 29.8) (end 73.1 48.8) (layer Edge.Cuts) (width 0.05))
+  (gr_line (start 81.1 48.8) (end 38.1 48.8) (layer Edge.Cuts) (width 0.05))
   (dimension 19 (width 0.15) (layer Dwgs.User)
     (gr_text "19,000 mm" (at 78.9 39.3 270) (layer Dwgs.User)
       (effects (font (size 1 1) (thickness 0.15)))
