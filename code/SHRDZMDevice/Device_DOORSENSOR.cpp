@@ -70,6 +70,7 @@ SensorData* Device_DOORSENSOR::readParameter()
 {  
   SensorData *al;
   bool unclearState = false;
+  rst_info *xyz;
 
   if(m_pConfigurationObject != NULL)
   {
@@ -79,17 +80,25 @@ SensorData* Device_DOORSENSOR::readParameter()
       int interval = atoi(documentRoot["interval"]);
     
       if(interval < 0)
-      {
-        rst_info *xyz;
-      
+      {      
         xyz = ESP.getResetInfoPtr();        
 
         if((*xyz).reason == 5) // in case of 5, the device was not going down and is in an unknown state
         {
           unclearState = true;
         }
+
+        Serial.println((*xyz).reason);
       }
     }  
+    else
+    {
+      Serial.println("interval not found!");
+    }
+  }
+  else
+  {
+    Serial.println("m_pConfigurationObject is NULL!");
   }
 
 

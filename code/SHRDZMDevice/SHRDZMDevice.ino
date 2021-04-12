@@ -1453,6 +1453,7 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
   if(dev != NULL)
   {
     configuration.set("devicetype", (char *)deviceType);
+    dev->setConfigurationObject(configuration.getConfigDocument());
     
     if(firstInit)
     {     
