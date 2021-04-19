@@ -133,39 +133,15 @@ F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manua
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR07
-U 1 1 6077856C
-P 5150 3100
-F 0 "#PWR07" H 5150 2850 50  0001 C CNN
-F 1 "GND" H 5155 2927 50  0000 C CNN
-F 2 "" H 5150 3100 50  0001 C CNN
-F 3 "" H 5150 3100 50  0001 C CNN
-	1    5150 3100
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5150 3050 5150 3100
-$Comp
 L Switch:SW_Reed SW2
 U 1 1 607790E4
-P 6250 2900
-F 0 "SW2" V 6204 2985 50  0000 L CNN
-F 1 "Open/Close" V 6295 2985 50  0000 L CNN
-F 2 "SHRDZM:Magnetic Reed Relay" H 6250 2900 50  0001 C CNN
-F 3 "~" H 6250 2900 50  0001 C CNN
-	1    6250 2900
+P 6250 2850
+F 0 "SW2" V 6204 2935 50  0000 L CNN
+F 1 "Open/Close" V 6295 2935 50  0000 L CNN
+F 2 "SHRDZM:Magnetic Reed Relay" H 6250 2850 50  0001 C CNN
+F 3 "~" H 6250 2850 50  0001 C CNN
+	1    6250 2850
 	0    1    1    0   
-$EndComp
-$Comp
-L power:GND #PWR09
-U 1 1 6077A1D1
-P 6250 3100
-F 0 "#PWR09" H 6250 2850 50  0001 C CNN
-F 1 "GND" H 6255 2927 50  0000 C CNN
-F 2 "" H 6250 3100 50  0001 C CNN
-F 3 "" H 6250 3100 50  0001 C CNN
-	1    6250 3100
-	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R2
@@ -182,19 +158,6 @@ Wire Wire Line
 	5750 2650 5950 2650
 Wire Wire Line
 	5950 2650 5950 2750
-$Comp
-L power:GND #PWR08
-U 1 1 6077B6AB
-P 5950 3100
-F 0 "#PWR08" H 5950 2850 50  0001 C CNN
-F 1 "GND" H 5955 2927 50  0000 C CNN
-F 2 "" H 5950 3100 50  0001 C CNN
-F 3 "" H 5950 3100 50  0001 C CNN
-	1    5950 3100
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5950 3050 5950 3100
 $Comp
 L eec:NTR4003NT1G Q1
 U 1 1 60784E62
@@ -306,8 +269,6 @@ Connection ~ 4150 1850
 Wire Wire Line
 	6250 2250 5750 2250
 Wire Wire Line
-	6250 2250 6250 2700
-Wire Wire Line
 	5750 2750 5750 3100
 Wire Wire Line
 	4350 3100 4350 1750
@@ -328,21 +289,8 @@ F 3 "~" H 6950 2950 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5750 2450 6950 2450
-$Comp
-L power:GND #PWR010
-U 1 1 60793010
-P 6950 3100
-F 0 "#PWR010" H 6950 2850 50  0001 C CNN
-F 1 "GND" H 6955 2927 50  0000 C CNN
-F 2 "" H 6950 3100 50  0001 C CNN
-F 3 "" H 6950 3100 50  0001 C CNN
-	1    6950 3100
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	6950 2450 6950 2550
-Wire Wire Line
-	6950 2950 6950 3100
 NoConn ~ 4550 2850
 NoConn ~ 4550 2750
 NoConn ~ 4550 2650
@@ -426,7 +374,7 @@ L Connector:Conn_01x02_Female J1
 U 1 1 607A3688
 P 800 2250
 F 0 "J1" H 692 1925 50  0000 C CNN
-F 1 "Conn_01x02_Female" H 692 2016 50  0000 C CNN
+F 1 "9V" H 692 2016 50  0000 C CNN
 F 2 "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal" H 800 2250 50  0001 C CNN
 F 3 "~" H 800 2250 50  0001 C CNN
 	1    800  2250
@@ -436,4 +384,22 @@ Wire Wire Line
 	1000 2250 1000 3000
 Wire Wire Line
 	1000 1600 1000 2150
+Wire Wire Line
+	5150 3050 3600 3050
+Wire Wire Line
+	3600 3050 3600 2150
+Connection ~ 3600 2150
+Wire Wire Line
+	5950 3050 5150 3050
+Connection ~ 5150 3050
+Wire Wire Line
+	6250 3050 5950 3050
+Connection ~ 5950 3050
+Wire Wire Line
+	6950 2950 6950 3050
+Wire Wire Line
+	6950 3050 6250 3050
+Connection ~ 6250 3050
+Wire Wire Line
+	6250 2250 6250 2650
 $EndSCHEMATC
