@@ -125,9 +125,7 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
     {
       if(inverted)
       {
-//        U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);
         U0C0 = BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
-//        UART_SetLineInverse(UART0, UART_RXD_INV);
       }      
     }
   }  
@@ -149,6 +147,7 @@ bool Device_IM350::initialize()
   deviceParameter["cipherkey"] = "00000000000000000000000000000000";
   deviceParameter["rxpin"] = "3";
   deviceParameter["invertrx"] = "NO";
+  deviceParameter["sendRawData"] = "NO";
 
   return true;
 }
@@ -301,13 +300,19 @@ SensorData* Device_IM350::readParameter()
 
   if (message[0] != firstByte)
   {
-    al = new SensorData(2);
+    if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+    {
+      al = new SensorData(2);
+      al->di[1].nameI = "data";
+      al->di[1].valueI = code;      
+    }
+    else
+    {
+      al = new SensorData(1);
+    }
     
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "No supported SmartMeter Type identified";  
-
-    al->di[1].nameI = "data";
-    al->di[1].valueI = code;      
         
     return al;
   }
@@ -320,13 +325,19 @@ SensorData* Device_IM350::readParameter()
 
   if (dt == unknown)
   {
-    al = new SensorData(2);
+    if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+    {    
+      al = new SensorData(2);
+      al->di[1].nameI = "data";
+      al->di[1].valueI = code;
+    }
+    else
+    {
+      al = new SensorData(1);
+    }
     
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "No supported SmartMeter Type identified";  
-
-    al->di[1].nameI = "data";
-    al->di[1].valueI = code;
             
     return al;
   }  
@@ -357,7 +368,16 @@ SensorData* Device_IM350::readParameter()
 
   if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
   {    
-    al = new SensorData(7);
+    if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+    {
+      al = new SensorData(7);
+      al->di[6].nameI = "encoded";
+      al->di[6].valueI = String(code.c_str());          
+    }
+    else
+    {
+      al = new SensorData(6);
+    }
 
     al->di[0].nameI = "counter_reading_p_in";
     al->di[0].valueI = String(getCounter_reading_p_in());  
@@ -376,19 +396,22 @@ SensorData* Device_IM350::readParameter()
 
     al->di[5].nameI = "counter_power_usage_out";
     al->di[5].valueI = String(getCurrent_power_usage_out()); 
-
-    al->di[6].nameI = "encoded";
-    al->di[6].valueI = String(code.c_str());    
   }
   else
   {
-    al = new SensorData(2);
+    if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+    {
+      al = new SensorData(2);
+      al->di[1].nameI = "data";
+      al->di[1].valueI = code;      
+    }
+    else
+      al = new SensorData(1);
+    
     
     al->di[0].nameI = "lasterror";
     al->di[0].valueI = "Translation of data not possible";      
 
-    al->di[1].nameI = "data";
-    al->di[1].valueI = code;      
   }
 
   Serial.flush();
