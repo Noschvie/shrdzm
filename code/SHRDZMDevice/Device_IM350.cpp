@@ -148,6 +148,7 @@ bool Device_IM350::initialize()
   deviceParameter["rxpin"] = "3";
   deviceParameter["invertrx"] = "NO";
   deviceParameter["sendRawData"] = "NO";
+  deviceParameter["autoRebootMinutes"] = "60";
 
   return true;
 }
@@ -182,6 +183,19 @@ SensorData* Device_IM350::readParameter()
   SensorData *al;
 
   ResetData();
+
+  if(!deviceParameter["autoRebootMinutes"].isNull() && strcmp(deviceParameter["autoRebootMinutes"],"0") != 0)
+  {
+    // Check whether to reboot first
+    if(millis() > (atol(deviceParameter["autoRebootMinutes"]) * 1000 * 60))
+    {
+      Serial.println("Will reboot now");
+      
+      delay(500); 
+      ESP.restart();      
+    }
+  }
+
 
   String ck = deviceParameter["cipherkey"];
 
