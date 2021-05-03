@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source C:\Users\erich\Nextcloud\Diverses\Arduino\Development\shrdzm\KiCAD\IM350_AM550_5V_V2.0\IM350_AM550_5V_V2.0.sch)
-    (date "02.05.2021 17:02:13")
+    (date "03.05.2021 08:30:54")
     (tool "Eeschema (5.1.9)-1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -66,7 +66,7 @@
       (tstamp 60715416))
     (comp (ref J7)
       (value RJ12)
-      (footprint ErichCollection:RJ12_Amphenol_54601_Reduced)
+      (footprint Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical)
       (datasheet ~)
       (libsource (lib Connector) (part RJ12) (description "RJ connector, 6P6C (6 positions 6 connected)"))
       (sheetpath (names /) (tstamps /))

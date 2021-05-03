@@ -198,7 +198,7 @@ U 1 1 6072674D
 P 9050 2400
 F 0 "J7" H 8720 2404 50  0000 R CNN
 F 1 "RJ12" H 8720 2495 50  0000 R CNN
-F 2 "ErichCollection:RJ12_Amphenol_54601_Reduced" V 9050 2425 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical" V 9050 2425 50  0001 C CNN
 F 3 "~" V 9050 2425 50  0001 C CNN
 	1    9050 2400
 	-1   0    0    1   
