@@ -27,94 +27,89 @@ $EndComp
 $Comp
 L Switch:SW_Reed SW1
 U 1 1 607709A2
-P 1700 1900
-F 0 "SW1" V 1654 1985 50  0000 L CNN
-F 1 "Trigger" V 1745 1985 50  0000 L CNN
-F 2 "SHRDZM:Magnetic Reed Relay" H 1700 1900 50  0001 C CNN
-F 3 "~" H 1700 1900 50  0001 C CNN
-	1    1700 1900
+P 1700 1800
+F 0 "SW1" V 1654 1885 50  0000 L CNN
+F 1 "Trigger" V 1745 1885 50  0000 L CNN
+F 2 "SHRDZM:Magnetic Reed Relay" H 1700 1800 50  0001 C CNN
+F 3 "~" H 1700 1800 50  0001 C CNN
+	1    1700 1800
 	0    1    1    0   
 $EndComp
 $Comp
 L Device:CP C1
 U 1 1 60771802
-P 1700 2600
-F 0 "C1" H 1818 2646 50  0000 L CNN
-F 1 "100uF" H 1818 2555 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 1738 2450 50  0001 C CNN
-F 3 "~" H 1700 2600 50  0001 C CNN
-	1    1700 2600
+P 1700 2850
+F 0 "C1" H 1818 2896 50  0000 L CNN
+F 1 "100uF" H 1818 2805 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 1738 2700 50  0001 C CNN
+F 3 "~" H 1700 2850 50  0001 C CNN
+	1    1700 2850
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR02
 U 1 1 60772F57
-P 1000 3250
-F 0 "#PWR02" H 1000 3000 50  0001 C CNN
-F 1 "GND" H 1005 3077 50  0000 C CNN
-F 2 "" H 1000 3250 50  0001 C CNN
-F 3 "" H 1000 3250 50  0001 C CNN
-	1    1000 3250
+P 1000 3300
+F 0 "#PWR02" H 1000 3050 50  0001 C CNN
+F 1 "GND" H 1005 3127 50  0000 C CNN
+F 2 "" H 1000 3300 50  0001 C CNN
+F 3 "" H 1000 3300 50  0001 C CNN
+	1    1000 3300
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1000 1600 1700 1600
-Wire Wire Line
 	1700 1600 1700 1700
 Wire Wire Line
-	1700 2100 1700 2250
+	2300 2500 2150 2500
 Wire Wire Line
-	2300 2250 2150 2250
-Connection ~ 1700 2250
-Wire Wire Line
-	1700 2250 1700 2450
+	1700 2500 1700 2700
 $Comp
 L power:GND #PWR03
 U 1 1 60773683
-P 1700 3250
-F 0 "#PWR03" H 1700 3000 50  0001 C CNN
-F 1 "GND" H 1705 3077 50  0000 C CNN
-F 2 "" H 1700 3250 50  0001 C CNN
-F 3 "" H 1700 3250 50  0001 C CNN
-	1    1700 3250
+P 1700 3300
+F 0 "#PWR03" H 1700 3050 50  0001 C CNN
+F 1 "GND" H 1705 3127 50  0000 C CNN
+F 2 "" H 1700 3300 50  0001 C CNN
+F 3 "" H 1700 3300 50  0001 C CNN
+	1    1700 3300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R1
 U 1 1 60773A0E
-P 2150 2600
-F 0 "R1" H 2220 2646 50  0000 L CNN
-F 1 "33k" H 2220 2555 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2080 2600 50  0001 C CNN
-F 3 "~" H 2150 2600 50  0001 C CNN
-	1    2150 2600
+P 2150 2850
+F 0 "R1" H 2220 2896 50  0000 L CNN
+F 1 "33k" H 2220 2805 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2080 2850 50  0001 C CNN
+F 3 "~" H 2150 2850 50  0001 C CNN
+	1    2150 2850
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2150 2250 2150 2450
-Connection ~ 2150 2250
+	2150 2500 2150 2700
+Connection ~ 2150 2500
 Wire Wire Line
-	2150 2250 1700 2250
+	2150 2500 1700 2500
 $Comp
 L power:GND #PWR04
 U 1 1 60774281
-P 2150 3250
-F 0 "#PWR04" H 2150 3000 50  0001 C CNN
-F 1 "GND" H 2155 3077 50  0000 C CNN
-F 2 "" H 2150 3250 50  0001 C CNN
-F 3 "" H 2150 3250 50  0001 C CNN
-	1    2150 3250
+P 2150 3300
+F 0 "#PWR04" H 2150 3050 50  0001 C CNN
+F 1 "GND" H 2155 3127 50  0000 C CNN
+F 2 "" H 2150 3300 50  0001 C CNN
+F 3 "" H 2150 3300 50  0001 C CNN
+	1    2150 3300
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR05
 U 1 1 60774757
-P 2800 3250
-F 0 "#PWR05" H 2800 3000 50  0001 C CNN
-F 1 "GND" H 2805 3077 50  0000 C CNN
-F 2 "" H 2800 3250 50  0001 C CNN
-F 3 "" H 2800 3250 50  0001 C CNN
-	1    2800 3250
+P 2800 3300
+F 0 "#PWR05" H 2800 3050 50  0001 C CNN
+F 1 "GND" H 2805 3127 50  0000 C CNN
+F 2 "" H 2800 3300 50  0001 C CNN
+F 3 "" H 2800 3300 50  0001 C CNN
+	1    2800 3300
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -157,65 +152,62 @@ Wire Wire Line
 $Comp
 L DOORSENSOR_Simple_9V-rescue:NTR4003NT1G-eec Q1
 U 1 1 60784E62
-P 2200 2250
-F 0 "Q1" H 2918 2196 50  0000 L CNN
-F 1 "NTR4003NT1G" H 2918 2105 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23" H 2200 2750 50  0001 L CNN
-F 3 "https://www.onsemi.com/pub/Collateral/NTR4003N-D.PDF" H 2200 2850 50  0001 L CNN
-F 4 "Yes" H 2200 2950 50  0001 L CNN "automotive"
-F 5 "Grade 0" H 2200 3050 50  0001 L CNN "automotive grade"
-F 6 "Trans" H 2200 3150 50  0001 L CNN "category"
-F 7 "830106" H 2200 3250 50  0001 L CNN "ciiva ids"
-F 8 "0.5A" H 2200 3350 50  0001 L CNN "continuous drain current"
-F 9 "False" H 2200 3450 50  0001 L CNN "depletion mode"
-F 10 "Discrete Semiconductors" H 2200 3550 50  0001 L CNN "device class L1"
-F 11 "Transistors" H 2200 3650 50  0001 L CNN "device class L2"
-F 12 "MOSFETs" H 2200 3750 50  0001 L CNN "device class L3"
-F 13 "MOSFET N-CH 30V 500MA SOT-23" H 2200 3850 50  0001 L CNN "digikey description"
-F 14 "NTR4003NT1GOSCT-ND" H 2200 3950 50  0001 L CNN "digikey part number"
-F 15 "30V" H 2200 4050 50  0001 L CNN "drain to source breakdown voltage"
-F 16 "1Ω" H 2200 4150 50  0001 L CNN "drain to source resistance"
-F 17 "30V" H 2200 4250 50  0001 L CNN "drain to source voltage"
-F 18 "https://www.onsemi.com/pub/Collateral/318-08.PDF" H 2200 4350 50  0001 L CNN "footprint url"
-F 19 "1.15nC @ 5V" H 2200 4450 50  0001 L CNN "gate charge at vgs"
-F 20 "20V" H 2200 4550 50  0001 L CNN "gate to source voltage"
-F 21 "1.1mm" H 2200 4650 50  0001 L CNN "height"
-F 22 "21pF @ 5V" H 2200 4750 50  0001 L CNN "input capacitace at vds"
-F 23 "Yes" H 2200 4850 50  0001 L CNN "lead free"
-F 24 "939a4efbd895d123" H 2200 4950 50  0001 L CNN "library id"
-F 25 "On Semiconductor" H 2200 5050 50  0001 L CNN "manufacturer"
-F 26 "0.7V" H 2200 5150 50  0001 L CNN "max forward diode voltage"
-F 27 "+150°C" H 2200 5250 50  0001 L CNN "max junction temp"
-F 28 "MOSFET NFET 30V .56A 1500M\\n\\n" H 2200 5350 50  0001 L CNN "mouser description"
-F 29 "863-NTR4003NT1G" H 2200 5450 50  0001 L CNN "mouser part number"
-F 30 "1" H 2200 5550 50  0001 L CNN "number of N channels"
-F 31 "1" H 2200 5650 50  0001 L CNN "number of channels"
-F 32 "SOT23-3" H 2200 5750 50  0001 L CNN "package"
-F 33 "0.69W" H 2200 5850 50  0001 L CNN "power dissipation"
-F 34 "1.7A" H 2200 5950 50  0001 L CNN "pulse drain current"
-F 35 "1407165756" H 2200 6050 50  0001 L CNN "release date"
-F 36 "14ns" H 2200 6150 50  0001 L CNN "reverse recovery time"
-F 37 "Yes" H 2200 6250 50  0001 L CNN "rohs"
-F 38 "300°C/W" H 2200 6350 50  0001 L CNN "rthja max"
-F 39 "0.01mm" H 2200 6450 50  0001 L CNN "standoff height"
-F 40 "+150°C" H 2200 6550 50  0001 L CNN "temperature range high"
-F 41 "-55°C" H 2200 6650 50  0001 L CNN "temperature range low"
-F 42 "1.4V" H 2200 6750 50  0001 L CNN "threshold vgs max"
-F 43 "0.8V" H 2200 6850 50  0001 L CNN "threshold vgs min"
-F 44 "0.33S" H 2200 6950 50  0001 L CNN "transconductance"
-F 45 "65.1ns" H 2200 7050 50  0001 L CNN "turn off delay time"
-F 46 "16.7ns" H 2200 7150 50  0001 L CNN "turn on delay time"
-F 47 "0.65V" H 2200 7250 50  0001 L CNN "typ forward diode voltage"
-	1    2200 2250
+P 2200 2500
+F 0 "Q1" H 2918 2446 50  0000 L CNN
+F 1 "NTR4003NT1G" H 2918 2355 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 2200 3000 50  0001 L CNN
+F 3 "https://www.onsemi.com/pub/Collateral/NTR4003N-D.PDF" H 2200 3100 50  0001 L CNN
+F 4 "Yes" H 2200 3200 50  0001 L CNN "automotive"
+F 5 "Grade 0" H 2200 3300 50  0001 L CNN "automotive grade"
+F 6 "Trans" H 2200 3400 50  0001 L CNN "category"
+F 7 "830106" H 2200 3500 50  0001 L CNN "ciiva ids"
+F 8 "0.5A" H 2200 3600 50  0001 L CNN "continuous drain current"
+F 9 "False" H 2200 3700 50  0001 L CNN "depletion mode"
+F 10 "Discrete Semiconductors" H 2200 3800 50  0001 L CNN "device class L1"
+F 11 "Transistors" H 2200 3900 50  0001 L CNN "device class L2"
+F 12 "MOSFETs" H 2200 4000 50  0001 L CNN "device class L3"
+F 13 "MOSFET N-CH 30V 500MA SOT-23" H 2200 4100 50  0001 L CNN "digikey description"
+F 14 "NTR4003NT1GOSCT-ND" H 2200 4200 50  0001 L CNN "digikey part number"
+F 15 "30V" H 2200 4300 50  0001 L CNN "drain to source breakdown voltage"
+F 16 "1Ω" H 2200 4400 50  0001 L CNN "drain to source resistance"
+F 17 "30V" H 2200 4500 50  0001 L CNN "drain to source voltage"
+F 18 "https://www.onsemi.com/pub/Collateral/318-08.PDF" H 2200 4600 50  0001 L CNN "footprint url"
+F 19 "1.15nC @ 5V" H 2200 4700 50  0001 L CNN "gate charge at vgs"
+F 20 "20V" H 2200 4800 50  0001 L CNN "gate to source voltage"
+F 21 "1.1mm" H 2200 4900 50  0001 L CNN "height"
+F 22 "21pF @ 5V" H 2200 5000 50  0001 L CNN "input capacitace at vds"
+F 23 "Yes" H 2200 5100 50  0001 L CNN "lead free"
+F 24 "939a4efbd895d123" H 2200 5200 50  0001 L CNN "library id"
+F 25 "On Semiconductor" H 2200 5300 50  0001 L CNN "manufacturer"
+F 26 "0.7V" H 2200 5400 50  0001 L CNN "max forward diode voltage"
+F 27 "+150°C" H 2200 5500 50  0001 L CNN "max junction temp"
+F 28 "MOSFET NFET 30V .56A 1500M\\n\\n" H 2200 5600 50  0001 L CNN "mouser description"
+F 29 "863-NTR4003NT1G" H 2200 5700 50  0001 L CNN "mouser part number"
+F 30 "1" H 2200 5800 50  0001 L CNN "number of N channels"
+F 31 "1" H 2200 5900 50  0001 L CNN "number of channels"
+F 32 "SOT23-3" H 2200 6000 50  0001 L CNN "package"
+F 33 "0.69W" H 2200 6100 50  0001 L CNN "power dissipation"
+F 34 "1.7A" H 2200 6200 50  0001 L CNN "pulse drain current"
+F 35 "1407165756" H 2200 6300 50  0001 L CNN "release date"
+F 36 "14ns" H 2200 6400 50  0001 L CNN "reverse recovery time"
+F 37 "Yes" H 2200 6500 50  0001 L CNN "rohs"
+F 38 "300°C/W" H 2200 6600 50  0001 L CNN "rthja max"
+F 39 "0.01mm" H 2200 6700 50  0001 L CNN "standoff height"
+F 40 "+150°C" H 2200 6800 50  0001 L CNN "temperature range high"
+F 41 "-55°C" H 2200 6900 50  0001 L CNN "temperature range low"
+F 42 "1.4V" H 2200 7000 50  0001 L CNN "threshold vgs max"
+F 43 "0.8V" H 2200 7100 50  0001 L CNN "threshold vgs min"
+F 44 "0.33S" H 2200 7200 50  0001 L CNN "transconductance"
+F 45 "65.1ns" H 2200 7300 50  0001 L CNN "turn off delay time"
+F 46 "16.7ns" H 2200 7400 50  0001 L CNN "turn on delay time"
+F 47 "0.65V" H 2200 7500 50  0001 L CNN "typ forward diode voltage"
+	1    2200 2500
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	1700 1600 2800 1600
 Wire Wire Line
 	3150 1600 3150 1850
 Wire Wire Line
 	3150 1850 3300 1850
-Connection ~ 1700 1600
 Wire Wire Line
 	3600 2150 3150 2150
 Wire Wire Line
@@ -238,12 +230,12 @@ Wire Wire Line
 $Comp
 L power:GND #PWR06
 U 1 1 6078E715
-P 3900 3250
-F 0 "#PWR06" H 3900 3000 50  0001 C CNN
-F 1 "GND" H 3905 3077 50  0000 C CNN
-F 2 "" H 3900 3250 50  0001 C CNN
-F 3 "" H 3900 3250 50  0001 C CNN
-	1    3900 3250
+P 3900 3300
+F 0 "#PWR06" H 3900 3050 50  0001 C CNN
+F 1 "GND" H 3905 3127 50  0000 C CNN
+F 2 "" H 3900 3300 50  0001 C CNN
+F 3 "" H 3900 3300 50  0001 C CNN
+	1    3900 3300
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -378,16 +370,6 @@ Connection ~ 3600 2150
 Wire Wire Line
 	6250 2250 6250 2650
 Wire Wire Line
-	3900 2800 3900 3250
-Wire Wire Line
-	2800 2650 2800 3250
-Wire Wire Line
-	2150 2750 2150 3250
-Wire Wire Line
-	1700 2750 1700 3250
-Wire Wire Line
-	1000 3000 1000 3250
-Wire Wire Line
 	3600 3200 5150 3200
 Wire Wire Line
 	3600 2150 3600 3200
@@ -408,4 +390,35 @@ Wire Wire Line
 Connection ~ 5150 3200
 Wire Wire Line
 	5150 3200 5950 3200
+$Comp
+L Device:R R3
+U 1 1 6091D0ED
+P 1700 2150
+F 0 "R3" H 1770 2196 50  0000 L CNN
+F 1 "1.8k" H 1770 2105 50  0000 L CNN
+F 2 "" V 1630 2150 50  0001 C CNN
+F 3 "~" H 1700 2150 50  0001 C CNN
+	1    1700 2150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1000 1600 1700 1600
+Connection ~ 1700 1600
+Wire Wire Line
+	1700 1600 2800 1600
+Wire Wire Line
+	2800 2300 2800 2050
+Wire Wire Line
+	1700 2300 1700 2500
+Connection ~ 1700 2500
+Wire Wire Line
+	2800 2900 2800 3300
+Wire Wire Line
+	2150 3000 2150 3300
+Wire Wire Line
+	1700 3000 1700 3300
+Wire Wire Line
+	3900 2800 3900 3300
+Wire Wire Line
+	1000 3000 1000 3300
 $EndSCHEMATC
