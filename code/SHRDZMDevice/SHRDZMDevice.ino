@@ -70,7 +70,8 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4200];
-
+const uint16_t ajaxIntervall = 2;
+String lastMessage = "";
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -105,6 +106,7 @@ char* getWebsite(char* content)
 <html>\
 <head>\
 <link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_green.svg\" sizes=\"any\">\
+<script src=\"j.js\"></script>\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
@@ -235,6 +237,51 @@ button {\
   return websideBuffer;
 }
 
+void handleJson() {
+  // Output: send data to browser as JSON
+
+  String message = "";
+  message = (F("{\"ss\":")); // Start of JSON and the first object "ss":
+  message += millis() / 1000;
+  message += (F(",\"mqttconnectionstate\":"));
+  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
+  message += (F(",\"lastmessage\":"));
+  message += lastMessage;  
+  message += (F("}")); // End of JSON
+  server.send(200, "application/json", message);
+}
+
+void handleJs()
+{
+  String message;
+  message += F("const url ='json';\n"
+               "function renew(){\n"
+//               " document.getElementById('sec').style.color = 'blue'\n"                                              // if the timer starts the request, the second gets blue
+               " fetch(url)\n" // Call the fetch function passing the url of the API as a parameter
+               " .then(response => {return response.json();})\n"
+               " .then(jo => {\n"
+//               "   document.getElementById('sec').innerHTML = Math.floor(jo['ss'] % 60);\n"                         // example how to change a value in the HTML page
+               "   for (var i in jo)\n"
+               "    {if (document.getElementById(i)) document.getElementById(i).innerHTML = jo[i];}\n"               // as long as the JSON name fits to the HTML id, the value will be replaced
+               // add other fields here (e.g. the delivered JSON name doesn't fit to the html id
+               // finally, update the runtime
+//               "   if (jo['ss'] > 60) { document.getElementById('min').innerHTML = Math.floor(jo['ss'] / 60 % 60);}\n"
+//               "   if (jo['ss'] > 3600) {document.getElementById('hour').innerHTML = Math.floor(jo['ss'] / 3600 % 24);}\n"
+//               "   if (jo['ss'] > 86400) {document.getElementById('day').innerHTML = Math.floor(jo['ss'] / 86400 % 7);}\n"
+//               "   if (jo['ss'] > 604800) {document.getElementById('week').innerHTML = Math.floor(jo['ss'] / 604800 % 52);}\n"
+//               "   document.getElementById('sec').style.color = 'dimgray';\n"  // if everything was ok, the second will be grey again.
+               " })\n"
+               " .catch(function() {\n"                                        // this is where you run code if the server returns any errors
+//               "  document.getElementById('sec').style.color = 'red';\n"
+               " });\n"
+               "}\n"
+               "document.addEventListener('DOMContentLoaded', renew, setInterval(renew, ");
+  message += ajaxIntervall * 1000;
+  message += F("));");
+
+  server.send(200, "text/javascript", message);
+}
+
 void handleRoot() 
 {
   char content[2500];
@@ -312,6 +359,12 @@ void handleRoot()
   informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
   informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
   informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
+  informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
+  informationTable += "Unknown";
+//  informationTable += mqttclient.connected() ? String("Connected") : String("Not Connected");
+  informationTable += F("</span></p><br>");    
+  informationTable += "Last Message : <br>";
+  informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
 
   if(WiFi.localIP().toString() != "(IP unset)")
   {
@@ -1723,6 +1776,7 @@ void getMeasurementData()
     if(dev != NULL)
     {
       SensorData* sd = dev->readParameter();
+      lastMessage = "\"";
   
       if(sd != NULL)
       {
@@ -1731,6 +1785,8 @@ void getMeasurementData()
         for(int i = 0; i<sd->size; i++)
         {
           reply = sd->di[i].nameI+":"+sd->di[i].valueI;
+
+          lastMessage += "(" + String(i)+ ")" +sd->di[i].nameI+"="+sd->di[i].valueI+"&#13;&#10;";
 
           DV(reply);
 
@@ -1743,8 +1799,10 @@ void getMeasurementData()
             simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
         }
         delete sd;
-        sd = NULL;
+        sd = NULL;  
       }
+
+      lastMessage += "\"";      
 
       // send message about last measurement;
       if(!gatewayMode)
@@ -1782,6 +1840,10 @@ void handleGatewayLoop()
       server.on("/general", handleRoot);
       server.on("/settings", handleSettings);
       server.on("/gateway", handleGateway);
+
+      server.on("/j.js", handleJs);      
+      server.on("/json", handleJson);
+      
       server.onNotFound(handleNotFound);
       server.begin();        
     } 
