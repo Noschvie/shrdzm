@@ -21,8 +21,8 @@
       )
     )
     (boundary
-      (path pcb 0  76000 -56000  26000 -56000  26000 -36000  76000 -36000
-            76000 -56000)
+      (path pcb 0  76000 -55000  26000 -55000  26000 -36500  76000 -36500
+            76000 -55000)
     )
     (via "Via[0-1]_800:400_um")
     (rule
@@ -38,7 +38,7 @@
       (place G1 69000 -52500 front 0 (PN LOGO))
     )
     (component Capacitor_THT:CP_Radial_D5.0mm_P2.50mm
-      (place C1 55500 -44500 front 90 (PN 100uF))
+      (place C1 55500 -46500 front 90 (PN 100uF))
     )
     (component Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder
       (place C2 61350 -42850 back 270 (PN 22uF))
@@ -69,6 +69,9 @@
     )
     (component "RF_Module:ESP-12E"
       (place U2 39300 -45950 front 90 (PN "ESP-12F"))
+    )
+    (component Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder::2
+      (place R3 55000 -41000 front 0 (PN 1.8k))
     )
   )
   (library
@@ -438,6 +441,20 @@
       (pin Rect[T]Pad_2500x1000_um 21 7600 1500)
       (pin Rect[T]Pad_2500x1000_um 22 7600 3500)
     )
+    (image Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder::2
+      (outline (path signal 50  1850 -950  -1850 -950))
+      (outline (path signal 50  1850 950  1850 -950))
+      (outline (path signal 50  -1850 950  1850 950))
+      (outline (path signal 50  -1850 -950  -1850 950))
+      (outline (path signal 120  -227.064 -735  227.064 -735))
+      (outline (path signal 120  -227.064 735  227.064 735))
+      (outline (path signal 100  1000 -625  -1000 -625))
+      (outline (path signal 100  1000 625  1000 -625))
+      (outline (path signal 100  -1000 625  1000 625))
+      (outline (path signal 100  -1000 -625  -1000 625))
+      (pin RoundRect[T]Pad_1200x1400_250.95_um 1 -1000 0)
+      (pin RoundRect[T]Pad_1200x1400_250.95_um 2 1000 0)
+    )
     (padstack Round[A]Pad_1524_um
       (shape (circle F.Cu 1524))
       (shape (circle B.Cu 1524))
@@ -543,7 +560,7 @@
   )
   (network
     (net "Net-(C1-Pad1)"
-      (pins C1-1 Q1-1 R1-1 SW1-2)
+      (pins C1-1 Q1-1 R1-1 R3-2)
     )
     (net GND
       (pins C1-2 C2-2 J1-1 Q1-2 R1-2)
@@ -611,11 +628,15 @@
     (net "Net-(U2-Pad22)"
       (pins U2-22)
     )
+    (net "Net-(R3-Pad1)"
+      (pins SW1-2 R3-1)
+    )
     (class kicad_default "" +3V3 GND "Net-(C1-Pad1)" "Net-(J1-Pad2)" "Net-(Q1-Pad3)"
-      "Net-(R2-Pad1)" "Net-(SW2-Pad1)" "Net-(SW3-Pad1)" "Net-(U2-Pad1)" "Net-(U2-Pad10)"
-      "Net-(U2-Pad11)" "Net-(U2-Pad12)" "Net-(U2-Pad13)" "Net-(U2-Pad14)"
-      "Net-(U2-Pad17)" "Net-(U2-Pad18)" "Net-(U2-Pad19)" "Net-(U2-Pad2)" "Net-(U2-Pad21)"
-      "Net-(U2-Pad22)" "Net-(U2-Pad5)" "Net-(U2-Pad6)" "Net-(U2-Pad9)"
+      "Net-(R2-Pad1)" "Net-(R3-Pad1)" "Net-(SW2-Pad1)" "Net-(SW3-Pad1)" "Net-(U2-Pad1)"
+      "Net-(U2-Pad10)" "Net-(U2-Pad11)" "Net-(U2-Pad12)" "Net-(U2-Pad13)"
+      "Net-(U2-Pad14)" "Net-(U2-Pad17)" "Net-(U2-Pad18)" "Net-(U2-Pad19)"
+      "Net-(U2-Pad2)" "Net-(U2-Pad21)" "Net-(U2-Pad22)" "Net-(U2-Pad5)" "Net-(U2-Pad6)"
+      "Net-(U2-Pad9)"
       (circuit
         (use_via Via[0-1]_800:400_um)
       )
