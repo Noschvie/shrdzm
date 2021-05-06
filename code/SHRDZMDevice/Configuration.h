@@ -35,6 +35,7 @@ class Configuration
     void storeLastRebootInfo(const char *rebootinformation);
     void sendSetup(SimpleEspNowConnection *simpleEspConnection);
     void sendSetup(PubSubClient *mqttclient, const char *subject);
+    void resetConfiguration();
    protected:
 
 };

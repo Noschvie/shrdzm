@@ -464,3 +464,17 @@ void Configuration::sendSetup(PubSubClient *mqttclient, const char *subject)
     }
   }   
 }
+
+void Configuration::resetConfiguration()
+{
+#ifdef LITTLEFS  
+  LittleFS.remove("/version.txt");
+  LittleFS.remove("/reboot.txt");
+  LittleFS.remove("/shrdzm_config.json");
+#else
+  SPIFFS.remove("/version.txt");
+  SPIFFS.remove("/reboot.txt");
+  SPIFFS.remove("/shrdzm_config.json");
+#endif  
+    
+}

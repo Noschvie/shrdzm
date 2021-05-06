@@ -89,6 +89,7 @@ void startConfigurationAP()
   server.on("/general", handleRoot);
   server.on("/settings", handleSettings);
   server.on("/gateway", handleGateway);
+  server.on("/NTP", handleNTP);
   server.onNotFound(handleNotFound);
   server.begin();
   
@@ -216,6 +217,7 @@ button {\
   <li><a href='./general'>General</a></li>\
   <li><a href='./settings'>Settings</a></li>\
   <li><a href='./gateway'>Gateway</a></li>\
+  <li><a href='./NTP'>NTP</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
@@ -256,23 +258,16 @@ void handleJs()
   String message;
   message += F("const url ='json';\n"
                "function renew(){\n"
-//               " document.getElementById('sec').style.color = 'blue'\n"                                              // if the timer starts the request, the second gets blue
                " fetch(url)\n" // Call the fetch function passing the url of the API as a parameter
                " .then(response => {return response.json();})\n"
                " .then(jo => {\n"
-//               "   document.getElementById('sec').innerHTML = Math.floor(jo['ss'] % 60);\n"                         // example how to change a value in the HTML page
                "   for (var i in jo)\n"
-               "    {if (document.getElementById(i)) document.getElementById(i).innerHTML = jo[i];}\n"               // as long as the JSON name fits to the HTML id, the value will be replaced
-               // add other fields here (e.g. the delivered JSON name doesn't fit to the html id
-               // finally, update the runtime
-//               "   if (jo['ss'] > 60) { document.getElementById('min').innerHTML = Math.floor(jo['ss'] / 60 % 60);}\n"
-//               "   if (jo['ss'] > 3600) {document.getElementById('hour').innerHTML = Math.floor(jo['ss'] / 3600 % 24);}\n"
-//               "   if (jo['ss'] > 86400) {document.getElementById('day').innerHTML = Math.floor(jo['ss'] / 86400 % 7);}\n"
-//               "   if (jo['ss'] > 604800) {document.getElementById('week').innerHTML = Math.floor(jo['ss'] / 604800 % 52);}\n"
-//               "   document.getElementById('sec').style.color = 'dimgray';\n"  // if everything was ok, the second will be grey again.
+               "    {if (document.getElementById(i))\n"
+               "      {\n"
+               "          document.getElementById(i).innerHTML = jo[i];}\n"              
+               "      }\n"
                " })\n"
                " .catch(function() {\n"                                        // this is where you run code if the server returns any errors
-//               "  document.getElementById('sec').style.color = 'red';\n"
                " });\n"
                "}\n"
                "document.addEventListener('DOMContentLoaded', renew, setInterval(renew, ");
@@ -303,11 +298,7 @@ void handleRoot()
         
       server.send(200, "text/html", content);
 
-#ifdef LITTLEFS
-      LittleFS.format();
-#else
-      SPIFFS.format();
-#endif
+      configuration.resetConfiguration();
 
       delay(2000);
       
@@ -361,9 +352,8 @@ void handleRoot()
   informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
   informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
   informationTable += "Unknown";
-//  informationTable += mqttclient.connected() ? String("Connected") : String("Not Connected");
   informationTable += F("</span></p><br>");    
-  informationTable += "Last Message : <br>";
+  informationTable += "Last Measurement : <br>";
   informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
 
   if(WiFi.localIP().toString() != "(IP unset)")
@@ -448,7 +438,6 @@ void handleReboot()
 
 void handleSettings()
 {
-//  char content[2700];
   String deviceBuffer = "<option></option>";
   String parameterBuffer = "";
   String deviceType;
@@ -513,7 +502,6 @@ void handleSettings()
   if(settingDev != NULL)
   {
     if(strcmp(configuration.get("devicetype"), deviceType.c_str()) == 0)    
-//    if(deviceType == configuration.get("devicetype"))
     {
       deviceParameter = configuration.getDeviceParameter();
     }
@@ -602,10 +590,34 @@ void handleSettings()
   server.send(200, "text/html", temp);  
 }
 
+void handleNTP()
+{
+  sprintf(menuContextBuffer,  
+      "<h1>NTP</h1><p><strong>Configuration</strong><br /><br />\
+      <form method='post' id='settingsForm'>\
+      <br/><br/><div><label for='ntpserver'>NTP Server</label>\
+      <input type='text' id='ntpserver' name='ntpserver' size='20' value='at.pool.ntp.org'></div>\
+      <br/><br/>\
+      <input type='hidden' id='save' name='save' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\
+      <script>\
+       function submitForm()\
+       {\
+          document.getElementById('save').value = 'true';\
+       }\
+      </script>\
+      </form>\
+      "
+  );  
+
+  char * temp = getWebsite(menuContextBuffer);
+
+  DLN("after getWebsite size = "+String(strlen(temp)));
+  server.send(200, "text/html", temp);  
+}
+
 void handleGateway()
 {
-//  char content[2300];
-
   if(server.args() != 0)
   {
     if( server.arg("wlanenabled") == "1")
@@ -1840,6 +1852,7 @@ void handleGatewayLoop()
       server.on("/general", handleRoot);
       server.on("/settings", handleSettings);
       server.on("/gateway", handleGateway);
+      server.on("/NTP", handleNTP);
 
       server.on("/j.js", handleJs);      
       server.on("/json", handleJson);

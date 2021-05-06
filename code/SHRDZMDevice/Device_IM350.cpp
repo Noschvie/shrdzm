@@ -184,10 +184,23 @@ SensorData* Device_IM350::readParameter()
 
   ResetData();
 
-  if(!deviceParameter["autoRebootMinutes"].isNull() && strcmp(deviceParameter["autoRebootMinutes"],"0") != 0)
+  if(!deviceParameter["autoRebootMinutes"].isNull())
   {
-    // Check whether to reboot first
-    if(millis() > (atol(deviceParameter["autoRebootMinutes"]) * 1000 * 60))
+    if(strcmp(deviceParameter["autoRebootMinutes"],"0") != 0)
+    {
+      // Check whether to reboot first
+      if(millis() > (atol(deviceParameter["autoRebootMinutes"]) * 1000 * 60))
+      {
+        Serial.println("Will reboot now");
+        
+        delay(500); 
+        ESP.restart();      
+      }
+    }
+  }
+  else // Default-Reset every 60 minutes
+  {
+    if(millis() > 3600000)
     {
       Serial.println("Will reboot now");
       
