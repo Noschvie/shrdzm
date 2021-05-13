@@ -141,8 +141,6 @@ Wire Wire Line
 	4550 3450 4800 3450
 Connection ~ 4850 3050
 Wire Wire Line
-	1300 1800 1950 1800
-Wire Wire Line
 	4850 1800 4850 2450
 Wire Wire Line
 	4050 2100 4050 1800
@@ -185,18 +183,16 @@ Wire Wire Line
 Wire Wire Line
 	6000 4150 6250 4150
 Wire Wire Line
-	6250 4150 6250 4850
-Wire Wire Line
 	6250 4850 5400 4850
 $Comp
 L Switch:SW_Reed SW1
 U 1 1 6058584E
-P 1950 2300
-F 0 "SW1" V 1904 2385 50  0000 L CNN
-F 1 "Trigger" V 1995 2385 50  0000 L CNN
-F 2 "SHRDZM:Magnetic Reed Relay" H 1950 2300 50  0001 C CNN
-F 3 "~" H 1950 2300 50  0001 C CNN
-	1    1950 2300
+P 1950 2150
+F 0 "SW1" V 1904 2235 50  0000 L CNN
+F 1 "Trigger" V 1995 2235 50  0000 L CNN
+F 2 "SHRDZM:Magnetic Reed Relay" H 1950 2150 50  0001 C CNN
+F 3 "~" H 1950 2150 50  0001 C CNN
+	1    1950 2150
 	0    1    1    0   
 $EndComp
 Wire Wire Line
@@ -269,11 +265,6 @@ NoConn ~ 6000 3450
 NoConn ~ 6000 3350
 NoConn ~ 6000 3250
 Wire Wire Line
-	1950 2100 1950 1800
-Connection ~ 1950 1800
-Wire Wire Line
-	1950 1800 4050 1800
-Wire Wire Line
 	1300 3450 1300 1800
 Connection ~ 1300 1800
 $Comp
@@ -288,16 +279,11 @@ F 3 "" H 1300 5100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1300 3550 1300 5100
-Wire Wire Line
-	1950 2500 1950 2900
-Wire Wire Line
 	3450 2500 3450 2900
 Wire Wire Line
 	3450 2900 3100 2900
 Wire Wire Line
 	2800 2900 1950 2900
-Connection ~ 1950 2900
 Wire Wire Line
 	1950 2900 1950 3450
 $Comp
@@ -326,4 +312,58 @@ Wire Wire Line
 	4650 4700 4650 3250
 Wire Wire Line
 	4650 3250 4800 3250
+$Comp
+L Device:R R3
+U 1 1 609CFCE5
+P 1950 2500
+F 0 "R3" H 2020 2546 50  0000 L CNN
+F 1 "10" H 2020 2455 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical" V 1880 2500 50  0001 C CNN
+F 3 "~" H 1950 2500 50  0001 C CNN
+	1    1950 2500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 1800 1950 1800
+Wire Wire Line
+	1950 1950 1950 1800
+Connection ~ 1950 1800
+Wire Wire Line
+	1950 1800 4050 1800
+Wire Wire Line
+	1950 2650 1950 2900
+Connection ~ 1950 2900
+$Comp
+L power:PWR_FLAG #FLG0101
+U 1 1 609D4F4D
+P 5800 2850
+F 0 "#FLG0101" H 5800 2925 50  0001 C CNN
+F 1 "PWR_FLAG" H 5800 3023 50  0000 C CNN
+F 2 "" H 5800 2850 50  0001 C CNN
+F 3 "~" H 5800 2850 50  0001 C CNN
+	1    5800 2850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5400 3050 5800 3050
+Wire Wire Line
+	5800 3050 5800 2850
+Connection ~ 5400 3050
+Wire Wire Line
+	1300 3550 1300 5100
+$Comp
+L Device:R R4
+U 1 1 609D72F0
+P 6250 4500
+F 0 "R4" H 6320 4546 50  0000 L CNN
+F 1 "10k" H 6320 4455 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical" V 6180 4500 50  0001 C CNN
+F 3 "~" H 6250 4500 50  0001 C CNN
+	1    6250 4500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6250 4150 6250 4350
+Wire Wire Line
+	6250 4650 6250 4850
 $EndSCHEMATC

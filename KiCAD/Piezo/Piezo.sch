@@ -1,0 +1,195 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Connector:Conn_01x02_Male J?
+U 1 1 6099ABDE
+P 1900 2500
+F 0 "J?" H 2008 2681 50  0000 C CNN
+F 1 "Conn_01x02_Male" H 2008 2590 50  0000 C CNN
+F 2 "" H 1900 2500 50  0001 C CNN
+F 3 "~" H 1900 2500 50  0001 C CNN
+	1    1900 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:BC547 Q?
+U 1 1 6099B3B0
+P 3250 2500
+F 0 "Q?" H 3441 2546 50  0000 L CNN
+F 1 "BC547" H 3441 2455 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 3450 2425 50  0001 L CIN
+F 3 "https://www.onsemi.com/pub/Collateral/BC550-D.pdf" H 3250 2500 50  0001 L CNN
+	1    3250 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:BC547 Q?
+U 1 1 6099BF8C
+P 4350 2500
+F 0 "Q?" H 4541 2546 50  0000 L CNN
+F 1 "BC547" H 4541 2455 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline" H 4550 2425 50  0001 L CIN
+F 3 "https://www.onsemi.com/pub/Collateral/BC550-D.pdf" H 4350 2500 50  0001 L CNN
+	1    4350 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:Battery_Cell BT?
+U 1 1 6099CEC5
+P 1100 2500
+F 0 "BT?" H 1218 2596 50  0000 L CNN
+F 1 "Battery_Cell" H 1218 2505 50  0000 L CNN
+F 2 "" V 1100 2560 50  0001 C CNN
+F 3 "~" V 1100 2560 50  0001 C CNN
+	1    1100 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 6099D4B3
+P 2800 2100
+F 0 "R?" V 2593 2100 50  0000 C CNN
+F 1 "R" V 2684 2100 50  0000 C CNN
+F 2 "" V 2730 2100 50  0001 C CNN
+F 3 "~" H 2800 2100 50  0001 C CNN
+	1    2800 2100
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 6099DDCF
+P 2500 1650
+F 0 "R?" H 2430 1604 50  0000 R CNN
+F 1 "R" H 2430 1695 50  0000 R CNN
+F 2 "" V 2430 1650 50  0001 C CNN
+F 3 "~" H 2500 1650 50  0001 C CNN
+	1    2500 1650
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 6099EEDD
+P 3350 1650
+F 0 "R?" H 3280 1604 50  0000 R CNN
+F 1 "R" H 3280 1695 50  0000 R CNN
+F 2 "" V 3280 1650 50  0001 C CNN
+F 3 "~" H 3350 1650 50  0001 C CNN
+	1    3350 1650
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 6099F2CF
+P 4450 1600
+F 0 "R?" H 4380 1554 50  0000 R CNN
+F 1 "R" H 4380 1645 50  0000 R CNN
+F 2 "" V 4380 1600 50  0001 C CNN
+F 3 "~" H 4450 1600 50  0001 C CNN
+	1    4450 1600
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 6099F96E
+P 3900 2100
+F 0 "C?" V 3645 2100 50  0000 C CNN
+F 1 "CP" V 3736 2100 50  0000 C CNN
+F 2 "" H 3938 1950 50  0001 C CNN
+F 3 "~" H 3900 2100 50  0001 C CNN
+	1    3900 2100
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4050 2100 4450 2100
+Wire Wire Line
+	4450 2100 4450 2300
+$Comp
+L Device:LED D?
+U 1 1 609A1796
+P 4450 1900
+F 0 "D?" V 4489 1782 50  0000 R CNN
+F 1 "LED" V 4398 1782 50  0000 R CNN
+F 2 "" H 4450 1900 50  0001 C CNN
+F 3 "~" H 4450 1900 50  0001 C CNN
+	1    4450 1900
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4450 2050 4450 2100
+Connection ~ 4450 2100
+Wire Wire Line
+	2500 2500 2500 2100
+Wire Wire Line
+	2500 2500 3050 2500
+Connection ~ 2500 2100
+Wire Wire Line
+	2500 2100 2650 2100
+Wire Wire Line
+	2300 2100 2500 2100
+Wire Wire Line
+	2300 2100 2300 2500
+Wire Wire Line
+	2300 2500 2100 2500
+Wire Wire Line
+	1100 2600 1100 2800
+Wire Wire Line
+	1100 2800 2300 2800
+Wire Wire Line
+	4450 2800 4450 2700
+Wire Wire Line
+	3350 2700 3350 2800
+Connection ~ 3350 2800
+Wire Wire Line
+	3350 2800 4450 2800
+Wire Wire Line
+	2100 2600 2300 2600
+Wire Wire Line
+	2300 2600 2300 2800
+Connection ~ 2300 2800
+Wire Wire Line
+	2300 2800 3350 2800
+Wire Wire Line
+	2950 2100 3750 2100
+Wire Wire Line
+	3350 2250 3800 2250
+Wire Wire Line
+	3800 2250 3800 2500
+Wire Wire Line
+	3800 2500 4150 2500
+Wire Wire Line
+	3350 2250 3350 2300
+Wire Wire Line
+	2500 1800 2500 2100
+Wire Wire Line
+	3350 1800 3350 2250
+Connection ~ 3350 2250
+Wire Wire Line
+	1100 1350 2500 1350
+Wire Wire Line
+	4450 1350 4450 1450
+Wire Wire Line
+	1100 1350 1100 2300
+Wire Wire Line
+	3350 1350 3350 1500
+Connection ~ 3350 1350
+Wire Wire Line
+	3350 1350 4450 1350
+Wire Wire Line
+	2500 1350 2500 1500
+Connection ~ 2500 1350
+Wire Wire Line
+	2500 1350 3350 1350
+$EndSCHEMATC
