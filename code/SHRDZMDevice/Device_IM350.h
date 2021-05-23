@@ -29,7 +29,8 @@ class Device_IM350 : public DeviceBase
     enum devicetype {
       unknown,
       im350,
-      am550
+      am550,
+      im350Wels
     };
     
   protected:

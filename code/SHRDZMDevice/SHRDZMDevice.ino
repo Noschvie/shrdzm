@@ -69,7 +69,7 @@ String MQTT_TOPIC = "SHRDZM/";
 String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
-char menuContextBuffer[4200];
+char menuContextBuffer[4300];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "";
 
@@ -96,7 +96,7 @@ void startConfigurationAP()
   configurationBlinker.attach(0.2, changeConfigurationBlinker);
 }
 
-char* getWebsite(char* content)
+char* getWebsite(char* content, bool update = false)
 {  
   int len = strlen(content);
 
@@ -107,7 +107,7 @@ char* getWebsite(char* content)
 <html>\
 <head>\
 <link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_green.svg\" sizes=\"any\">\
-<script src=\"j.js\"></script>\
+%s\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
@@ -234,7 +234,9 @@ button {\
 </div>\
 </body>\
 </html>\
-  ", deviceName.c_str(), deviceName.c_str(), content);
+  ",
+  update ? "<script src=\"j.js\"></script>" : "", 
+  deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
 }
@@ -390,7 +392,7 @@ void handleRoot()
       upgradeText.c_str()
   );  
 
-  char * temp = getWebsite(content);
+  char * temp = getWebsite(content, true);
   server.send(200, "text/html", temp);
 }
 

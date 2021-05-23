@@ -110,7 +110,7 @@ SensorData* Device_DOORSENSOR::readParameter()
     al->di[0].valueI = "sensor state unclear";
 
     al->di[1].nameI = "state";
-    al->di[1].valueI = "UNCLEAR";    
+    al->di[1].valueI = "OPEN";    
   }
   else if(deviceParameter["pin"].as<uint8_t>() < 16)
   {
