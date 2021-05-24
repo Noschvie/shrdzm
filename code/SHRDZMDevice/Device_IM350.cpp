@@ -350,7 +350,7 @@ SensorData* Device_IM350::readParameter()
     }
     
     al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "No supported SmartMeter Type identified";  
+    al->di[0].valueI = "No supported SmartMeter Type identified - first Byte does not fit";  
         
     return al;
   }
@@ -359,7 +359,7 @@ SensorData* Device_IM350::readParameter()
     dt = im350;
    else if (message[sizeof(message)-3] == lastByte)
     dt = am550;
-   else if (message[sizeof(message)-19] == lastByte)
+   else if (message[sizeof(message)-10] == lastByte)
     dt = im350Wels;
 #endif
 
@@ -377,7 +377,7 @@ SensorData* Device_IM350::readParameter()
     }
     
     al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "No supported SmartMeter Type identified";  
+    al->di[0].valueI = "No supported SmartMeter Type identified - No end Byte found";  
             
     return al;
   }  
