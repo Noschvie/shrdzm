@@ -621,7 +621,8 @@ void Device_IM350::decryptAesGcm(Data *data)
     else if(dt == am550)
       aad.set(m_pMessage+28, len_);
     else if(dt == im350Wels)
-      aad.set(m_pMessage+30, len_);
+//      aad.set(m_pMessage+30, len_);
+      aad.set(m_pMessage+30, len_-9);
     else
     {
       Serial.println("Decryption Type not implemented!");

@@ -90,6 +90,7 @@ void startConfigurationAP()
   server.on("/settings", handleSettings);
   server.on("/gateway", handleGateway);
   server.on("/NTP", handleNTP);
+  server.on("/experimental", handleExperimental);
   server.onNotFound(handleNotFound);
   server.begin();
   
@@ -218,6 +219,7 @@ button {\
   <li><a href='./settings'>Settings</a></li>\
   <li><a href='./gateway'>Gateway</a></li>\
   <li><a href='./NTP'>NTP</a></li>\
+  <li><a href='./experimental'>Experimental</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
@@ -589,6 +591,84 @@ void handleSettings()
   DV(writeConfiguration);
   DLN("after getWebsite size = "+String(strlen(temp)));
   
+  server.send(200, "text/html", temp);  
+}
+
+void handleExperimental()
+{
+  if(server.args() != 0)
+  {
+    if( server.arg("cloudenabled") == "1")
+    {
+      configuration.setCloudParameter("enabled", "true");
+    }
+    else
+      configuration.setCloudParameter("enabled", "false");
+
+    if(server.hasArg("user"))
+      configuration.setCloudParameter("user", server.arg("user").c_str());
+    else
+      configuration.setCloudParameter("user", "");
+        
+    if(server.hasArg("password"))
+      configuration.setCloudParameter("password", server.arg("password").c_str());
+    else
+      configuration.setCloudParameter("password", "");    
+
+    if(server.hasArg("email"))
+      configuration.setCloudParameter("email", server.arg("email").c_str());
+    else
+      configuration.setCloudParameter("email", "");    
+
+    writeConfiguration = true;      
+  }
+    
+  sprintf(menuContextBuffer,  
+      "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br />\
+      Cloud Settings.\
+      <br/><br/>\
+      <form method='post'>\
+      <input type='checkbox' id='cloudenabled' name='cloudenabled' value='1' %s/>\
+      <input type='hidden' name='cloudenabled' value='0' />\
+      <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
+      <br/><br/>\
+      <hr/>\
+      <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
+      <p><label for='user'>User Name</label></p></div><br/><br/>\
+      <div><input type='text' id='userid' name='userid' placeholder='' size='30' value='%s'>\
+      <p><label for='user'>Unique User ID</label></p></div><br/>\
+      <br/>\   
+      <div><input type='text' id='email' name='email' placeholder='EMail' size='30' value='%s'>\
+      <p><label for='email'>EMail Address</label></p></div><br/>\
+      <br/>\   
+      <div><input type='password' id='password' name='password' placeholder='Password' size='30' value='%s'>\
+      <label for='password'>Password</label></div><br/><br/>\
+      <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
+      </div><br/>\         
+      <hr/>\
+      <input class='submitbutton' type='submit' value='Save Configuration!' />\
+      <script>\
+      function showCloudPassword() {\
+        var x = document.getElementById('password');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\
+      </form>\
+      ",
+      String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("user"),
+      configuration.getCloudParameter("userid"),
+      configuration.getCloudParameter("email"),
+      configuration.getCloudParameter("password")
+  );  
+
+  char * temp = getWebsite(menuContextBuffer);
+
+  DLN("after getWebsite size = "+String(strlen(temp)));
   server.send(200, "text/html", temp);  
 }
 
@@ -1855,6 +1935,7 @@ void handleGatewayLoop()
       server.on("/settings", handleSettings);
       server.on("/gateway", handleGateway);
       server.on("/NTP", handleNTP);
+      server.on("/experimental", handleExperimental);
 
       server.on("/j.js", handleJs);      
       server.on("/json", handleJson);

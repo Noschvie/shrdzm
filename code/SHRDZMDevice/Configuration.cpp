@@ -231,6 +231,11 @@ bool Configuration::containsWlanKey(char *name)
   return g_configdoc["wlan"].containsKey(name);
 }
 
+bool Configuration::containsCloudKey(char *name)
+{
+  return g_configdoc["cloud"].containsKey(name);
+}
+
 void Configuration::set(char *name, char *value)
 {
   g_configdoc[name] = value;
@@ -260,6 +265,15 @@ void Configuration::setWlanParameter(const char *name, const char *value)
   g_configdoc["wlan"][name] = v;
 }
 
+void Configuration::setCloudParameter(const char *name, const char *value)
+{
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["cloud"][name] = v;
+}
+
 void Configuration::setDeviceParameter(JsonObject dc)
 {
   g_configdoc["device"] = dc;
@@ -268,6 +282,11 @@ void Configuration::setDeviceParameter(JsonObject dc)
 void Configuration::setWlanParameter(JsonObject dc)
 {
   g_configdoc["wlan"] = dc;
+}
+ 
+void Configuration::setCloudParameter(JsonObject dc)
+{
+  g_configdoc["cloud"] = dc;
 }
  
 const char* Configuration::get(char *name)
@@ -288,9 +307,22 @@ JsonObject Configuration::getWlanParameter()
   return g_configdoc["wlan"];
 }
 
+JsonObject Configuration::getCloudParameter()
+{
+  return g_configdoc["cloud"];
+}
+
 const char* Configuration::getWlanParameter(const char *parameterName)
 {
   return g_configdoc["wlan"][parameterName];
+}
+
+const char* Configuration::getCloudParameter(const char *parameterName)
+{
+  if(g_configdoc["cloud"][parameterName].isNull())
+    return "";
+  else
+    return g_configdoc["cloud"][parameterName];
 }
 
 String Configuration::readLastVersionNumber()
