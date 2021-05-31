@@ -72,6 +72,9 @@ char websideBuffer[6500];
 char menuContextBuffer[4300];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "";
+bool cloudConnected = false;
+String cloudToken = "";
+String cloudID = "";
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -601,6 +604,14 @@ void handleSettings()
 
 void handleExperimental()
 {
+  if((String(configuration.getCloudParameter("enabled")) == "true") &&
+      cloudID != String(configuration.getCloudParameter("userid")))
+  {
+    configuration.setCloudParameter("userid", cloudID.c_str());
+    
+    writeConfiguration = true;          
+  }
+  
   // check if registerNewUser was pressed
   if(server.hasArg("registerNewUser"))
   {
@@ -1969,7 +1980,13 @@ void handleGatewayLoop()
       server.on("/json", handleJson);
       
       server.onNotFound(handleNotFound);
-      server.begin();        
+      server.begin();     
+
+      if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && !cloudConnected)
+      {
+        DLN("Will start cloud connection");
+        cloudConnected = cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));        
+      }         
     } 
     else
     {
@@ -1986,7 +2003,7 @@ void handleGatewayLoop()
   }
 
   if(WiFi.status() == WL_CONNECTED)
-  {
+  {    
     if(!mqttclient.connected())
     {
       if(millis() > mqttNextTry)

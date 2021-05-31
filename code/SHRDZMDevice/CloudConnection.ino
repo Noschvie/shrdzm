@@ -1,26 +1,49 @@
 #include "config/config.h"
 
-String cloudToken = "";
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {
   DLN("Will now try to register new User on "+String(CloudApiAddress));
 
-  cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false);
+  String reply;
+  cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply);
 
   return true;
 }
 
 bool cloudLogin(const char* user, const char* password )
 {
-  DLN("Will now try to register new User on "+String(CloudApiAddress));
+  DLN("Will now try Log On to "+String(CloudApiAddress));
 
-  cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false);
+  String reply;
+  if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+    return false;
 
+  DV(reply);
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, reply);
+
+  if(error)
+  {
+    DV(error.c_str());
+    return false;  
+  }
+
+  if(doc["success"].as<unsigned int>() == 1)
+  {
+    cloudToken = doc["token"].as<String>();
+    cloudID = doc["id"].as<String>();
+
+    DV(cloudID);
+  }
+  else
+    return false;
+    
   return true;
 }
 
-bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded)
+bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply)
 {
   if(WiFi.status()== WL_CONNECTED)
   {
@@ -38,7 +61,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
           
       DV(httpResponseCode);
       DV(http.getString());
-        
+
+      *reply = http.getString();
       http.end();
       return true;
     }
