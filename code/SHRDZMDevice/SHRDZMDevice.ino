@@ -161,13 +161,13 @@ label.h2 {\
 input,\
 label {\
   float: left;\
-  width: 40%;\
+  width: 80%;\
   margin-left: 1.5;\
   padding-left: 5px;\
 }\
 label {\
   display: inline-block;\
-  width: 7em;\
+  width: 14em;\
 }\
 input {\
   margin: 0 0 1em .2em;\
@@ -186,6 +186,11 @@ background: cyan;\
 border: 2px solid red;\
 color: black;\
 }\
+input.submitbutton, textarea {\
+background: lightgray;\
+border: 2px solid black;\
+color: black;\
+}\
 button {\
   margin-top: 1.5em;\
   width: 30%;\
@@ -197,8 +202,8 @@ button {\
   border-radius: 5px;\
 }\
 .submitbutton {\
-  background-color: Gainsboro;\
-  border: 1px solid black;\
+  background-color: Gray;\
+  border: 2px solid black;\
   border-radius: 5px;\
 }\
 .main {\
@@ -519,7 +524,7 @@ void handleSettings()
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
     for (JsonPair kv : documentRoot) 
     {
-      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype")
+      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype" && String(kv.key().c_str()) != "cloud")
       {
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
         if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
@@ -596,6 +601,22 @@ void handleSettings()
 
 void handleExperimental()
 {
+  // check if registerNewUser was pressed
+  if(server.hasArg("registerNewUser"))
+  {
+    if(String(server.arg("registerNewUser")) == "true") 
+    {
+      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
+         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
+      {
+        cloudRegisterNewUser(server.arg("user").c_str(), server.arg("email").c_str(), server.arg("password").c_str());
+      }
+
+//      writeConfiguration = true;          
+    }
+  }  
+
+  
   if(server.args() != 0)
   {
     if( server.arg("cloudenabled") == "1")
@@ -622,10 +643,13 @@ void handleExperimental()
 
     writeConfiguration = true;      
   }
+
+  String registerNewUserButtonText = "<input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /><br/><br/>";
     
   sprintf(menuContextBuffer,  
       "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br />\
-      Cloud Settings.\
+      Cloud Settings. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a>\
       <br/><br/>\
       <form method='post'>\
       <input type='checkbox' id='cloudenabled' name='cloudenabled' value='1' %s/>\
@@ -634,17 +658,16 @@ void handleExperimental()
       <br/><br/>\
       <hr/>\
       <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
-      <p><label for='user'>User Name</label></p></div><br/><br/>\
-      <div><input type='text' id='userid' name='userid' placeholder='' size='30' value='%s'>\
-      <p><label for='user'>Unique User ID</label></p></div><br/>\
-      <br/>\   
-      <div><input type='text' id='email' name='email' placeholder='EMail' size='30' value='%s'>\
-      <p><label for='email'>EMail Address</label></p></div><br/>\
+      <label for='user'>User Name</label></div><br/><br/>\
+      Unique User ID = %s<br/><br/>\
+      <div><input type='text' id='email' name='email' placeholder='name@example.com' size='30' value='%s'>\
+      <label for='email'>EMail Address (optional)</label></div><br/>\
       <br/>\   
       <div><input type='password' id='password' name='password' placeholder='Password' size='30' value='%s'>\
       <label for='password'>Password</label></div><br/><br/>\
       <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
-      </div><br/>\         
+      </div><br/>\
+      %s\
       <hr/>\
       <input class='submitbutton' type='submit' value='Save Configuration!' />\
       <script>\
@@ -656,14 +679,19 @@ void handleExperimental()
           x.type = 'password';\
         }\
       }\
+      function submitRegisterNewUser()\
+      {\
+         document.getElementById('registerNewUser').value = 'true';\
+      }\      
       </script>\
       </form>\
       ",
       String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
       configuration.getCloudParameter("user"),
-      configuration.getCloudParameter("userid"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i>NOT REGISTERED</i>" : configuration.getCloudParameter("userid"),
       configuration.getCloudParameter("email"),
-      configuration.getCloudParameter("password")
+      configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : ""
   );  
 
   char * temp = getWebsite(menuContextBuffer);

@@ -5,6 +5,8 @@
 #define VERSION		"0.4.0"
 #define NAME		"SHRDZMDevice"
 
+#define CloudApiAddress "http://pintarweb.selfhost.at/shrdzm/api"
+
 //#define LITTLEFS
 
 #define SLEEP_SECS 10
@@ -40,6 +42,7 @@
 #include <PubSubClient.h>
 #include <Ticker.h>
 #include "..\Configuration.h"
+
 
 #define SUPPORTED_DEVICES "DHT22,BH1750,BMP280,BME280,DS18B20,HTU21,HTU21D,SI7021,SHT21,MQ135,WATER,ANALOG,DIGITAL,DIGITALGROUND,RELAYTIMER,IM350/AM550,SDS011,SDS011_BMP280,SDS011_BME280,SDS011_BH1750,GW60,DOORSENSOR"
 
