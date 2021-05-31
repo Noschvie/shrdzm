@@ -621,12 +621,22 @@ void handleExperimental()
          (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
       {
         cloudRegisterNewUser(server.arg("user").c_str(), server.arg("email").c_str(), server.arg("password").c_str());
+        writeConfiguration = true;          
       }
 
-//      writeConfiguration = true;          
     }
   }  
 
+  // check if registerDevice was pressed
+  if(server.hasArg("registerDevice"))
+  {
+    if(String(server.arg("registerDevice")) == "true") 
+    {
+      cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
+      
+      writeConfiguration = true;          
+    }
+  }  
   
   if(server.args() != 0)
   {
@@ -657,6 +667,9 @@ void handleExperimental()
 
   String registerNewUserButtonText = "<input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
       <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /><br/><br/>";
+
+  String registerDeviceButtonText = "<br/><input type='hidden' id='registerDevice' name='registerDevice' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitRegisterDevice()' value='Register This Device' /><br/><br/>";
     
   sprintf(menuContextBuffer,  
       "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br />\
@@ -679,6 +692,7 @@ void handleExperimental()
       <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
       </div><br/>\
       %s\
+      %s\
       <hr/>\
       <input class='submitbutton' type='submit' value='Save Configuration!' />\
       <script>\
@@ -694,6 +708,10 @@ void handleExperimental()
       {\
          document.getElementById('registerNewUser').value = 'true';\
       }\      
+      function submitRegisterDevice()\
+      {\
+         document.getElementById('registerDevice').value = 'true';\
+      }\      
       </script>\
       </form>\
       ",
@@ -702,7 +720,8 @@ void handleExperimental()
       (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i>NOT REGISTERED</i>" : configuration.getCloudParameter("userid"),
       configuration.getCloudParameter("email"),
       configuration.getCloudParameter("password"),
-      (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : ""
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : "",
+      cloudConnected ? registerDeviceButtonText.c_str() : ""
   );  
 
   char * temp = getWebsite(menuContextBuffer);
@@ -1927,6 +1946,13 @@ void getMeasurementData()
           {
             DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+
+            // send to cloud
+            if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0)
+            {
+              if(cloudConnected)
+                cloudAddMeasurement(deviceName.c_str(), sd->di[i].nameI.c_str(), sd->di[i].valueI.c_str());
+            }
           }
           else                
             simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          

@@ -11,6 +11,26 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
   return true;
 }
 
+bool cloudRegisterDevice(const char* devicename, const char* type )
+{
+  DLN("Will now try to register Device on "+String(CloudApiAddress));
+
+  String reply;
+  cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply);
+
+  return true;
+}
+
+bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
+{
+  DLN("Will now try to add mesurement on "+String(CloudApiAddress));
+
+  String reply;
+  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply);
+
+  return true;
+}
+
 bool cloudLogin(const char* user, const char* password )
 {
   DLN("Will now try Log On to "+String(CloudApiAddress));
@@ -56,6 +76,11 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     if(http.begin(finalAddress))
     {
       http.addHeader("Content-Type", "application/json");
+
+      if(tokenNeeded && cloudToken != "")
+      {
+        http.addHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
+      }      
     
       int httpResponseCode = http.POST(content);
           
