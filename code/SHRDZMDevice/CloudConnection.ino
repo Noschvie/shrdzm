@@ -6,9 +6,45 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
   DLN("Will now try to register new User on "+String(CloudApiAddress));
 
   String reply;
-  cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply);
+  if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+    return false;
 
-  return true;
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, reply);
+
+  if(error)
+  {
+    DV(error.c_str());
+    return false;  
+  }
+
+  if(doc["success"].as<unsigned int>() == 1)
+    return true;
+  else
+    return false;
+}
+
+bool cloudUnregisterUser(const char* user, const char* password )
+{
+  DLN("Will now try to unregister new User on "+String(CloudApiAddress));
+
+  String reply;
+  if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+    return false;
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, reply);
+
+  if(error)
+  {
+    DV(error.c_str());
+    return false;  
+  }
+
+  if(doc["success"].as<unsigned int>() == 1)
+    return true;
+  else
+    return false;
 }
 
 bool cloudRegisterDevice(const char* devicename, const char* type )

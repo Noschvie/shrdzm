@@ -620,10 +620,58 @@ void handleExperimental()
       if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
          (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
       {
-        cloudRegisterNewUser(server.arg("user").c_str(), server.arg("email").c_str(), server.arg("password").c_str());
+        if(cloudRegisterNewUser(server.arg("user").c_str(), server.arg("email").c_str(), server.arg("password").c_str()))
+        {
+          if((String(configuration.getCloudParameter("enabled")) == "true"))
+          {
+            cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
+            if(cloudConnected)
+            {
+              configuration.setCloudParameter("userid", cloudID.c_str());
+              
+              writeConfiguration = true;          
+            }
+          }        
+        }
         writeConfiguration = true;          
       }
+    }
+  }  
 
+  if(server.hasArg("unregisterUser"))
+  {
+    if(String(server.arg("unregisterUser")) == "true") 
+    {
+      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
+         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
+      {
+        if(cloudUnregisterUser(server.arg("user").c_str(), server.arg("password").c_str()))
+        {
+          cloudConnected = false;
+          configuration.setCloudParameter("userid", "");
+          
+          writeConfiguration = true;          
+        }
+      }
+    }
+  }  
+
+  // check if registerNewUser was pressed
+  if(server.hasArg("loginUser"))
+  {
+    if(String(server.arg("loginUser")) == "true") 
+    {
+      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
+         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
+      {
+        cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
+        if(cloudConnected)
+        {
+          configuration.setCloudParameter("userid", cloudID.c_str());
+          
+          writeConfiguration = true;          
+        }
+      }
     }
   }  
 
@@ -665,14 +713,22 @@ void handleExperimental()
     writeConfiguration = true;      
   }
 
-  String registerNewUserButtonText = "<input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /><br/><br/>";
+  String loginUserButtonText = "<div><p><input type='hidden' id='loginUser' name='loginUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitLoginUser()' value='LogIn User' /></p></div><br/><br/>";
 
-  String registerDeviceButtonText = "<br/><input type='hidden' id='registerDevice' name='registerDevice' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitRegisterDevice()' value='Register This Device' /><br/><br/>";
+  String registerNewUserButtonText = "<div><p><input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /></p></div><br/><br/>";
+
+  String unregisterUserButtonText = "<div><p><input type='hidden' id='unregisterUser' name='unregisterUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitUnregisterUser()' value='UnRegister User' /></p></div><br/><br/>";
+
+  String registerDeviceButtonText = "<div><p><input type='hidden' id='registerDevice' name='registerDevice' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitRegisterDevice()' value='Register This Device' /></p></div><br/><br/>";
+
     
   sprintf(menuContextBuffer,  
-      "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br />\
+      "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br /><br />\
+      <hr/>\
       Cloud Settings. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a>\
       <br/><br/>\
       <form method='post'>\
@@ -680,7 +736,6 @@ void handleExperimental()
       <input type='hidden' name='cloudenabled' value='0' />\
       <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
       <br/><br/>\
-      <hr/>\
       <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
       <label for='user'>User Name</label></div><br/><br/>\
       Unique User ID = %s<br/><br/>\
@@ -691,6 +746,8 @@ void handleExperimental()
       <label for='password'>Password</label></div><br/><br/>\
       <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
       </div><br/>\
+      %s\
+      %s\
       %s\
       %s\
       <hr/>\
@@ -704,9 +761,17 @@ void handleExperimental()
           x.type = 'password';\
         }\
       }\
+      function submitLoginUser()\
+      {\
+         document.getElementById('loginUser').value = 'true';\
+      }\      
       function submitRegisterNewUser()\
       {\
          document.getElementById('registerNewUser').value = 'true';\
+      }\      
+      function submitUnregisterUser()\
+      {\
+         document.getElementById('unregisterUser').value = 'true';\
       }\      
       function submitRegisterDevice()\
       {\
@@ -720,7 +785,9 @@ void handleExperimental()
       (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i>NOT REGISTERED</i>" : configuration.getCloudParameter("userid"),
       configuration.getCloudParameter("email"),
       configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? loginUserButtonText.c_str() : "",
       (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : "",
+      (strlen(configuration.getCloudParameter("userid")) > 0) ? unregisterUserButtonText.c_str() : "",
       cloudConnected ? registerDeviceButtonText.c_str() : ""
   );  
 

@@ -5,7 +5,7 @@
 #define VERSION		"0.4.0"
 #define NAME		"SHRDZMDevice"
 
-#define CloudApiAddress "http://pintarweb.selfhost.at/shrdzm/api"
+#define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
 
 //#define LITTLEFS
 
