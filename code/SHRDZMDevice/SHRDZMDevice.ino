@@ -681,11 +681,23 @@ void handleExperimental()
   {
     if(String(server.arg("registerDevice")) == "true") 
     {
-      cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
+      cloudIsDeviceRegistered = cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
       
       writeConfiguration = true;          
     }
   }  
+
+  // check if unregisterDevice was pressed
+  if(server.hasArg("unregisterDevice"))
+  {
+    if(String(server.arg("unregisterDevice")) == "true") 
+    {
+      cloudIsDeviceRegistered = !cloudUnregisterDevice(deviceName.c_str());
+      
+      writeConfiguration = true;          
+    }
+  }  
+  
   
   if(server.args() != 0)
   {
@@ -2030,7 +2042,7 @@ void getMeasurementData()
             // send to cloud
             if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0)
             {
-              if(cloudConnected)
+              if(cloudConnected && cloudIsDeviceRegistered)
                 cloudAddMeasurement(deviceName.c_str(), sd->di[i].nameI.c_str(), sd->di[i].valueI.c_str());
             }
           }

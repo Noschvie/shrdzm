@@ -52,9 +52,33 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
   DLN("Will now try to register Device on "+String(CloudApiAddress));
 
   String reply;
-  cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply);
+  if(cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply))  
+    return true;
+  else
+    return false;
+}
 
-  return true;
+bool cloudUnregisterDevice(const char* devicename)
+{
+  DLN("Will now try to register Device on "+String(CloudApiAddress));
+
+  String reply;
+  if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
+    return false;
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, reply);
+
+  if(error)
+  {
+    DV(error.c_str());
+    return false;  
+  }
+
+  if(doc["success"].as<unsigned int>() == 1)
+    return true;
+  else
+    return false;
 }
 
 bool cloudIsDeviceRegisteredHere(const char* devicename)
@@ -72,7 +96,7 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
     return false;  
   }
 
-  if(doc["success"].as<unsigned int>() == 1)
+  if((doc["success"].as<unsigned int>() == 1) && (doc["status"].as<unsigned int>() == 200))
   {
     if(doc["user"]["name"].as<String>() == String(configuration.getCloudParameter("user")))
       return true;
@@ -81,8 +105,6 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
   }
   else
     return false;
-
-  return true;
 }
 
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
