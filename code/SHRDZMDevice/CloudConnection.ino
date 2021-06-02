@@ -119,8 +119,6 @@ bool cloudAddMeasurement(const char* devicename, const char* reading, const char
 
 bool cloudLogin(const char* user, const char* password )
 {
-  DLN("Will now try Log On to "+String(CloudApiAddress));
-
   String reply;
   if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
     return false;
