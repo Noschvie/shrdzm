@@ -59,7 +59,7 @@ else:
             $check_device_stmt->execute();
 			
             if($check_device_stmt->rowCount()):
-                $returnData = msg(1,201,'Device exist',$auth1);
+                $returnData = msg(1,200,'Device exist',$auth1);
 			else:
                 $returnData = msg(1,42,'Unknown device');
             endif;
