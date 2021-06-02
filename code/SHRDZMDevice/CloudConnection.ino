@@ -57,6 +57,34 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
   return true;
 }
 
+bool cloudIsDeviceRegisteredHere(const char* devicename)
+{
+  String reply;
+  if(!cloudSendRESTCommand("device-info.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
+    return false;
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, reply);
+
+  if(error)
+  {
+    DV(error.c_str());
+    return false;  
+  }
+
+  if(doc["success"].as<unsigned int>() == 1)
+  {
+    if(doc["user"]["name"].as<String>() == String(configuration.getCloudParameter("user")))
+      return true;
+    else
+      return false;
+  }
+  else
+    return false;
+
+  return true;
+}
+
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
 {
   DLN("Will now try to add mesurement on "+String(CloudApiAddress));
@@ -117,7 +145,7 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
       {
         http.addHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
       }      
-    
+
       int httpResponseCode = http.POST(content);
           
       DV(httpResponseCode);

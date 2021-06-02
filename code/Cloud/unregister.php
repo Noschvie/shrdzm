@@ -42,7 +42,7 @@ else:
     $name = trim($data->name);
     $password = trim($data->password);
 
-    elseif(strlen($password) < 8):
+    if(strlen($password) < 8):
         $returnData = msg(0,422,'Your password must be at least 8 characters long!');
 
     elseif(strlen($name) < 3):
@@ -64,7 +64,7 @@ else:
                 // IF PASSWORD IS CORRECT THEN SEND THE LOGIN TOKEN
                 if($check_password):						
 					$delete_query = "DELETE from `users` WHERE `name`=:name";
-					$delete_stmt = $conn->prepare($insert_query);
+					$delete_stmt = $conn->prepare($delete_query);
 					$delete_stmt->bindValue(':name', htmlspecialchars(strip_tags($name)),PDO::PARAM_STR);
 					$delete_stmt->execute();
 

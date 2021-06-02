@@ -75,6 +75,7 @@ String lastMessage = "";
 bool cloudConnected = false;
 String cloudToken = "";
 String cloudID = "";
+bool cloudIsDeviceRegistered = false;
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -725,6 +726,9 @@ void handleExperimental()
   String registerDeviceButtonText = "<div><p><input type='hidden' id='registerDevice' name='registerDevice' value='false'/>\
       <input class='submitbutton' type='submit' onclick='submitRegisterDevice()' value='Register This Device' /></p></div><br/><br/>";
 
+  String unregisterDeviceButtonText = "<div><p><input type='hidden' id='unregisterDevice' name='unregisterDevice' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitUnregisterDevice()' value='UnRegister This Device' /></p></div><br/><br/>";
+
     
   sprintf(menuContextBuffer,  
       "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br /><br />\
@@ -746,6 +750,7 @@ void handleExperimental()
       <label for='password'>Password</label></div><br/><br/>\
       <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
       </div><br/>\
+      %s\
       %s\
       %s\
       %s\
@@ -777,6 +782,10 @@ void handleExperimental()
       {\
          document.getElementById('registerDevice').value = 'true';\
       }\      
+      function submitUnregisterDevice()\
+      {\
+         document.getElementById('unregisterDevice').value = 'true';\
+      }\      
       </script>\
       </form>\
       ",
@@ -788,8 +797,12 @@ void handleExperimental()
       (strlen(configuration.getCloudParameter("userid")) == 0) ? loginUserButtonText.c_str() : "",
       (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : "",
       (strlen(configuration.getCloudParameter("userid")) > 0) ? unregisterUserButtonText.c_str() : "",
-      cloudConnected ? registerDeviceButtonText.c_str() : ""
+      (cloudConnected && !cloudIsDeviceRegistered) ? registerDeviceButtonText.c_str() : "",
+      (cloudConnected && cloudIsDeviceRegistered) ? unregisterDeviceButtonText.c_str() : ""
   );  
+
+  DV(cloudConnected);
+  DV(cloudIsDeviceRegistered);
 
   char * temp = getWebsite(menuContextBuffer);
 
@@ -2079,6 +2092,7 @@ void handleGatewayLoop()
       {
         DLN("Will start cloud connection");
         cloudConnected = cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));        
+        cloudIsDeviceRegistered = cloudIsDeviceRegisteredHere(deviceName.c_str());
       }         
     } 
     else
