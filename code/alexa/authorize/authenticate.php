@@ -43,7 +43,7 @@
 
                 // DATA BINDING
                 $update_stmt->bindValue(':username', htmlspecialchars(strip_tags($username)),PDO::PARAM_STR);
-                $update_stmt->bindValue(':client_id', $client_id,PDO::PARAM_STR);
+                $update_stmt->bindValue(':client_id', $code,PDO::PARAM_STR);
 
                 $update_stmt->execute();
 			else:
