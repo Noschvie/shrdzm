@@ -6,7 +6,7 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
   DLN("Will now try to register new User on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+  if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
     return false;
 
   DynamicJsonDocument doc(512);
@@ -29,7 +29,7 @@ bool cloudUnregisterUser(const char* user, const char* password )
   DLN("Will now try to unregister new User on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+  if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
     return false;
 
   DynamicJsonDocument doc(512);
@@ -52,7 +52,7 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
   DLN("Will now try to register Device on "+String(CloudApiAddress));
 
   String reply;
-  if(cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply))  
+  if(cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply, true))  
     return true;
   else
     return false;
@@ -63,7 +63,7 @@ bool cloudUnregisterDevice(const char* devicename)
   DLN("Will now try to register Device on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
+  if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
     return false;
 
   DynamicJsonDocument doc(512);
@@ -84,7 +84,7 @@ bool cloudUnregisterDevice(const char* devicename)
 bool cloudIsDeviceRegisteredHere(const char* devicename)
 {
   String reply;
-  if(!cloudSendRESTCommand("device-info.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
+  if(!cloudSendRESTCommand("device-info.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
     return false;
 
   DynamicJsonDocument doc(512);
@@ -112,7 +112,7 @@ bool cloudAddMeasurement(const char* devicename, const char* reading, const char
   DLN("Will now try to add mesurement on "+String(CloudApiAddress));
 
   String reply;
-  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply);
+  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
 
   return true;
 }
@@ -120,7 +120,7 @@ bool cloudAddMeasurement(const char* devicename, const char* reading, const char
 bool cloudLogin(const char* user, const char* password )
 {
   String reply;
-  if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
+  if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
     return false;
 
   DV(reply);
@@ -138,8 +138,6 @@ bool cloudLogin(const char* user, const char* password )
   {
     cloudToken = doc["token"].as<String>();
     cloudID = doc["id"].as<String>();
-
-    DV(cloudID);
   }
   else
     return false;
@@ -147,7 +145,7 @@ bool cloudLogin(const char* user, const char* password )
   return true;
 }
 
-bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply)
+bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
 {
   if(WiFi.status()== WL_CONNECTED)
   {
@@ -173,6 +171,25 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
 
       *reply = http.getString();
       http.end();
+
+      if(tokenNeeded && newTokenIfNeeded)
+      {
+        // check valid topken
+        DynamicJsonDocument doc(512);
+        DeserializationError error = deserializeJson(doc, *reply);
+  
+        if(doc["success"].as<unsigned int>() == 0)
+        {
+          if(doc["status"].as<unsigned int>() == 401) // Unauthorized
+          {
+            if(cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password")))
+            {
+              return cloudSendRESTCommand(address, content, tokenNeeded, reply, false);
+            }
+          }
+        }
+      }
+      
       return true;
     }
     else
