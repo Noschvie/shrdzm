@@ -7,13 +7,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="116.704mm"
-   height="112.3407mm"
-   viewBox="44 75 127.81867 86.997847"
+   width="120mm"
+   height="120mm"
+   viewBox="44 75 131.42857 92.929293"
    version="1.1"
    id="svg1356"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
-   sodipodi:docname="Logo_min.svg">
+   sodipodi:docname="Logo_min.svg"
+   inkscape:export-filename="C:\Users\erich\Nextcloud\Diverses\Arduino\Development\shrdzm\hardware\Logo_min_108.png"
+   inkscape:export-xdpi="22.860001"
+   inkscape:export-ydpi="22.860001">
   <defs
      id="defs1350" />
   <sodipodi:namedview
@@ -24,17 +27,18 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="-22.89304"
-     inkscape:cy="113.97688"
+     inkscape:cx="142.26685"
+     inkscape:cy="208.95349"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="false"
-     inkscape:window-width="1600"
-     inkscape:window-height="847"
-     inkscape:window-x="-8"
+     inkscape:window-width="1920"
+     inkscape:window-height="1027"
+     inkscape:window-x="1672"
      inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     scale-x="1.09524" />
   <metadata
      id="metadata1353">
     <rdf:RDF>
@@ -43,7 +47,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -54,19 +58,19 @@
      transform="translate(-0.94781181,-53.997946)">
     <path
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 105.15257,207.39505 12.64808,12.64808 v -49.9999 L 92.800654,145.04328 108.8571,128.98683 132.80064,152.93037 V 135.04329 L 108.8571,111.09984 74.913564,145.04328 105.15257,175.2822 Z"
+       d="m 106.90891,210.61501 12.64808,12.64808 v -49.9999 l -24.999993,-24.99995 16.056443,-16.05645 23.94354,23.94354 v -17.88708 l -23.94354,-23.94345 -33.943533,33.94344 30.239003,30.23892 z"
        id="path1121-0"
        inkscape:export-xdpi="11.603471"
        inkscape:export-ydpi="11.603471" />
     <path
        id="path1312"
        style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0.264583;stroke-opacity:1"
-       d="m 153.95486,124.94541 -7.34941,7.3494 a 53.384389,53.384389 0 0 1 0.0651,75.43157 53.384389,53.384389 0 0 1 -75.461551,0.16536 53.384389,53.384389 0 0 1 -0.235127,-75.46154 l 0.26975,-5.3e-4 -7.323066,-7.32304 -0.322461,5.3e-4 a 63.777802,63.777802 0 0 0 0.28112,90.15313 63.777802,63.777802 0 0 0 90.153685,-0.19741 63.777802,63.777802 0 0 0 -0.0781,-90.11747 z"
+       d="m 155.7112,128.16537 -7.34941,7.3494 a 53.384389,53.384389 0 0 1 0.0651,75.43157 53.384389,53.384389 0 0 1 -75.461548,0.16536 53.384389,53.384389 0 0 1 -0.235127,-75.46154 l 0.26975,-5.3e-4 -7.323066,-7.32304 -0.322461,5.3e-4 a 63.777802,63.777802 0 0 0 0.28112,90.15313 63.777802,63.777802 0 0 0 90.153682,-0.19741 63.777802,63.777802 0 0 0 -0.0781,-90.11747 z"
        inkscape:export-xdpi="11.603471"
        inkscape:export-ydpi="11.603471" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 146.57523,132.26446 c 7.22874,-7.16808 7.22874,-7.16808 7.22874,-7.16808"
+       d="m 148.33157,135.48442 c 7.22874,-7.16808 7.22874,-7.16808 7.22874,-7.16808"
        id="path1318"
        inkscape:export-xdpi="11.603471"
        inkscape:export-ydpi="11.603471" />
