@@ -1,30 +1,87 @@
 <?php
-function logReply($text)
-{
-	$datei_handle = fopen ( "/var/log/apache2/echo.log", "a+" );
-	
-	fputs ( $datei_handle, "\nlogging start:" );
+require __DIR__.'/logging.php';
+require __DIR__.'/classes/Database.php';
 
-	if (is_string($text )) 
+
+function extractNameFromToken($token)
+{
+	$db_connection = new Database();
+	$conn = $db_connection->dbConnection();
+
+	$returnData = "unbekannter";
+
+	try{
+		
+		$fetch_user_by_token = 'SELECT name FROM `users` WHERE `alexa_userid`="'.$token.'"';
+		$query_stmt = $conn->prepare($fetch_user_by_token);
+		$query_stmt->execute();
+
+		// IF THE USER IS FOUNDED BY NAME
+		if($query_stmt->rowCount())
+		{
+            $row = $query_stmt->fetch(PDO::FETCH_ASSOC);			
+			$returnData = $row['name'];
+		}
+	}
+	catch(PDOException $e)
 	{
-		fputs ( $datei_handle, $text );
-		fputs ( $datei_handle, "\nLogging end" );		  
+		return "error";
 	}	
 	
-	fclose ( $datei_handle );	
+	return $returnData;
 }
 
+function listDevices($token)
+{
+	$db_connection = new Database();
+	$conn = $db_connection->dbConnection();
+
+	$returnData = "keine";
+
+	try{
+		
+		$fetch_user_by_token = 'SELECT id FROM `users` WHERE `alexa_userid`="'.$token.'"';
+		$query_stmt = $conn->prepare($fetch_user_by_token);
+		$query_stmt->execute();
+
+		// IF THE USER IS FOUNDED BY NAME
+		if($query_stmt->rowCount())
+		{
+            $rowUser = $query_stmt->fetch(PDO::FETCH_ASSOC);			
+			
+			$fetch_devices_from_id = 'SELECT name, type FROM `devices` WHERE `userid`="'.$rowUser['id'].'"';
+			$query_devices = $conn->prepare($fetch_devices_from_id);
+			$query_devices->execute();
+			
+			if($query_devices->rowCount())
+			{
+				$returnData = "";
+				
+				while ($row = $query_devices->fetch(PDO::FETCH_ASSOC)) 
+				{
+					$returnData .= ", ".$row['name']." vom typ ".$row['type'];
+				}				
+			}			
+		}
+	}
+	catch(PDOException $e)
+	{
+		return "error";
+	}	
+	
+	return $returnData;
+}
 function LaunchRequest($obj)
-{	 
+{	 	
 	$response = [
 			'version' => '1.0',
 			'sessionAttributes' => null,
 			'response' => [
 				  'outputSpeech' => [
 						'type' => 'SSML',
-						'ssml' => '<speak>Was kann ich für dich tun?</speak>'
+						'ssml' => '<speak>Fehler beim Interpretieren der Anfrage. Bitte Skill Entwickler kontaktieren</speak>'
 				  ],
-				  'shouldEndSession' => false
+				  'shouldEndSession' => true
 			]
 	  ];
 
@@ -45,14 +102,31 @@ function LaunchRequest($obj)
 				]
 		  ];
 	}
+	else
+	{
+		$name = extractNameFromToken($obj->{'session'}->{'user'}->{'accessToken'});
+
+		$response = [
+				'version' => '1.0',
+				'sessionAttributes' => null,
+				'response' => [
+					  'outputSpeech' => [
+							'type' => 'SSML',
+							'ssml' => '<speak>Hallo '.$name.', Was kann ich für dich tun?</speak>'
+					  ],
+					  'shouldEndSession' => false
+				]
+		  ];
+	}
 
 	return json_encode ( $response );
 }
 
-function DeviceList($obj)
+function deviceList($obj)
 {
 	$replytext = 'werde ich dir irgendwann mal sagen';
 	
+	$replytext = listDevices($obj->{'session'}->{'user'}->{'accessToken'});
 
 	$response = [
 			'version' => '1.0',
@@ -92,7 +166,7 @@ else if($requestType == "IntentRequest")
 	
 	if($intentName == "DeviceList")
 	{
-		$replyToSender = DeviceList($obj);
+		$replyToSender = deviceList($obj);
 	}
 }
 
