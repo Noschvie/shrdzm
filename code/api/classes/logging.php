@@ -5,14 +5,6 @@ function loging2file($text)
 	$serverName = $_SERVER['SERVER_NAME'];
 	
 	$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
-/*	if($serverName == 'pintarweb.selfhost.at')
-	{
-		$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
-	}
-	else
-	{
-		$logfileName = '../../../priv/logs/'.date('Y-m-d').'_shrdzm.log';
-	}	*/
 	
 	$logdatei_handle = fopen ( $logfileName, "a+" );
 	
