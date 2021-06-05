@@ -123,7 +123,7 @@ function listDevices($token)
 		return "error";
 	}	
 	
-	return $returnData;
+	return $returnData.". Von welchem sensor willst du die werte wissen? du kannst mich auch nach allen fragen.";
 }
 
 function getDeviceDataParameterList($conn, $type)
@@ -147,10 +147,15 @@ function getDeviceDataParameterList($conn, $type)
 
 function getDeviceDataValues($token, $aliasname)
 {
+	$closing = true;
+	
 	$db_connection = new Database();
 	$conn = $db_connection->dbConnection();
 
-	$returnData = "keine";
+	if(isset($aliasname))
+		$returnData = "leider keine messwerte von ".$aliasname." welche werte soll ich dir anstelle dessen sagen?";
+	else
+		$returnData = "leider keine messwerte";
 
 	try{
 		
@@ -163,14 +168,21 @@ function getDeviceDataValues($token, $aliasname)
 		{
             $rowUser = $query_stmt->fetch(PDO::FETCH_ASSOC);			
 			
-			$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'" AND alias="'.$aliasname.'"';
+			if(isset($aliasname))
+				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'" AND alias="'.$aliasname.'"';
+			else
+				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'"';
+			
 
 			$query_devices = $conn->prepare($fetch_devices_from_id);
 			$query_devices->execute();
 			
 			if($query_devices->rowCount())
 			{
-				$returnData = "Letzte messungen für ".$aliasname.": ";
+				if(isset($aliasname))				
+					$returnData = "Letzte messungen für ".$aliasname.": ";
+				else
+					$returnData = "Letzte messungen für alle sensoren: ";
 								
 				while ($row = $query_devices->fetch(PDO::FETCH_ASSOC))				
 				{
@@ -195,7 +207,10 @@ function getDeviceDataValues($token, $aliasname)
 								if($query_devicetype_parameter->rowCount() == 1)
 								{
 									$rowParameter = $query_devicetype_parameter->fetch(PDO::FETCH_ASSOC);
-									$returnData .= $rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
+									if(isset($aliasname))				
+										$returnData .= $rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
+									else
+										$returnData .= $row['alias'].": ".$rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
 								}
 								else
 								{
@@ -205,15 +220,18 @@ function getDeviceDataValues($token, $aliasname)
 						}					
 					}
 				}				
-			}			
+			}
+			$closing = false;
 		}
 	}
 	catch(PDOException $e)
 	{
-		return "error";
+		return array("hatte leider einen fehler bei der datenbankabfrage. versuche es bitte später nochmal", true);
+//		return "error";
 	}	
 	
-	return $returnData;
+	return array($returnData, $closing);
+//	return $returnData;
 }
 
 function LaunchRequest($obj)
@@ -238,7 +256,7 @@ function LaunchRequest($obj)
 				'response' => [
 					  'outputSpeech' => [
 							'type' => 'SSML',
-							'ssml' => '<speak>Damit Ihre Sensoren abgefragt werden können, müssen sie den skill erst mit SHRDM verbinden. Gehen sie bitte in die Alexa app und führen sie eine kontoverknüpfung durch</speak>'
+							'ssml' => '<speak>Damit deine Sensoren abgefragt werden können, musst du den skill erst mit deinem <phoneme alphabet="ipa" ph="ˈʃɹdzm">SHRDZM</phoneme> verbinden. Gehe bitte in die Alexa app und führe eine kontoverknüpfung durch. Zum testen kannst du als benutzername "test" und als passwort "test0001" verwenden. alles kleingeschrieben. Viel spass</speak>'
 					  ],
 					  'card' => [
 							'type' => 'LinkAccount'
@@ -295,7 +313,14 @@ function setDeviceAlias($obj)
 
 function deviceDataRequest($obj)
 {
-	$aliasname = $obj->{'request'}->{'intent'}->{'slots'}->{'aliasname'}->{'value'};
+	$aliasname = null;
+	
+	if(isset($obj->{'request'}->{'intent'}->{'slots'}->{'aliasname'}->{'value'}))	
+		$aliasname = $obj->{'request'}->{'intent'}->{'slots'}->{'aliasname'}->{'value'};
+		
+	if(!isset($aliasname) && isset($obj->{'request'}->{'intent'}->{'slots'}->{'ort'}->{'value'}))
+		$aliasname = $obj->{'request'}->{'intent'}->{'slots'}->{'ort'}->{'value'};
+			
 	$replytext = 'leider keine information zu '.$aliasname." vorhanden";
 	
 	$replytext = getDeviceDataValues($obj->{'session'}->{'user'}->{'accessToken'}, $aliasname);
@@ -306,12 +331,12 @@ function deviceDataRequest($obj)
 			'response' => [
 				  'outputSpeech' => [
 						'type' => 'SSML',
-						'ssml' => '<speak>'.$replytext.'</speak>'
+						'ssml' => '<speak>'.$replytext[0].'</speak>'
 				  ],
-				  'shouldEndSession' => true
+				  'shouldEndSession' => $replytext[1]
 			]
 	  ];
-
+		
 	return json_encode ( $response );	
 }
 
@@ -329,7 +354,26 @@ function deviceList($obj)
 						'type' => 'SSML',
 						'ssml' => '<speak>'.$replytext.'</speak>'
 				  ],
-				  'shouldEndSession' => true
+				  'shouldEndSession' => false
+			]
+	  ];
+
+	return json_encode ( $response );	
+}
+
+function getHelp($obj)
+{
+	$replytext = 'Frag mich zum beispiel welche sensoren ich unterstütze, frag nach den messwerten aller sensoren oder frag direkt nach den messwerten von einem sensor';
+	
+	$response = [
+			'version' => '1.0',
+			'sessionAttributes' => null,
+			'response' => [
+				  'outputSpeech' => [
+						'type' => 'SSML',
+						'ssml' => '<speak>'.$replytext.'</speak>'
+				  ],
+				  'shouldEndSession' => false
 			]
 	  ];
 
@@ -383,7 +427,7 @@ else if($requestType == "IntentRequest")
 	}
 	if($intentName == "AMAZON.HelpIntent")
 	{
-		$replyToSender = responseGenerator('Willkommen bei <phoneme alphabet="ipa" ph="ˈʃɹdzm">SHRDZM</phoneme>. Was kann ich für dich tun?', false);
+		$replyToSender = getHelp($obj);
 	}
 	if($intentName == "AMAZON.FallbackIntent")
 	{

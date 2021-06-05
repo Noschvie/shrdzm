@@ -12,10 +12,13 @@
 		<meta charset="utf-8">
 		<title>Login</title>
 		<link href="style.css" rel="stylesheet" type="text/css">
+		<link rel="icon" type="image/svg+xml" href="https://shrdzm.pintarweb.net/Logo_min_blue.svg" sizes="any">	
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
 	</head>
 	<body>
 		<div class="login">
-			<h1>Login</h1>
+			<h1>SHRDZM Login</h1>
+			<h2><center>for Alexa Account Linking</center></h2>
 			<form action="authenticate.php" method="post">
 <?php
 				echo "<input type='hidden' id='client_id' name='client_id' value='".$client_id."'/>";
