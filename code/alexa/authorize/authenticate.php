@@ -28,7 +28,7 @@
 			// IF PASSWORD IS CORRECT THEN SEND THE LOGIN TOKEN
 			if($check_password):
 
-				$jwt = new JwtHandler();
+/*				$jwt = new JwtHandler();
 				$token = $jwt->_jwt_encode_data(
 					'http://localhost/php_auth_api/',
 					array("user_id"=> $row['id'])
@@ -45,7 +45,9 @@
                 $update_stmt->bindValue(':username', htmlspecialchars(strip_tags($username)),PDO::PARAM_STR);
                 $update_stmt->bindValue(':client_id', $code,PDO::PARAM_STR);
 
-                $update_stmt->execute();
+                $update_stmt->execute(); */
+				
+				$code = $row['alexa_userid'];
 			else:
 				echo "Invalid password";
 				exit;

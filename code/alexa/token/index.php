@@ -31,7 +31,7 @@
 		// IF THE USER IS FOUNDED BY NAME
 		if($query_stmt->rowCount())
 		{
-            $row = $query_stmt->fetch(PDO::FETCH_ASSOC);	
+/*            $row = $query_stmt->fetch(PDO::FETCH_ASSOC);	
 
 			$jwt = new JwtHandler();
 			$token = $jwt->_jwt_encode_data(
@@ -47,7 +47,8 @@
 			$update_stmt = $conn->prepare($update_query);
 
 
-			$update_stmt->execute();
+			$update_stmt->execute();*/
+			$codeNew = $code;
 		}
 	}
 	catch(PDOException $e)
@@ -58,7 +59,7 @@
 		
 	$returnData = '{"access_token":"'.$codeNew.'","token_type":"bearer","expires_in":3600,"refresh_token":"r_'.$codeNew.'"}';
 
-	loging2file('new token generated (old='.$code.' ,new='.$codeNew.')');
+//	loging2file('new token generated (old='.$code.' ,new='.$codeNew.')');
 
 	echo $returnData;
 ?>

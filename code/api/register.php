@@ -65,7 +65,13 @@ else:
                 $returnData = msg(0,422, 'This Name is already in use!');
             
             else:
-                $insert_query = "INSERT INTO `users`(`name`,`email`,`password`) VALUES(:name,:email,:password)";
+				//Generate a random string.
+				$token = openssl_random_pseudo_bytes(32);
+
+				//Convert the binary data into hexadecimal representation.
+				$token = bin2hex($token);
+
+                $insert_query = "INSERT INTO `users`(`name`,`email`,`password`,`alexa_userid`) VALUES(:name,:email,:password,:alexa_userid)";
 
                 $insert_stmt = $conn->prepare($insert_query);
 
@@ -73,6 +79,7 @@ else:
                 $insert_stmt->bindValue(':name', htmlspecialchars(strip_tags($name)),PDO::PARAM_STR);
                 $insert_stmt->bindValue(':email', $email,PDO::PARAM_STR);
                 $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT),PDO::PARAM_STR);
+                $insert_stmt->bindValue(':alexa_userid', $token,PDO::PARAM_STR);
 
                 $insert_stmt->execute();
 
