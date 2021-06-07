@@ -33,10 +33,15 @@ class Configuration
     void storeLastRebootInfo(const char *rebootinformation);
 
     bool containsWlanKey(char *name);
+    bool containsCloudKey(char *name);    
     void setWlanParameter(const char *name, const char *value);
     void setWlanParameter(JsonObject dc);
+    void setCloudParameter(const char *name, const char *value);
+    const char *getCloudParameter(const char *parameterName);    
     JsonObject getWlanParameter();
+    JsonObject getCloudParameter();    
     const char *getWlanParameter(const char *parameterName);
+    void resetConfiguration();
 
 
    protected:

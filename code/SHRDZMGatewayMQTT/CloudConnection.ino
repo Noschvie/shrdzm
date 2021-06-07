@@ -1,7 +1,5 @@
 #include "config/config.h"
 
-#define DEBUG_SHRDZM
-
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {
@@ -114,7 +112,9 @@ bool cloudAddMeasurement(const char* devicename, const char* reading, const char
   DLN("Will now try to add mesurement on "+String(CloudApiAddress));
 
   String reply;
-  return cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
+  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
+
+  return true;
 }
 
 bool cloudLogin(const char* user, const char* password )
@@ -165,9 +165,6 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
       }      
 
       int httpResponseCode = http.POST(content);
-
-      if(httpResponseCode != 200)
-        return false;
           
       DV(httpResponseCode);
       DV(http.getString());

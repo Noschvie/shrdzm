@@ -1,4 +1,5 @@
 
+
 void SwSerLoop()
 {
   while (swSer.available()) 
@@ -52,10 +53,9 @@ String readSerialSS()
     else if(timeoutStart + 1000 < millis())
     {
       finished = true;
-    }
-    
-  }
-      
+    }    
+  } 
+  
   return cmd.substring(3);
 }
 
@@ -171,6 +171,16 @@ void sendSensorData(String data)
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
           splitter->getItemAtIndex(2).c_str());
+
+/*        if(
+        if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
+        {
+          // Register the device
+          cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
+        }
+  */
+        Serial.println("will register device "+data);
+          
       }
       else if(splitter->getItemAtIndex(0) == "[A]")
       {

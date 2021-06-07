@@ -4,6 +4,8 @@
 #define VERSION		"0.5.0"
 #define NAME		"SHRDZMGatewayMQTT"
 
+#define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
+
 //#define LITTLEFS
 
 #include <ArduinoJson.h>
@@ -15,6 +17,7 @@
 #include <PubSubClient.h>
 #include <ESP8266httpUpdate.h>
 #include <RCSwitch.h>
+#include <Ticker.h>
 
 #ifdef LITTLEFS
 #include <LittleFS.h>

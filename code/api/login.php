@@ -14,7 +14,6 @@ function msg($success,$status,$message,$extra = []){
 }
 
 require __DIR__.'/classes/Database.php';
-require __DIR__.'/classes/JwtHandler.php';
 
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
@@ -63,12 +62,8 @@ else:
                 // IF PASSWORD IS CORRECT THEN SEND THE LOGIN TOKEN
                 if($check_password):
 
-                    $jwt = new JwtHandler();
-                    $token = $jwt->_jwt_encode_data(
-                        'http://localhost/php_auth_api/',
-                        array("user_id"=> $row['id'])
-                    );
-                    
+					$token = $row["alexa_userid"];
+					
                     $returnData = [
                         'success' => 1,
                         'message' => 'You have successfully logged in.',

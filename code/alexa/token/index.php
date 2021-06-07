@@ -31,9 +31,9 @@
 		// IF THE USER IS FOUNDED BY NAME
 		if($query_stmt->rowCount())
 		{
-/*            $row = $query_stmt->fetch(PDO::FETCH_ASSOC);	
+            $row = $query_stmt->fetch(PDO::FETCH_ASSOC);	
 
-			$jwt = new JwtHandler();
+/*			$jwt = new JwtHandler();
 			$token = $jwt->_jwt_encode_data(
 				'http://localhost/php_auth_api/',
 				array("user_id"=> $row['id'])
@@ -49,6 +49,7 @@
 
 			$update_stmt->execute();*/
 			$codeNew = $code;
+			loging2file('new token for '.$row["name"].' generated');
 		}
 	}
 	catch(PDOException $e)

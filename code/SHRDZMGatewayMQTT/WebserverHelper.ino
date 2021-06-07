@@ -1,4 +1,11 @@
-char* getWebsite(char* content)
+void changeConfigurationBlinker()
+{
+#ifdef LEDPIN
+  digitalWrite(LEDPIN, !(digitalRead(LEDPIN)));
+#endif
+}
+
+char* getWebsite(char* content, bool update = false)
 {  
   int len = strlen(content);
 
@@ -9,11 +16,11 @@ char* getWebsite(char* content)
 <html>\
 <head>\
 <link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_red.svg\" sizes=\"any\">\
+%s\
 <style>\
 body {\
   font-family: Arial, Helvetica, sans-serif;\
 }\
-\
 hr\
 { \
   display: block;\
@@ -132,18 +139,100 @@ button {\
 </div>\
 </body>\
 </html>\
-  ", deviceName.c_str(), deviceName.c_str(), content);
+  ",
+  update ? "<script src=\"j.js\"></script>" : "", 
+  deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
+}
+
+void handleJson() {
+  // Output: send data to browser as JSON
+
+  String message = "";
+  message = (F("{\"ss\":")); // Start of JSON and the first object "ss":
+  message += millis() / 1000;
+  message += (F(",\"mqttconnectionstate\":"));
+  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
+  message += (F(",\"lastmessage\":"));
+  message += lastMessage;  
+  message += (F("}")); // End of JSON
+  webserver.send(200, "application/json", message);
+}
+
+void handleJs()
+{
+  String message;
+  message += F("const url ='json';\n"
+               "function renew(){\n"
+               " fetch(url)\n" // Call the fetch function passing the url of the API as a parameter
+               " .then(response => {return response.json();})\n"
+               " .then(jo => {\n"
+               "   for (var i in jo)\n"
+               "    {if (document.getElementById(i))\n"
+               "      {\n"
+               "          document.getElementById(i).innerHTML = jo[i];}\n"              
+               "      }\n"
+               " })\n"
+               " .catch(function() {\n"                                        // this is where you run code if the server returns any errors
+               " });\n"
+               "}\n"
+               "document.addEventListener('DOMContentLoaded', renew, setInterval(renew, ");
+  message += ajaxIntervall * 1000;
+  message += F("));");
+
+  webserver.send(200, "text/javascript", message);
 }
 
 void handleRoot() 
 {
   char content[2000];
 
+  if(webserver.hasArg("factoryreset"))
+  {
+    if(String(webserver.arg("factoryreset")) == "true") // factory reset was pressed
+    {
+      snprintf(content, 300,
+      "<!DOCTYPE html>\
+      <html>\
+      <head>\
+      </head>\
+      <body>\
+      <h1>Factory Reset was pressed. SHRDZMGatewayMQTT will be restarted with default configuration.</h1>\
+      </body>\
+      </html>\
+      ");
+        
+      webserver.send(200, "text/html", content);
+
+      configuration.resetConfiguration();
+
+      delay(2000);
+      
+      ESP.restart();        
+    }
+  }
   
   String informationTable = "<br><br>";  
+  informationTable += "Firmware Version : "+ver+"-"+ESP.getSketchMD5()+"<br><br>";
+  informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
+  informationTable += "MQTTTopic Set : "+String(subscribeTopicSet)+"<br>";
+  informationTable += "MQTTTopic Config : "+String(subscribeTopicConfig)+"<br>";
+  informationTable += "MQTTTopic RCSEND : "+String(subscribeTopicRCSEND)+"<br>";
+  informationTable += "MQTTTopic Sensordata : "+String(MQTT_TOPIC)+"/<i><b>SensorID</b></i>/sensor/<br><br>";
+  informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
+  informationTable += "Unknown";
+  informationTable += F("</span></p><br>");    
+  informationTable += "Last Measurement : <br>";
+  informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
 
+  if(WiFi.localIP().toString() != "(IP unset)")
+  {
+    informationTable += "<br><br>IP : "+WiFi.localIP().toString()+"<br>";
+    informationTable += "DNS : "+WiFi.dnsIP().toString()+"<br>";
+    informationTable += "Gateway : "+WiFi.gatewayIP().toString()+"<br>";
+    informationTable += "Subnet : "+WiFi.subnetMask().toString()+"<br>";
+  }
 
   sprintf(content,  
       "<h1>General</h1>\
@@ -165,7 +254,7 @@ void handleRoot()
       informationTable.c_str()
   );  
 
-  char * temp = getWebsite(content);
+  char * temp = getWebsite(content, true);
   webserver.send(200, "text/html", temp);
 }
 
@@ -213,8 +302,6 @@ void handleReboot()
 
 void handleSettings()
 {
-  char content[2200];
-
   if(webserver.args() != 0)
   {
     if(webserver.hasArg("ssid"))
@@ -235,12 +322,120 @@ void handleSettings()
     if(webserver.hasArg("MQTTpassword"))
       configuration.setWlanParameter("MQTTpassword", webserver.arg("MQTTpassword").c_str());
 
-    configuration.store();
-    configuration.storeLastRebootInfo("normal");
+//    configuration.store();
+//    configuration.storeLastRebootInfo("normal");
+    writeConfiguration = true;          
   }
 
+  if((String(configuration.getCloudParameter("enabled")) == "true") &&
+      cloudID != String(configuration.getCloudParameter("userid")))
+  {
+    configuration.setCloudParameter("userid", cloudID.c_str());
+    
+    writeConfiguration = true;          
+  }
+  
+  // check if registerNewUser was pressed
+  if(webserver.hasArg("registerNewUser"))
+  {
+    if(String(webserver.arg("registerNewUser")) == "true") 
+    {
+      if((webserver.hasArg("user") && strlen(webserver.arg("user").c_str()) > 3) &&
+         (webserver.hasArg("cloudpassword") && strlen(webserver.arg("cloudpassword").c_str()) > 3))
+      {
+        if(cloudRegisterNewUser(webserver.arg("user").c_str(), webserver.arg("email").c_str(), webserver.arg("cloudpassword").c_str()))
+        {
+          if((String(configuration.getCloudParameter("enabled")) == "true"))
+          {
+            cloudConnected = cloudLogin(webserver.arg("user").c_str(), webserver.arg("cloudpassword").c_str());
+            if(cloudConnected)
+            {
+              configuration.setCloudParameter("userid", cloudID.c_str());
+              
+              writeConfiguration = true;          
+            }
+          }        
+        }
+        writeConfiguration = true;          
+      }
+    }
+  }  
 
-  sprintf(content,  
+  if(webserver.hasArg("unregisterUser"))
+  {
+    if(String(webserver.arg("unregisterUser")) == "true") 
+    {
+      if((webserver.hasArg("user") && strlen(webserver.arg("user").c_str()) > 3) &&
+         (webserver.hasArg("cloudpassword") && strlen(webserver.arg("cloudpassword").c_str()) > 3))
+      {
+        if(cloudUnregisterUser(webserver.arg("user").c_str(), webserver.arg("cloudpassword").c_str()))
+        {
+          cloudConnected = false;
+          configuration.setCloudParameter("userid", "");
+          
+          writeConfiguration = true;          
+        }
+      }
+    }
+  }  
+
+  // check if registerNewUser was pressed
+  if(webserver.hasArg("loginUser"))
+  {
+    if(String(webserver.arg("loginUser")) == "true") 
+    {
+      if((webserver.hasArg("user") && strlen(webserver.arg("user").c_str()) > 3) &&
+         (webserver.hasArg("cloudpassword") && strlen(webserver.arg("cloudpassword").c_str()) > 3))
+      {
+        cloudConnected = cloudLogin(webserver.arg("user").c_str(), webserver.arg("cloudpassword").c_str());
+        if(cloudConnected)
+        {
+          configuration.setCloudParameter("userid", cloudID.c_str());
+          
+          writeConfiguration = true;          
+        }
+      }
+    }
+  }  
+  
+  if(webserver.args() != 0)
+  {
+    if( webserver.arg("cloudenabled") == "1")
+    {
+      configuration.setCloudParameter("enabled", "true");
+    }
+    else
+      configuration.setCloudParameter("enabled", "false");
+
+    if(webserver.hasArg("user"))
+      configuration.setCloudParameter("user", webserver.arg("user").c_str());
+    else
+      configuration.setCloudParameter("user", "");
+        
+    if(webserver.hasArg("cloudpassword"))
+      configuration.setCloudParameter("password", webserver.arg("cloudpassword").c_str());
+    else
+      configuration.setCloudParameter("password", "");    
+
+    if(webserver.hasArg("email"))
+      configuration.setCloudParameter("email", webserver.arg("email").c_str());
+    else
+      configuration.setCloudParameter("email", "");    
+
+    writeConfiguration = true;      
+  }
+
+  String loginUserButtonText = "<div><p><input type='hidden' id='loginUser' name='loginUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitLoginUser()' value='LogIn User' /></p></div><br/><br/>";
+
+  String registerNewUserButtonText = "<div><p><input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /></p></div><br/><br/>";
+
+  String unregisterUserButtonText = "<div><p><input type='hidden' id='unregisterUser' name='unregisterUser' value='false'/>\
+      <input class='submitbutton' type='submit' onclick='submitUnregisterUser()' value='UnRegister User' /></p></div><br/><br/>";
+
+
+  sprintf(menuContextBuffer,  
       "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
       <form method='post'>\
       <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
@@ -264,7 +459,28 @@ void handleSettings()
       <label for='MQTTuser'>MQTT User</label><br/>\
       <br/>\
       <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
-      <label for='MQTTuser'>MQTT Password</label><br/>\
+      <label for='MQTTuser'>MQTT Password</label><br/><br/><br/>\
+      <hr/>\
+      Cloud Settings. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a>\
+      <br/><br/>\
+      <input type='checkbox' id='cloudenabled' name='cloudenabled' value='1' %s/>\
+      <input type='hidden' name='cloudenabled' value='0' />\
+      <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
+      <br/><br/>\
+      <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
+      <label for='user'>User Name</label></div><br/><br/>\
+      Unique User ID = %s<br/><br/>\
+      <div><input type='text' id='email' name='email' placeholder='name@example.com' size='30' value='%s'>\
+      <label for='email'>EMail Address (optional)</label></div><br/>\
+      <br/>\   
+      <div><input type='password' id='cloudpassword' name='cloudpassword' placeholder='Password' size='30' value='%s'>\
+      <label for='cloudpassword'>Password</label></div><br/><br/>\
+      <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
+      </div><br/>\
+      %s\
+      %s\
+      %s\
+      <hr/>\
       <br/><br /> <input type='submit' value='Save Configuration!' />\
       <script>\
       function showWLANPassword() {\
@@ -275,6 +491,26 @@ void handleSettings()
           x.type = 'password';\
         }\
       }\
+      function showCloudPassword() {\
+        var x = document.getElementById('cloudpassword');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\      
+      function submitLoginUser()\
+      {\
+         document.getElementById('loginUser').value = 'true';\
+      }\      
+      function submitRegisterNewUser()\
+      {\
+         document.getElementById('registerNewUser').value = 'true';\
+      }\      
+      function submitUnregisterUser()\
+      {\
+         document.getElementById('unregisterUser').value = 'true';\
+      }\      
       </script>\ 
       </form>\
       ", 
@@ -283,10 +519,18 @@ void handleSettings()
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
-      configuration.getWlanParameter("MQTTpassword") 
+      configuration.getWlanParameter("MQTTpassword"),
+      String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("user"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i>NOT REGISTERED</i>" : configuration.getCloudParameter("userid"),
+      configuration.getCloudParameter("email"),
+      configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? loginUserButtonText.c_str() : "",
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : "",
+      (strlen(configuration.getCloudParameter("userid")) > 0) ? unregisterUserButtonText.c_str() : ""
   );  
 
-  char * temp = getWebsite(content);
+  char * temp = getWebsite(menuContextBuffer);
   DLN("after getWebsite size = "+String(strlen(temp)));
   
   webserver.send(200, "text/html", temp);  
@@ -304,8 +548,16 @@ void startConfigurationAP()
   webserver.on("/reboot", handleReboot);
   webserver.on("/general", handleRoot);
   webserver.on("/settings", handleSettings);
+  webserver.on("/j.js", handleJs);      
+  webserver.on("/json", handleJson);
+  
   webserver.onNotFound(handleNotFound); 
   webserver.begin();
+
+#ifdef LEDPIN
+  pinMode(LEDPIN, OUTPUT);
+  configurationBlinker.attach(0.2, changeConfigurationBlinker);  
+#endif
 }
 
 void startGatewayWebserver()
@@ -328,6 +580,8 @@ void startServerListener()
   webserver.on("/reboot", handleReboot);
   webserver.on("/general", handleRoot);
   webserver.on("/settings", handleSettings);
+  webserver.on("/j.js", handleJs);      
+  webserver.on("/json", handleJson);  
   webserver.onNotFound(handleNotFound); 
   webserver.begin();
 

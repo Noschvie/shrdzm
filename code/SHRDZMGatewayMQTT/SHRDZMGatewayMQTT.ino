@@ -23,8 +23,10 @@ PubSubClient mqttclient(espClient);
 
 RCSwitch mySwitch = RCSwitch();
 unsigned long lastRCMillis = 0;
+Ticker configurationBlinker;
 
-char websideBuffer[5000];
+char websideBuffer[7000];
+char menuContextBuffer[5300];
 String deviceName;
 String ver, nam;
 String lastVersionNumber;
@@ -38,6 +40,12 @@ String subscribeTopicSet;
 String subscribeTopicConfig;
 String subscribeTopicRCSEND;
 unsigned long mqttNextTry = 0;
+String lastMessage = "";
+const uint16_t ajaxIntervall = 2;
+bool cloudConnected = false;
+String cloudToken = "";
+String cloudID = "";
+bool writeConfiguration = false;
 
 void setup() 
 {  
@@ -163,6 +171,13 @@ Serial.begin(SERIALBAUD); Serial.println();
 
 void loop() 
 {  
+  if(writeConfiguration)
+  {
+    writeConfiguration = false;
+    DLN("Store configuration...");
+    configuration.store();
+  }
+  
   if(configurationMode)
   {
     webserver.handleClient();
@@ -175,8 +190,19 @@ void loop()
     {
       apConnectingOngoing = false;
       DLN("Connected to AP. Starting Webserver...");
+
+      DV(WiFi.localIP());
+      DV(WiFi.dnsIP());
+      DV(WiFi.gatewayIP());
+      DV(WiFi.subnetMask());
       
       startServerListener();
+
+      if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && !cloudConnected)
+      {
+        DLN("Will start cloud connection");
+        cloudConnected = cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));        
+      }               
     } 
     else
     {

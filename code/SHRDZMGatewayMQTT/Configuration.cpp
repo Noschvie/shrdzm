@@ -159,6 +159,11 @@ bool Configuration::containsWlanKey(char *name)
   return g_configdoc["configuration"]["wlan"].containsKey(name);
 }
 
+bool Configuration::containsCloudKey(char *name)
+{
+  return g_configdoc["configuration"]["cloud"].containsKey(name);
+}
+
 void Configuration::setWlanParameter(const char *name, const char *value)
 {
   String v(value);
@@ -172,15 +177,37 @@ void Configuration::setWlanParameter(JsonObject dc)
 {
   g_configdoc["configuration"]["wlan"] = dc;
 }
- 
+
+void Configuration::setCloudParameter(const char *name, const char *value)
+{
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["configuration"]["cloud"][name] = v;
+}
+
 JsonObject Configuration::getWlanParameter()
 {
   return g_configdoc["configuration"]["wlan"];
 }
 
+JsonObject Configuration::getCloudParameter()
+{
+  return g_configdoc["configuration"]["cloud"];
+}
+
 const char* Configuration::getWlanParameter(const char *parameterName)
 {
   return g_configdoc["configuration"]["wlan"][parameterName];
+}
+
+const char* Configuration::getCloudParameter(const char *parameterName)
+{
+  if(g_configdoc["configuration"]["cloud"][parameterName].isNull())
+    return "";
+  else
+    return g_configdoc["configuration"]["cloud"][parameterName];
 }
 
 String Configuration::readLastRebootInfo()
@@ -233,4 +260,17 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
   }
 
   file.close();
+}
+
+void Configuration::resetConfiguration()
+{
+#ifdef LITTLEFS  
+  LittleFS.remove("/version.txt");
+  LittleFS.remove("/reboot.txt");
+  LittleFS.remove("/shrdzm_config.json");
+#else
+  SPIFFS.remove("/version.txt");
+  SPIFFS.remove("/reboot.txt");
+  SPIFFS.remove("/shrdzm_config.json");
+#endif     
 }

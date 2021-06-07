@@ -454,6 +454,8 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
   }
 
   simpleEspConnection->sendMessage((char *)reply.c_str());
+  Serial.println("reply 1 = "+reply);
+
 
   // send device parameter
   if(g_configdoc["device"].size() > 0)
@@ -469,6 +471,7 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
     reply.remove(reply.length()-1);
 
     simpleEspConnection->sendMessage((char *)reply.c_str());
+    Serial.println("reply 2 = "+reply);
   }   
 }
 

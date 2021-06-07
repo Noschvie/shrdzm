@@ -1287,6 +1287,7 @@ void sendSetup()
 
   if(!gatewayMode)
   {
+    DLN("Send INIT");
     simpleEspConnection.sendMessage((char *)"$I$");
     configuration.sendSetup(&simpleEspConnection);
   }
@@ -1317,7 +1318,10 @@ void sendSetup()
       }
 
       if(!gatewayMode)
+      {
         simpleEspConnection.sendMessage((char *)reply.c_str());
+        DV(reply);
+      }      
       
       delete sd; 
 
@@ -2353,12 +2357,15 @@ void loop()
   
   if(forceSleep || (lastIntervalTime > 0 && millis() > MAXCONTROLWAIT+lastIntervalTime))
   {
-    if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty() && !avoidSleeping)
+    if(!preparing && !setNewDeviceType && simpleEspConnection.isSendBufferEmpty())
     {      
-      if(atoi(configuration.get("interval")) < 0)    
-        gotoInfiniteSleep();
-      else
-        gotoSleep();
+      if(!avoidSleeping)
+      {
+        if(atoi(configuration.get("interval")) < 0)    
+          gotoInfiniteSleep();
+        else
+          gotoSleep();
+      }
     }
   }  
 

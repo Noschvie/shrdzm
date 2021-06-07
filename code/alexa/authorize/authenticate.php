@@ -4,7 +4,9 @@
 	$redirect_uri = $_POST["redirect_uri"];
 	$username = $_POST["username"];
 	$password = $_POST["password"];
+	$REMOTE_ADDR = $_POST["REMOTE_ADDR"];
 	
+	require __DIR__.'/../logging.php';
 	require __DIR__.'/classes/Database.php';
 	require __DIR__.'/classes/JwtHandler.php';
 	
@@ -48,6 +50,9 @@
                 $update_stmt->execute(); */
 				
 				$code = $row['alexa_userid'];
+				
+				loging2file($username.' registered for '.$REMOTE_ADDR.' ('.gethostbyaddr($REMOTE_ADDR).')');
+				
 			else:
 				echo "Invalid password";
 				exit;
@@ -64,6 +69,7 @@
 		echo "Database connection broken";
 		exit;
 	}
+			
 			
 	$url = $redirect_uri."?state=".$state."&code=".$code;
 	

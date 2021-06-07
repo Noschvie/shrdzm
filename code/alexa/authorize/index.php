@@ -3,7 +3,7 @@
 	$redirect_uri = $_GET["redirect_uri"];
 	$state = $_GET["state"];
 	$response_type = $_GET["response_type"];
-	$scope = $_GET["scope"];
+	$scope = $_GET["scope"];	
 ?>
 
 <!DOCTYPE html>
@@ -24,6 +24,7 @@
 				echo "<input type='hidden' id='client_id' name='client_id' value='".$client_id."'/>";
 				echo "<input type='hidden' id='state' name='state' value='".$state."'/>";
 				echo "<input type='hidden' id='redirect_uri' name='redirect_uri' value='".$redirect_uri."'/>";
+				echo "<input type='hidden' id='REMOTE_ADDR' name='REMOTE_ADDR' value='".$_SERVER['REMOTE_ADDR']."'/>";				
 ?>
 				<label for="username">
 					<i class="fas fa-user"></i>
