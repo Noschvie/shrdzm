@@ -26,26 +26,20 @@ bool Configuration::initialize()
 
 bool Configuration::store()
 {
-  Serial.println("Store configuration...");
   serializeJson(g_configdoc, Serial);
 
-  Serial.println();
 #ifdef LITTLEFS  
   File configFile = LittleFS.open("/shrdzm_config.json", "w");
 #else
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
 #endif
-  Serial.println("file opened...");
   
   if (!configFile) 
   {
-    Serial.println("failed to open config file for writing");
     return false;
   }
 
-  Serial.println("serializing...");
   serializeJson(g_configdoc, configFile);
-  Serial.println("serialized...");
   configFile.close();
     
   return true;
@@ -70,14 +64,12 @@ bool Configuration::load()
     DeserializationError error = deserializeJson(g_configdoc, content);
     if (error)
     {
-      Serial.println("Error at deserializeJson");
       return false;
     }
 
     configFile.close();    
 
     serializeJson(g_configdoc, Serial);    
-    Serial.println();
 
     if(!g_configdoc["configuration"]["wlan"].containsKey("ssid"))
     {
@@ -134,7 +126,6 @@ void Configuration::storeVersionNumber()
 #endif  
   if (!file) 
   {
-      Serial.println("Error opening version file for writing");
       return;
   }  
 
@@ -148,7 +139,6 @@ void Configuration::storeVersionNumber()
    
   if (bytesWritten == 0) 
   {
-      Serial.println("Version file write failed");
   }
 
   file.close();
@@ -248,7 +238,6 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
 #endif  
   if (!file) 
   {
-      Serial.println("Error opening reboot info file for writing");
       return;
   }  
 
@@ -256,7 +245,6 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
    
   if (bytesWritten == 0) 
   {
-      Serial.println("Reboot info file write failed");
   }
 
   file.close();

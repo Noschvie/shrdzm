@@ -1,5 +1,21 @@
 #include "config/config.h"
 
+void CloudLoop()
+{
+  if(registerDeviceTypeBuffer != "")
+  {
+    if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
+    {
+      StringSplitter *splitter = new StringSplitter(registerDeviceTypeBuffer, ':', 2);
+      if(splitter->getItemCount() == 2)
+      {          
+        cloudRegisterDevice(splitter->getItemAtIndex(0).c_str(), splitter->getItemAtIndex(1).c_str());
+      }
+    }
+    
+    registerDeviceTypeBuffer = "";
+  }
+}
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {

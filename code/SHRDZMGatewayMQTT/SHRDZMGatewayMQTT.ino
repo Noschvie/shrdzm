@@ -10,12 +10,13 @@
 
 */
 
-#define DEBUG_SHRDZM
+//#define DEBUG_SHRDZM
 
 #include "config/config.h"
 
 Configuration configuration;
 
+//SoftwareSerial swSer(14,12);
 SoftwareSerial swSer(14,12);
 ESP8266WebServer webserver;
 WiFiClient espClient;
@@ -46,6 +47,8 @@ bool cloudConnected = false;
 String cloudToken = "";
 String cloudID = "";
 bool writeConfiguration = false;
+String registerDeviceTypeBuffer = "";
+
 
 void setup() 
 {  
@@ -124,9 +127,8 @@ Serial.begin(SERIALBAUD); Serial.println();
     ESP.restart();          
   }
 
-  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-
-  DV(SERIALBAUD);
+//  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 350);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 
@@ -248,5 +250,6 @@ void loop()
   SwSerLoop();
   OTALoop();
   RCSwitchLoop();
+  CloudLoop();
   
 }

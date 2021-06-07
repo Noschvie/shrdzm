@@ -2,7 +2,8 @@
 
 void SwSerLoop()
 {
-  while (swSer.available()) 
+//  while (swSer.available()) 
+  if (swSer.available()) 
   {
     char r = swSer.read();
     
@@ -10,7 +11,6 @@ void SwSerLoop()
     {
       String cmd = readSerialSS();
 
-      DLN("Command : "+cmd);
       sendSensorData(cmd);      
     }
     else if(r == '#' ) 
@@ -50,7 +50,7 @@ String readSerialSS()
         timeoutStart = millis();
       }    
     }
-    else if(timeoutStart + 1000 < millis())
+    else if(timeoutStart + 2000 < millis())
     {
       finished = true;
     }    
@@ -157,6 +157,11 @@ void sendSensorData(String data)
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+t).c_str(), 
           v.c_str());
+
+        if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
+        {
+          cloudAddMeasurement(splitter->getItemAtIndex(1).c_str(), t.c_str(), v.c_str());
+        }
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {
@@ -172,15 +177,8 @@ void sendSensorData(String data)
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
           splitter->getItemAtIndex(2).c_str());
 
-/*        if(
-        if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
-        {
-          // Register the device
-          cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
-        }
-  */
-        Serial.println("will register device "+data);
-          
+        if(t == "devicetype")
+          registerDeviceTypeBuffer = splitter->getItemAtIndex(1)+":"+v;
       }
       else if(splitter->getItemAtIndex(0) == "[A]")
       {

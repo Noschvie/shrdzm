@@ -13,12 +13,12 @@ void update_finished()
 
 void update_progress(int cur, int total) 
 {
-  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
+//  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes..\n", cur, total);
 }
 
 void update_error(int err) 
 {
-  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+//  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }
 
 void executeUpdateFirmware()
@@ -49,13 +49,13 @@ void executeUpdateFirmware()
     DLN("WLAN connected!");
   
     WiFiClient client; 
-    Serial.printf("host:%s, url:%s, versionString:%s \n", upgradeHost.c_str(), upgradeUrl.c_str(), versionStr.c_str());
+//    Serial.printf("host:%s, url:%s, versionString:%s \n", upgradeHost.c_str(), upgradeUrl.c_str(), versionStr.c_str());
     t_httpUpdate_return ret = ESPhttpUpdate.update(upgradeHost, 80, upgradeUrl, versionStr);    
     
     switch (ret) 
     {
       case HTTP_UPDATE_FAILED:
-        Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+//        Serial.printf("HTTP_UPDATE_FAILD Error (%d):  sendUpdatedVersion %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
         delay(100);
         ESP.restart();
         break;
