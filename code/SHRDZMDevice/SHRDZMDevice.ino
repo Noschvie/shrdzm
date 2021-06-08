@@ -260,9 +260,9 @@ void handleJson() {
   message += millis() / 1000;
   message += (F(",\"mqttconnectionstate\":"));
   message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
-  message += (F(",\"lastmessage\":"));
+  message += (F(",\"lastmessage\":\""));
   message += lastMessage;  
-  message += (F("}")); // End of JSON
+  message += (F("\"}")); // End of JSON
   server.send(200, "application/json", message);
 }
 

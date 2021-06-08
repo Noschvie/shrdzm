@@ -129,6 +129,9 @@ bool updateFirmware(String parameter)
   upgradeUrl = upgradeHost.substring(upgradeHost.indexOf('/'));
   upgradeHost = upgradeHost.substring(0,upgradeHost.indexOf('/'));
 
+  DV(upgradeUrl);
+  DV(upgradeHost);
+
   firmwareUpdate = true;
   
   return true;

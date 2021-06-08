@@ -140,7 +140,7 @@ button {\
 </body>\
 </html>\
   ",
-  update ? "<script src=\"j.js\"></script>" : "", 
+  update ? "<script src='j.js'></script>\n" : "", 
   deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
@@ -148,20 +148,18 @@ button {\
 
 void handleJson() {
   // Output: send data to browser as JSON
-
   String message = "";
-  message = (F("{\"ss\":")); // Start of JSON and the first object "ss":
-  message += millis() / 1000;
-  message += (F(",\"mqttconnectionstate\":"));
+
+  message += (F("{\"mqttconnectionstate\":"));
   message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
-  message += (F(",\"lastmessage\":"));
+  message += (F(",\"lastmessage\":\""));
   message += lastMessage;  
-  message += (F("}")); // End of JSON
+  message += (F("\"}")); // End of JSON
   webserver.send(200, "application/json", message);
 }
 
 void handleJs()
-{
+{  
   String message;
   message += F("const url ='json';\n"
                "function renew(){\n"
@@ -186,7 +184,8 @@ void handleJs()
 
 void handleRoot() 
 {
-  char content[2000];
+  char content[2500];
+  String upgradeTextGateway = "";
 
   if(webserver.hasArg("factoryreset"))
   {
@@ -212,6 +211,59 @@ void handleRoot()
       ESP.restart();        
     }
   }
+
+  if(webserver.hasArg("upgradeMQTT") && webserver.hasArg("upgradepathMQTT"))
+  {
+    if(String(webserver.arg("upgradeMQTT")) == "true") // Upgrade was pressed
+    {
+      DLN("Upgrade from "+String(webserver.arg("upgradepathMQTT"))+" will be started...");
+      //if(updateFirmwareByMQTT(server.arg("upgradepathMQTT")))
+      if(updateFirmware(webserver.arg("upgradepathMQTT")))
+      {        
+        snprintf(content, 300,
+        "<!DOCTYPE html>\
+        <html>\
+        <head>\
+        </head>\
+        <body>\
+        <h1>Upgrade started. SHRDZMGatewayMQTT will reboot after upgrade. </h1>\
+        </body>\
+        </html>\
+        ");
+          
+        webserver.send(200, "text/html", content);  
+        return;      
+      }
+    }    
+  }  
+
+  if(webserver.hasArg("upgradeESPNow") && webserver.hasArg("upgradepathESPNow"))
+  {
+    if(String(webserver.arg("upgradeESPNow")) == "true") // Upgrade was pressed
+    {
+          String upgradeText = String("$upgrade "+WiFi.SSID()+"|"+WiFi.psk()+"|"+webserver.arg("upgradepathESPNow"));
+          
+          DLN("Send upgrade of GATEWAY called : '"+upgradeText+"'");
+
+          swSer.write(upgradeText.c_str());
+          swSer.write('\n');           
+      
+          snprintf(content, 300,
+          "<!DOCTYPE html>\
+          <html>\
+          <head>\
+          </head>\
+          <body>\
+          <h1>Upgrade started. SHRDZMGateway will reboot after upgrade.</h1>\
+          </body>\
+          </html>\
+          ");
+            
+          webserver.send(200, "text/html", content);  
+          return;      
+    }    
+  }  
+
   
   String informationTable = "<br><br>";  
   informationTable += "Firmware Version : "+ver+"-"+ESP.getSketchMD5()+"<br><br>";
@@ -220,9 +272,9 @@ void handleRoot()
   informationTable += "MQTTTopic Config : "+String(subscribeTopicConfig)+"<br>";
   informationTable += "MQTTTopic RCSEND : "+String(subscribeTopicRCSEND)+"<br>";
   informationTable += "MQTTTopic Sensordata : "+String(MQTT_TOPIC)+"/<i><b>SensorID</b></i>/sensor/<br><br>";
-  informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
+  informationTable += "<p>MQTT Connection State :  <span id='mqttconnectionstate'>";
   informationTable += "Unknown";
-  informationTable += F("</span></p><br>");    
+  informationTable += "</span></p><br>";    
   informationTable += "Last Measurement : <br>";
   informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
 
@@ -232,6 +284,16 @@ void handleRoot()
     informationTable += "DNS : "+WiFi.dnsIP().toString()+"<br>";
     informationTable += "Gateway : "+WiFi.gatewayIP().toString()+"<br>";
     informationTable += "Subnet : "+WiFi.subnetMask().toString()+"<br>";
+
+
+    upgradeTextGateway = "<br/><br/><input type='hidden' id='upgradeMQTT' name='upgradeMQTT' value='false'/><br/>\
+        <input class='factoryresetbutton' type='submit' onclick='submitFormUpgradeMQTT()' value='OTA Upgrade Gateway MQTT' />\
+        <input type='text' id='upgradepathMQTT' name='upgradepathMQTT' size='35' value='http://shrdzm.pintarweb.net/upgrade.php'>\
+        <br/>";
+    upgradeTextGateway += "<br /><input type='hidden' id='upgradeESPNow' name='upgradeESPNow' value='false'/><br/>\
+        <input class='factoryresetbutton' type='submit' onclick='submitFormUpgradeESPNow()' value='OTA Upgrade Gateway ESPNow' />\
+        <input type='text' id='upgradepathESPNow' name='upgradepathESPNow' size='35' value='http://shrdzm.pintarweb.net/upgrade.php'>\
+        <br/>";
   }
 
   sprintf(content,  
@@ -243,15 +305,25 @@ void handleRoot()
       <form method='post' id='factoryReset'>\
       <input type='hidden' id='factoryreset' name='factoryreset' value='false'/>\
       <input class='factoryresetbutton' type='submit' onclick='submitForm()' value='Factory Reset!' />\
+      %s\
       <script>\
        function submitForm()\
        {\
           document.getElementById('factoryreset').value = 'true';\
        }\
+       function submitFormUpgradeMQTT()\
+       {\
+          document.getElementById('upgradeMQTT').value = 'true';\
+       }\       
+       function submitFormUpgradeESPNow()\
+       {\
+          document.getElementById('upgradeESPNow').value = 'true';\
+       }\       
       </script>\
       </form>\
       ",
-      informationTable.c_str()
+      informationTable.c_str(),
+      upgradeTextGateway.c_str()      
   );  
 
   char * temp = getWebsite(content, true);
@@ -548,8 +620,6 @@ void startConfigurationAP()
   webserver.on("/reboot", handleReboot);
   webserver.on("/general", handleRoot);
   webserver.on("/settings", handleSettings);
-  webserver.on("/j.js", handleJs);      
-  webserver.on("/json", handleJson);
   
   webserver.onNotFound(handleNotFound); 
   webserver.begin();
