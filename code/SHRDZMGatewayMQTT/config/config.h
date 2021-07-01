@@ -5,6 +5,8 @@
 #define NAME		"SHRDZMGatewayMQTT"
 
 #define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
+#define NTP_SERVER "at.pool.ntp.org"
+#define TZ "CET-1CEST,M3.5.0,M10.5.0/3"
 
 //#define LITTLEFS
 
@@ -18,6 +20,7 @@
 #include <ESP8266httpUpdate.h>
 #include <RCSwitch.h>
 #include <Ticker.h>
+#include <time.h>
 
 #ifdef LITTLEFS
 #include <LittleFS.h>

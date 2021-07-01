@@ -80,6 +80,17 @@ bool Configuration::load()
 #endif  
       return false;
     }
+
+    if(!g_configdoc["configuration"]["wlan"].containsKey("NTPServer"))
+    {
+      setWlanParameter("NTPServer", String(NTP_SERVER).c_str());
+      store();
+    }
+    if(!g_configdoc["configuration"]["wlan"].containsKey("TZ"))
+    {
+      setWlanParameter("TZ", String(TZ).c_str());
+      store();
+    }
   }
   else
   {    

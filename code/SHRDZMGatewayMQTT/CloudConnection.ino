@@ -1,5 +1,7 @@
 #include "config/config.h"
 
+StaticJsonDocument<512> replyDoc;
+
 void CloudLoop()
 {
   if(registerDeviceTypeBuffer != "")
@@ -22,11 +24,10 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
   DLN("Will now try to register new User on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
+  if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
     return false;
 
-  DynamicJsonDocument doc(512);
-  DeserializationError error = deserializeJson(doc, reply);
+  DeserializationError error = deserializeJson(replyDoc, reply);
 
   if(error)
   {
@@ -34,7 +35,7 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
     return false;  
   }
 
-  if(doc["success"].as<unsigned int>() == 1)
+  if(replyDoc["success"].as<unsigned int>() == 1)
     return true;
   else
     return false;
@@ -45,11 +46,10 @@ bool cloudUnregisterUser(const char* user, const char* password )
   DLN("Will now try to unregister new User on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
+  if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
     return false;
 
-  DynamicJsonDocument doc(512);
-  DeserializationError error = deserializeJson(doc, reply);
+  DeserializationError error = deserializeJson(replyDoc, reply);
 
   if(error)
   {
@@ -57,7 +57,7 @@ bool cloudUnregisterUser(const char* user, const char* password )
     return false;  
   }
 
-  if(doc["success"].as<unsigned int>() == 1)
+  if(replyDoc["success"].as<unsigned int>() == 1)
     return true;
   else
     return false;
@@ -68,7 +68,7 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
   DLN("Will now try to register Device on "+String(CloudApiAddress));
 
   String reply;
-  if(cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply, true))  
+  if(cloudSendRESTCommand("register-device.php", String("{\"name\":\""+String(devicename)+"\",\"type\":\""+String(type)+"\"}").c_str(), true, &reply))  
     return true;
   else
     return false;
@@ -79,11 +79,10 @@ bool cloudUnregisterDevice(const char* devicename)
   DLN("Will now try to register Device on "+String(CloudApiAddress));
 
   String reply;
-  if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
+  if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
     return false;
 
-  DynamicJsonDocument doc(512);
-  DeserializationError error = deserializeJson(doc, reply);
+  DeserializationError error = deserializeJson(replyDoc, reply);
 
   if(error)
   {
@@ -91,7 +90,7 @@ bool cloudUnregisterDevice(const char* devicename)
     return false;  
   }
 
-  if(doc["success"].as<unsigned int>() == 1)
+  if(replyDoc["success"].as<unsigned int>() == 1)
     return true;
   else
     return false;
@@ -100,11 +99,10 @@ bool cloudUnregisterDevice(const char* devicename)
 bool cloudIsDeviceRegisteredHere(const char* devicename)
 {
   String reply;
-  if(!cloudSendRESTCommand("device-info.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
+  if(!cloudSendRESTCommand("device-info.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply))
     return false;
 
-  DynamicJsonDocument doc(512);
-  DeserializationError error = deserializeJson(doc, reply);
+  DeserializationError error = deserializeJson(replyDoc, reply);
 
   if(error)
   {
@@ -112,9 +110,9 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
     return false;  
   }
 
-  if((doc["success"].as<unsigned int>() == 1) && (doc["status"].as<unsigned int>() == 200))
+  if((replyDoc["success"].as<unsigned int>() == 1) && (replyDoc["status"].as<unsigned int>() == 200))
   {
-    if(doc["user"]["name"].as<String>() == String(configuration.getCloudParameter("user")))
+    if(replyDoc["user"]["name"].as<String>() == String(configuration.getCloudParameter("user")))
       return true;
     else
       return false;
@@ -125,10 +123,8 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
 
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
 {
-  DLN("Will now try to add mesurement on "+String(CloudApiAddress));
-
   String reply;
-  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
+  cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply);
 
   return true;
 }
@@ -136,13 +132,10 @@ bool cloudAddMeasurement(const char* devicename, const char* reading, const char
 bool cloudLogin(const char* user, const char* password )
 {
   String reply;
-  if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
+  if(!cloudSendRESTCommand("login.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply))
     return false;
 
-  DV(reply);
-
-  DynamicJsonDocument doc(512);
-  DeserializationError error = deserializeJson(doc, reply);
+  DeserializationError error = deserializeJson(replyDoc, reply);
 
   if(error)
   {
@@ -150,10 +143,10 @@ bool cloudLogin(const char* user, const char* password )
     return false;  
   }
 
-  if(doc["success"].as<unsigned int>() == 1)
+  if(replyDoc["success"].as<unsigned int>() == 1)
   {
-    cloudToken = doc["token"].as<String>();
-    cloudID = doc["id"].as<String>();
+    sprintf(cloudTokenArray, "Basic %s", replyDoc["token"].as<const char*>());
+    cloudID = replyDoc["id"].as<String>();
   }
   else
     return false;
@@ -161,7 +154,7 @@ bool cloudLogin(const char* user, const char* password )
   return true;
 }
 
-bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
+bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply)
 {
   if(WiFi.status()== WL_CONNECTED)
   {
@@ -175,36 +168,24 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     {
       http.addHeader("Content-Type", "application/json");
 
-      if(tokenNeeded && cloudToken != "")
+      if(tokenNeeded && strlen(cloudTokenArray) > 0)
       {
-        http.addHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
+        http.addHeader("Authorization", cloudTokenArray);
       }      
 
       int httpResponseCode = http.POST(content);
+
+      if(httpResponseCode != 200) // Transaction OK
+      {
+        DV(httpResponseCode);
+        return false;
+      }
           
       DV(httpResponseCode);
       DV(http.getString());
 
       *reply = http.getString();
       http.end();
-
-      if(tokenNeeded && newTokenIfNeeded)
-      {
-        // check valid topken
-        DynamicJsonDocument doc(512);
-        DeserializationError error = deserializeJson(doc, *reply);
-  
-        if(doc["success"].as<unsigned int>() == 0)
-        {
-          if(doc["status"].as<unsigned int>() == 401) // Unauthorized
-          {
-            if(cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password")))
-            {
-              return cloudSendRESTCommand(address, content, tokenNeeded, reply, false);
-            }
-          }
-        }
-      }
       
       return true;
     }

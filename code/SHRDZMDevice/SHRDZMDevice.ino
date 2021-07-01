@@ -76,6 +76,8 @@ bool cloudConnected = false;
 String cloudToken = "";
 String cloudID = "";
 bool cloudIsDeviceRegistered = false;
+time_t now;                         
+tm tm; 
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -254,14 +256,20 @@ button {\
 
 void handleJson() {
   // Output: send data to browser as JSON
-
   String message = "";
-  message = (F("{\"ss\":")); // Start of JSON and the first object "ss":
-  message += millis() / 1000;
-  message += (F(",\"mqttconnectionstate\":"));
+
+  time(&now);
+  localtime_r(&now, &tm);
+
+  char t[22];
+  sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );
+
+  message += (F("{\"mqttconnectionstate\":"));
   message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
-  message += (F(",\"lastmessage\":\""));
-  message += lastMessage;  
+  message += (F(",\"lastmessage\":"));
+  message += lastMessage+"";  
+  message += (F(",\"timestamp\":\""));
+  message += String(t);  
   message += (F("\"}")); // End of JSON
   server.send(200, "application/json", message);
 }
