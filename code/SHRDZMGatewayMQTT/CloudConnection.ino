@@ -4,14 +4,16 @@ StaticJsonDocument<512> replyDoc;
 
 void CloudLoop()
 {
-  if(registerDeviceTypeBuffer != "")
+  if(registerDeviceTypeBuffer != "" && freeForRegistering)
   {
     if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
     {
       StringSplitter *splitter = new StringSplitter(registerDeviceTypeBuffer, ':', 2);
       if(splitter->getItemCount() == 2)
-      {          
+      {     
+        yield();     
         cloudRegisterDevice(splitter->getItemAtIndex(0).c_str(), splitter->getItemAtIndex(1).c_str());
+        freeForRegistering = false;
       }
     }
     

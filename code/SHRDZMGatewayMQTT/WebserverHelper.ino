@@ -292,6 +292,7 @@ MQTTTopic Config : %s<br>\
 MQTTTopic RCSEND : %s<br>\
 MQTTTopic Sensordata : %s/<i><b>SensorID</b></i>/sensor/<br><br>\
 MQTT Connection State :  <span id='mqttconnectionstate'>Unknown</span><br>\
+Cloud Update :  %s<br><br>\
 Date/Time :  <span id='timestamp'>Unknown</span><br><br>\
 Last Measurement : <br>\
 <textarea readonly style='background-color:white;' id='lastmessage' name='lastmessage' cols='65' rows='10'></textarea><br><br>\
@@ -328,6 +329,7 @@ Subnet : %s<br>\
       subscribeTopicConfig.c_str(),
       subscribeTopicRCSEND.c_str(),
       String(MQTT_TOPIC).c_str(), 
+      String(configuration.getCloudParameter("enabled")) == "true" ? "Enabled" : "Disabled",      
       WiFi.localIP().toString().c_str(),   
       WiFi.dnsIP().toString().c_str(), 
       WiFi.gatewayIP().toString().c_str(),

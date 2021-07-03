@@ -54,6 +54,7 @@ String registerDeviceTypeBuffer = "";
 time_t now;                         
 tm tm; 
 char cmd[MAXLINELENGTH];
+bool freeForRegistering = false;
 
 void setup() 
 {  
@@ -142,6 +143,7 @@ Serial.begin(SERIALBAUD); Serial.println();
 
 //  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 256);
+  swSer.setTimeout(3000);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 
