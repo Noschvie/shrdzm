@@ -1,70 +1,60 @@
+//String cmd = "";
+
+char serBuffer[MAXLINELENGTH];
 
 void SwSerLoop()
 {
-  while (swSer.available()) 
+//  while (swSer.available()) 
+  if (swSer.available()) 
   {
     char r = swSer.read();
     
     if ( r == '*' ) 
     {
-      String cmd = readSerialSS();
-
-      DLN("Command : "+cmd);
-      sendSensorData(cmd);      
+      readSerialSS();  
+      yield(); 
+      sendSensorData();      
+//      sendSensorData(&cmd);      
     }
     else if(r == '#' ) 
     {
-      sendGatewayUpdate(readGatewayReply());
+      readGatewayReply();
+      yield(); 
+      sendGatewayUpdate();
+//      sendGatewayUpdate(&cmd);
     }
     else if(r == '~' ) 
     {
-      String cmd = readSerialSS();
-
-      DLN("Gateway message : "+cmd);
-      handleGatewayMessage(cmd);
+      readSerialSS();
+      yield(); 
+      handleGatewayMessage();
+//      handleGatewayMessage(&cmd);
     }
   }
 }
 
-String readSerialSS()
+void readSerialSS()
 {
-  String cmd = "";
   byte inByte = 0;
   int counter = 0;
   bool finished = false;
   unsigned int timeoutStart = millis();
 
-  while (!finished) 
-  {
-    if(swSer.available())
-    {
-      char inChar = (char)swSer.read();
-      if (inChar == '\n') 
-      {
-        finished = true;
-      }
-      else
-      {
-        cmd += inChar;
-        timeoutStart = millis();
-      }    
-    }
-    else if(timeoutStart + 1000 < millis())
-    {
-      finished = true;
-    }
-    
-  }
-      
-  return cmd.substring(3);
+  swSer.readBytes(cmd, 3);
+  
+  int len = swSer.readBytesUntil('\n', cmd, MAXLINELENGTH);
+  cmd[len] = '\0';
+
+  DV(cmd);
 }
 
-String readGatewayReply()
+void readGatewayReply()
 {
-  String cmd = "";
+//  String cmd = "";
   byte inByte = 0;
   int counter = 0;
   bool finished = false;
+//  cmd = "";
   
   while (!finished)
   {
@@ -90,25 +80,30 @@ String readGatewayReply()
       }
       else
       {
-        cmd += (char)inByte;
+        cmd[counter++] = (char)inByte;
+//        cmd += (char)inByte;
       }
     }    
   }  
 
+  cmd[counter] = '\0';
+
   delay(100);
   
-  return cmd;  
+//  return cmd;  
 }
 
-void sendGatewayUpdate(String data)
+void sendGatewayUpdate()
 {
-  DLN("GatewayUpdate sent : "+data);
+//  DLN("GatewayUpdate sent : "+*data);
 
 
 }
 
-void handleGatewayMessage(String cmd)
+//void handleGatewayMessage(String *cmd)
+void handleGatewayMessage()
 {
+//  StringSplitter *splitter = new StringSplitter(*cmd, '$', 4);
   StringSplitter *splitter = new StringSplitter(cmd, '$', 4);
   int itemCount = splitter->getItemCount();
 
@@ -124,6 +119,8 @@ void handleGatewayMessage(String cmd)
         mqttclient.publish((String(MQTT_TOPIC)+"/gatewayaddress").c_str(), splitter1->getItemAtIndex(1).c_str());
       }
     }
+
+    delete splitter1;
   }
   else if(splitter->getItemAtIndex(0) == "[V]")  // gateway version
   {
@@ -137,12 +134,18 @@ void handleGatewayMessage(String cmd)
         mqttclient.publish((String(MQTT_TOPIC)+"/gatewayversion").c_str(), splitter1->getItemAtIndex(1).c_str());
       }
     }
+
+    delete splitter1;
   }
+
+  delete splitter;
 }
 
-void sendSensorData(String data)
+//void sendSensorData(String *data)
+void sendSensorData()
 {
-  StringSplitter *splitter = new StringSplitter(data, '$', 3);
+//  StringSplitter *splitter = new StringSplitter(*data, '$', 3);
+  StringSplitter *splitter = new StringSplitter(cmd, '$', 3);
   int itemCount = splitter->getItemCount();
   String subject = "SHRDZM/";
 
@@ -155,14 +158,26 @@ void sendSensorData(String data)
 
       if(splitter->getItemAtIndex(0) == "[D]")
       {
-/*        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor").c_str(), 
-          splitter->getItemAtIndex(2).c_str()); */
-        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+v).c_str(), 
-          t.c_str());
+//        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+t).c_str(), 
+//          v.c_str());
+        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+
+        splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'))).c_str(), 
+          splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1).c_str());
+
+        if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
+        {
+//          cloudAddMeasurement(splitter->getItemAtIndex(1).c_str(), t.c_str(), v.c_str());
+          cloudAddMeasurement(splitter->getItemAtIndex(1).c_str(), 
+          splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':')).c_str(), 
+          splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1).c_str());
+        }
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {
-        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), String(t+" "+v).c_str());
+//        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), String(t+" "+v).c_str());
+        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), 
+        (splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'))+" "+
+        splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1)).c_str());
       }  
       else if(splitter->getItemAtIndex(0) == "[P]") // [P]$500291D60619$paired:OK
       {        
@@ -173,6 +188,9 @@ void sendSensorData(String data)
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/config").c_str(), 
           splitter->getItemAtIndex(2).c_str());
+
+        if(t == "devicetype")
+          registerDeviceTypeBuffer = splitter->getItemAtIndex(1)+":"+v;
       }
       else if(splitter->getItemAtIndex(0) == "[A]")
       {

@@ -1,3 +1,7 @@
 
 hardware/.~lock.Wiring.odp#
 *.odp#
+code/Cloud/classes/Database.php
+code/alexa/authorize/classes/Database.php
+code/api/classes/Database.php
+code/alexa/classes/Database.php

@@ -9,6 +9,9 @@
 
 #include "DeviceBase.h"
 
+#include <SoftwareSerial.h>
+#include "uart.h"
+
 class Device_IM350 : public DeviceBase
 {   
   public:
@@ -22,8 +25,21 @@ class Device_IM350 : public DeviceBase
     SensorData* readParameterTypes();
     SensorData* readParameter();
     SensorData* readInitialSetupParameter();
+
+    enum devicetype {
+      unknown,
+      im350,
+      am550,
+      im350Wels
+    };
     
   protected:
+    void ResetData();
+    devicetype dt;
+    SoftwareSerial mySoftwareSerial;
+    bool softwareSerialUsed;
+    bool inverted;
+    
     char m_cipherkey[33];
     bool Translate(const char* code, const char *data);
     String getTimestamp();
@@ -55,6 +71,17 @@ class Device_IM350 : public DeviceBase
             m_pData = NULL;
             m_pOutput = NULL;
           }
+        }
+
+        void ResetData()
+        {
+          if(m_pData != NULL)
+          {
+            free(m_pData);
+            m_dataSize = 0;
+            m_pData = NULL;
+            m_pOutput = NULL;
+          }          
         }
         
         byte getUInt8(int index);
@@ -88,6 +115,7 @@ class Device_IM350 : public DeviceBase
         };
 
         Cipher();
+        void ResetData();
         void setBlockCipherKey(byte *key);
         void generateWorkingkeys();
         void flushFinalBlock(Data *data);
@@ -174,6 +202,7 @@ class Device_IM350 : public DeviceBase
     int m_packetLength;
     int m_position;
     Data m_data;
+//    Data *m_data;
     Cipher m_cipher;
     uint16_t m_message_year;
     uint8_t m_message_month;

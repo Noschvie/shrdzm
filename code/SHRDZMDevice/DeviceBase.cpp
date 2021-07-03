@@ -65,6 +65,11 @@ bool DeviceBase::setDeviceParameter(JsonObject obj)
   return true;
 }
 
+void DeviceBase::setConfigurationObject(DynamicJsonDocument *configurationObject)
+{
+  m_pConfigurationObject = configurationObject;
+};
+
 JsonObject DeviceBase::getDeviceParameter()
 {
   return deviceParameter;

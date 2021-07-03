@@ -9,11 +9,11 @@
   https://github.com/saghonfly
 
 */
-
 #include "config/config.h"
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "SetupObject.h"
+#include "SerialBufferObject.h"
 #include "MQTTBufferObject.h"
 #include "StringSplitter.h"
 #include <SoftwareSerial.h>
@@ -24,14 +24,25 @@
 #include <ESP8266WebServer.h>
 
 #define TINY_GSM_MODEM_SIM800
+#define DEBUG_SHRDZM
 
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 
 SimpleEspNowConnection simpleEspConnection(SimpleEspNowRole::SERVER);
 DynamicJsonDocument configdoc(1024);
-JsonObject configurationDevices  = configdoc.createNestedObject("devices");
+//JsonObject configurationDevices  = configdoc.createNestedObject("devices");
 
+typedef struct struct_esp_message {
+  char prefix = '.';
+  char type;
+  long sendTime;  
+  uint8_t pc; // packe count
+  uint8_t p;  // package  
+  uint8_t len;
+  char message[200];
+  uint16_t checksum;  
+} esp_message;
 
 SoftwareSerial SerialAT(14, 12); // RX, TX for SIM800
 TinyGsm modem(SerialAT);
@@ -69,6 +80,7 @@ String APName;
 
 SetupObject setupObject;
 MQTTBufferObject mqttBufferObject;
+SerialBufferObject serialBufferObject;
 
 // AP WebServer
 char* getWebsite(char* content)
@@ -516,7 +528,7 @@ void update_error(int err)
 bool deleteConfig()
 {
   configdoc.clear();
-  configurationDevices = configdoc.createNestedObject("devices");
+//  configurationDevices = configdoc.createNestedObject("devices");
 
   return writeConfig();
 }
@@ -530,12 +542,18 @@ bool readConfig()
       if (configFile) 
       {
         // Allocate a buffer to store contents of the file.
-
         String content;
-        
+
         for(int i=0;i<configFile.size();i++) //Read upto complete file size
         {
           content += (char)configFile.read();
+        }
+
+        if(content.isEmpty())
+        {
+          Serial.println("Content file will be deleted bacause it is corrupt");
+          SPIFFS.remove("/shrdzm_config.json");
+          return false;
         }
 
         DeserializationError error = deserializeJson(configdoc, content);
@@ -549,6 +567,12 @@ bool readConfig()
 
         configFile.close();
       }
+      else
+      {
+        Serial.println("configFile does not exist");
+
+        return false;
+      }
     }
     else
     {
@@ -561,7 +585,9 @@ bool readConfig()
 #ifdef DEBUG
     serializeJson(configdoc, Serial);
     Serial.println();
-#endif    
+#endif   
+
+    return true;
 }
 
 bool writeConfig()
@@ -599,7 +625,7 @@ void sendOpenESPMessages(String ad)
   String message;
   
 #ifdef DEBUG  
-  Serial.println("Send open messages to "+ad);
+ // Serial.println("Send open messages to "+ad);
 #endif    
 
   do
@@ -614,7 +640,7 @@ void sendOpenESPMessages(String ad)
         message += ":"+ si->m_parameterValue;
   
 #ifdef DEBUG
-      Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+ //     Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
 #endif
       
       simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
@@ -629,34 +655,73 @@ void sendOpenESPMessages(String ad)
   simpleEspConnection.sendMessage("$SLEEP$", ad);
 }
 
+bool CheckChecksum(uint16_t checksum, const char *message)
+{
+  return simpleEspConnection.calculateChecksum(message) == checksum ? true : false;
+}
+
 void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
 #ifdef DEBUG  
-  Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
+ // Serial.println("MESSAGE:'"+String((char *)message)+"' from "+simpleEspConnection.macToStr(ad));
 #endif
-  
-  if(String((char *)message) == "$PING$")
+  uint16_t checksum = 0;
+  String m;
+
+  if(message[0] == '.') // structure
+  {
+    esp_message em;    
+    memcpy(&em, message, len);
+    
+    m = String(em.message);
+
+    if(em.pc > 1)
+    {
+      String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$Multi package not supported in this version. Please update.";
+      serialBufferObject.AddItem(s);
+
+/*      Serial.write(s.c_str(), s.length());
+      delay(100);
+      Serial.print('\n');
+      delay(100);  */
+      
+      return;
+    }
+
+    if(!CheckChecksum(em.checksum, em.message))
+    {
+      String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$Checksum different!";
+      serialBufferObject.AddItem(s);
+
+/*      Serial.write(s.c_str(), s.length());
+      delay(100);
+      Serial.print('\n');
+      delay(100);  */
+
+      return;
+    }
+  }
+  else
+  {
+    m = (char *)message;
+  }
+
+  if(m == "$PING$")
   {
     OnConnected(ad, simpleEspConnection.macToStr(ad));
     return;
   }
 
-  if(String((char *)message) == "$F$") // client ask for shutdown signal
+  if(m == "$F$") // client ask for shutdown signal
   {    
     sendOpenESPMessages(simpleEspConnection.macToStr(ad));
-//    simpleEspConnection.sendMessage("$SLEEP$", simpleEspConnection.macToStr(ad));        
-
-//    Serial.println("Sent $SLEEP$ to "+simpleEspConnection.macToStr(ad));
     return;
-  }
-
-  String m = (char *)message;
+  }  
 
   if(m.substring(0,3) == "$D$")       // Data
   {
     String s = "*000[D]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-    Serial.write(s.c_str(), s.length());
-    Serial.print('\n');
+    serialBufferObject.AddItem(s);
 
     // send via GSM    
     if(simEnabled)
@@ -692,8 +757,10 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
         if(nf > 0)
         {
           String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
-          Serial.write(s.c_str(), s.length());
-          Serial.print('\n');
+//          Serial.write(s.c_str(), s.length());
+//          Serial.print('\n');
+            serialBufferObject.AddItem(s);
+
 
           if(simEnabled)
           {
@@ -708,8 +775,10 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       }while(run);
   
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
-      Serial.write(s.c_str(), s.length());
-      Serial.print('\n');
+//      Serial.write(s.c_str(), s.length());
+//      Serial.print('\n');
+      serialBufferObject.AddItem(s);
+
 
       // send via GSM    
       if(simEnabled)
@@ -721,8 +790,9 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     else
     {
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
-      Serial.write(s.c_str(), s.length());
-      Serial.print('\n');
+//      Serial.write(s.c_str(), s.length());
+//      Serial.print('\n');
+      serialBufferObject.AddItem(s);
 
       // send via GSM    
       if(simEnabled)
@@ -748,8 +818,9 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$V$")  // Version
   {
     String s = "*000[V]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-    Serial.write(s.c_str(), s.length());
-    Serial.print('\n');
+//    Serial.write(s.c_str(), s.length());
+//    Serial.print('\n');
+    serialBufferObject.AddItem(s);
 
     if(simEnabled)
     {
@@ -760,8 +831,9 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$X$")  // Supported devices
   {
     String s = "*000[X]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-    Serial.write(s.c_str(), s.length());
-    Serial.print('\n');
+//    Serial.write(s.c_str(), s.length());
+//    Serial.print('\n');
+    serialBufferObject.AddItem(s);
 
     if(simEnabled)
     {
@@ -772,8 +844,9 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$I$")  // Init due to new firmware
   {
     String s = "*000[I]$"+simpleEspConnection.macToStr(ad)+"$INIT";
-    Serial.write(s.c_str(), s.length());
-    Serial.print('\n');
+//    Serial.write(s.c_str(), s.length());
+//    Serial.print('\n');
+    serialBufferObject.AddItem(s);
     
     if(simEnabled)
     {
@@ -784,25 +857,26 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else
   {
     String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$"+m;
-    Serial.write(s.c_str(), s.length());
+/*    Serial.write(s.c_str(), s.length());
     delay(100);
     Serial.print('\n');
-    delay(100);  
+    delay(100);  */
+    serialBufferObject.AddItem(s);    
   }
 }
 
 void OnPaired(uint8_t *ga, String ad)
 {
 #ifdef DEBUG
-  Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
+//  Serial.println("EspNowConnection : Client '"+ad+"' paired! ");
 #endif
 
-  if(!configurationDevices.containsKey(ad))
+/*  if(!configurationDevices.containsKey(ad))
   {
     JsonObject newDevice  = configurationDevices.createNestedObject(ad);
     
     writeConfig();
-  }
+  } */
   
   String s = "*000[P]$"+ad+"$paired:OK";
   Serial.write(s.c_str(), s.length());
@@ -819,7 +893,7 @@ void OnPaired(uint8_t *ga, String ad)
   if(simEnabled)
   {
 #ifdef DEBUG
-    Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
+ //   Serial.println("OnPaired - send "+String(MQTT_TOPIC)+"/paired ("+deviceName+"/"+ad+")");
 #endif
     mqttBufferObject.AddItem(String(MQTT_TOPIC)+"/paired", deviceName+"/"+ad);  
   }
@@ -831,39 +905,21 @@ void OnConnected(uint8_t *ga, String ad)
   Serial.println("EspNowConnection : Client '"+ad+"' connected! ");
 #endif
 
-//  sendOpenESPMessages(ad);
-
-/*
-  clientAddress = ad;
-  SetupObject::SetupItem *si = setupObject.GetItem(ad);
-
-  if(si != NULL)
+  // check auto pairing
+/*  if(!configurationDevices.containsKey(ad))
   {
-    String message = si->m_parameterName;
-
-    if(si->m_parameterValue != "")
-      message += ":"+ si->m_parameterValue;
-
 #ifdef DEBUG
-    Serial.printf("Send '%s' to %s\n", message.c_str(), ad.c_str());
+    Serial.printf("Unknown device %s connected. Will start auto pair mechanism.",ad.c_str());
 #endif
-    
-    simpleEspConnection.sendMessage((char *)message.c_str(), ad);  
 
-    setupObject.RemoveItem(si);
-
-    reportDeviceStateInfo(ad, "Sent setup");
-  }  
-  else
-  {
-//    simpleEspConnection.sendMessage("$SLEEP$", ad);        
+    OnPaired(ga, ad);
   } */
 }
 
 void OnPairingFinished()
 {
 #ifdef DEBUG  
-  Serial.println("Pairing finished");
+//  Serial.println("Pairing finished");
 #endif  
 }
 
@@ -991,7 +1047,7 @@ void setup()
 {
   bool writeConfigAndReboot = false;
   
-  Serial.begin(9600);
+  Serial.begin(SERIALBAUD);
   Serial.println();
 
 #ifdef VERSION
@@ -1022,8 +1078,19 @@ void setup()
 #endif        
   if(!readConfig())
   {    
+    Serial.println("write new config");
     writeConfig();
   }   
+
+  if(configdoc.containsKey("devices"))
+  {
+    // delete old devices. Risk of too less buffer!
+     deleteConfig();
+     delay(100);
+
+     ESP.restart();     
+  }
+
 
   if(!configdoc.containsKey("wlan"))
   {
@@ -1046,6 +1113,7 @@ void setup()
 
     writeConfig();
   }
+
 
   if(ap_pin != -1)
   {
@@ -1212,6 +1280,8 @@ void loop()
   }
   
   simpleEspConnection.loop();
+  serialBufferObject.executeSerialSend();
+  
 
   if (simEnabled) 
   {

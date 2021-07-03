@@ -70,11 +70,26 @@ bool checkAPModeRequest()
     
     return false;
   }
-  else if(configurationAPWaitStartTime == 0 && configurationAPWaiting)
+  else
   {
-    configurationAPWaitStartTime = currentUptime;
-    DV(configurationAPWaitStartTime);
-  }
+    if(configurationAPWaitStartTime == 0 && configurationAPWaiting)
+    {
+      configurationAPWaitStartTime = currentUptime;
+      DV(configurationAPWaitStartTime);
+    }  
+
+    if(!configurationAPWaitOngoing)
+    {
+      if((configurationAPWaitStartTime > 0) && 
+         (currentUptime > (configurationAPWaitStartTime + 3000)) &&
+         (currentUptime < (configurationAPWaitStartTime + 10000)))
+      {
+        configurationAPWaitOngoing = true;
+        DLN( "Start fast blinking..." );
+        configurationBlinker.attach(0.2, changeConfigurationBlinker);
+      }
+    }
+  }  
 
   return false;
 }

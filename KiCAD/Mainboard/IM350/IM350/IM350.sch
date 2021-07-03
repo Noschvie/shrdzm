@@ -1,0 +1,339 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L RF_Module:ESP-12F U2
+U 1 1 60539BCE
+P 4350 2900
+F 0 "U2" H 4350 3950 50  0000 C CNN
+F 1 "ESP-12F" H 4350 3850 50  0000 C CNN
+F 2 "RF_Module:ESP-12E" H 4350 2900 50  0001 C CNN
+F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf" H 4000 3000 50  0001 C CNN
+	1    4350 2900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR01
+U 1 1 6053D4D6
+P 1300 3900
+F 0 "#PWR01" H 1300 3650 50  0001 C CNN
+F 1 "GND" H 1305 3727 50  0000 C CNN
+F 2 "" H 1300 3900 50  0001 C CNN
+F 3 "" H 1300 3900 50  0001 C CNN
+	1    1300 3900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 3500 1300 3650
+Connection ~ 1300 3650
+Wire Wire Line
+	1300 3650 1300 3900
+Wire Wire Line
+	4350 3650 4350 3600
+Wire Wire Line
+	4350 2000 4350 2100
+Wire Wire Line
+	3500 2000 3500 2500
+Wire Wire Line
+	3500 2500 3750 2500
+Wire Wire Line
+	3500 2000 3650 2000
+Wire Wire Line
+	4950 3200 5100 3200
+Connection ~ 4350 3650
+$Comp
+L power:+5V #PWR02
+U 1 1 6054595C
+P 1700 1650
+F 0 "#PWR02" H 1700 1500 50  0001 C CNN
+F 1 "+5V" H 1715 1823 50  0000 C CNN
+F 2 "" H 1700 1650 50  0001 C CNN
+F 3 "" H 1700 1650 50  0001 C CNN
+	1    1700 1650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5700 2300 5700 3650
+$Comp
+L Connector_Generic:Conn_02x03_Odd_Even J2
+U 1 1 6054CE2E
+P 7000 2000
+F 0 "J2" H 7050 2317 50  0000 C CNN
+F 1 "Conn_02x03_Odd_Even" H 7050 2226 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical" H 7000 2000 50  0001 C CNN
+F 3 "~" H 7000 2000 50  0001 C CNN
+	1    7000 2000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5200 1900 5200 2600
+Wire Wire Line
+	5200 2600 4950 2600
+$Comp
+L Device:R R1
+U 1 1 6054E299
+P 5900 1650
+F 0 "R1" V 5693 1650 50  0000 C CNN
+F 1 "10k" V 5784 1650 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 5830 1650 50  0001 C CNN
+F 3 "~" H 5900 1650 50  0001 C CNN
+	1    5900 1650
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5700 1900 5700 1650
+Wire Wire Line
+	5700 1650 5750 1650
+$Comp
+L power:+3.3V #PWR03
+U 1 1 6054F38A
+P 3650 1450
+F 0 "#PWR03" H 3650 1300 50  0001 C CNN
+F 1 "+3.3V" H 3665 1623 50  0000 C CNN
+F 2 "" H 3650 1450 50  0001 C CNN
+F 3 "" H 3650 1450 50  0001 C CNN
+	1    3650 1450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3650 1450 3650 2000
+Connection ~ 3650 2000
+Wire Wire Line
+	3650 2000 4350 2000
+$Comp
+L power:+3.3V #PWR04
+U 1 1 60552BA5
+P 6250 1450
+F 0 "#PWR04" H 6250 1300 50  0001 C CNN
+F 1 "+3.3V" H 6265 1623 50  0000 C CNN
+F 2 "" H 6250 1450 50  0001 C CNN
+F 3 "" H 6250 1450 50  0001 C CNN
+	1    6250 1450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6050 1650 6250 1650
+Wire Wire Line
+	6250 1650 6250 1900
+Wire Wire Line
+	6250 1650 6250 1450
+Connection ~ 6250 1650
+$Comp
+L Device:R R2
+U 1 1 605543CB
+P 6400 2000
+F 0 "R2" V 6193 2000 50  0000 C CNN
+F 1 "10k" V 6284 2000 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 6330 2000 50  0001 C CNN
+F 3 "~" H 6400 2000 50  0001 C CNN
+	1    6400 2000
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6250 1900 6250 2000
+Connection ~ 6250 1900
+Wire Wire Line
+	6250 1900 6800 1900
+Wire Wire Line
+	5200 1900 5700 1900
+Wire Wire Line
+	6000 2100 6550 2100
+Wire Wire Line
+	6550 2000 6550 2100
+Connection ~ 6550 2100
+Wire Wire Line
+	6550 2100 6800 2100
+Wire Wire Line
+	4950 3000 5200 3000
+$Comp
+L Switch:SW_Push SW1
+U 1 1 60542FE7
+P 5200 3200
+F 0 "SW1" V 5200 3500 50  0000 R CNN
+F 1 "SW_Push" V 5100 3650 50  0000 R CNN
+F 2 "Button_Switch_THT:SW_PUSH_6mm" H 5200 3400 50  0001 C CNN
+F 3 "~" H 5200 3400 50  0001 C CNN
+	1    5200 3200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5200 3400 5200 3650
+Connection ~ 5200 3650
+Wire Wire Line
+	5200 3650 5700 3650
+Wire Wire Line
+	4950 2800 7500 2800
+Wire Wire Line
+	7500 2800 7500 1900
+Wire Wire Line
+	7500 1900 7300 1900
+Connection ~ 5700 3650
+Wire Wire Line
+	7300 2100 7300 3650
+Wire Wire Line
+	5700 3650 6700 3650
+Wire Wire Line
+	6800 2000 6700 2000
+Wire Wire Line
+	6700 2000 6700 3650
+Connection ~ 6700 3650
+Wire Wire Line
+	6700 3650 7300 3650
+NoConn ~ 3750 3400
+NoConn ~ 3750 3300
+NoConn ~ 3750 3200
+NoConn ~ 3750 3100
+NoConn ~ 3750 3000
+NoConn ~ 3750 2900
+NoConn ~ 3750 2700
+NoConn ~ 3750 2300
+NoConn ~ 4950 2300
+NoConn ~ 4950 2400
+NoConn ~ 4950 2500
+NoConn ~ 4950 2700
+NoConn ~ 4950 2900
+NoConn ~ 4950 3100
+NoConn ~ 4950 3300
+NoConn ~ 7300 2000
+Wire Wire Line
+	1700 2900 1600 2900
+Wire Wire Line
+	4350 3650 5100 3650
+Connection ~ 5100 3650
+Wire Wire Line
+	5100 3650 5200 3650
+$Comp
+L Transistor_BJT:BC547 Q1
+U 1 1 6059183E
+P 5800 2100
+F 0 "Q1" H 5991 2146 50  0000 L CNN
+F 1 "BC547" H 5991 2055 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-92_Inline_Horizontal1" H 6000 2025 50  0001 L CIN
+F 3 "https://www.onsemi.com/pub/Collateral/BC550-D.pdf" H 5800 2100 50  0001 L CNN
+	1    5800 2100
+	-1   0    0    -1  
+$EndComp
+Connection ~ 5700 1900
+$Comp
+L Device:R R3
+U 1 1 60596A0F
+P 5100 3450
+F 0 "R3" V 5300 3450 50  0000 C CNN
+F 1 "10k" V 5200 3450 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 5030 3450 50  0001 C CNN
+F 3 "~" H 5100 3450 50  0001 C CNN
+	1    5100 3450
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	5100 3600 5100 3650
+Wire Wire Line
+	5100 3300 5100 3200
+$Comp
+L Erich:USB_B_Micro_Power J1
+U 1 1 605D392E
+P 1300 3100
+F 0 "J1" H 1357 3567 50  0000 C CNN
+F 1 "USB_B_Micro_Power" H 1357 3476 50  0000 C CNN
+F 2 "SHRDZM:USB_Micro-B_Power" H 1450 3050 50  0001 C CNN
+F 3 "~" H 1450 3050 50  0001 C CNN
+	1    1300 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L ME6211C33M5G:ME6211C33M5G IC1
+U 1 1 6059B393
+P 2050 2400
+F 0 "IC1" H 2600 2665 50  0000 C CNN
+F 1 "ME6211C33M5G" H 2600 2574 50  0000 C CNN
+F 2 "ErichCollection:SOT95P282X145-5N" H 3000 2500 50  0001 L CNN
+F 3 "http://xinhuidianzi.com.cn/UploadSysFiles/files/LDO-series/ME6211-Series_E15.0.pdf" H 3000 2400 50  0001 L CNN
+F 4 "High Speed LDO Regulators, High PSRR, Low noise, ME6211 Series" H 3000 2300 50  0001 L CNN "Description"
+F 5 "1.45" H 3000 2200 50  0001 L CNN "Height"
+F 6 "Microne" H 3000 2100 50  0001 L CNN "Manufacturer_Name"
+F 7 "ME6211C33M5G" H 3000 2000 50  0001 L CNN "Manufacturer_Part_Number"
+F 8 "" H 3000 1900 50  0001 L CNN "Mouser Part Number"
+F 9 "" H 3000 1800 50  0001 L CNN "Mouser Price/Stock"
+F 10 "" H 3000 1700 50  0001 L CNN "Arrow Part Number"
+F 11 "" H 3000 1600 50  0001 L CNN "Arrow Price/Stock"
+	1    2050 2400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1700 1650 1700 2400
+Wire Wire Line
+	2050 2400 1700 2400
+Connection ~ 1700 2400
+Wire Wire Line
+	1700 2400 1700 2600
+Connection ~ 1700 2600
+Wire Wire Line
+	1700 2600 1700 2900
+$Comp
+L Device:C C1
+U 1 1 605A350B
+P 1850 3150
+F 0 "C1" H 1600 3150 50  0000 L CNN
+F 1 "1uF" H 1650 3050 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 1888 3000 50  0001 C CNN
+F 3 "~" H 1850 3150 50  0001 C CNN
+	1    1850 3150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1700 2600 1850 2600
+Wire Wire Line
+	1300 3650 1850 3650
+Wire Wire Line
+	1850 2600 1850 3000
+Connection ~ 1850 2600
+Wire Wire Line
+	1850 2600 2050 2600
+Wire Wire Line
+	1850 3300 1850 3650
+Connection ~ 1850 3650
+Wire Wire Line
+	1850 3650 2050 3650
+Connection ~ 2050 3650
+Wire Wire Line
+	2050 3650 3250 3650
+Wire Wire Line
+	3150 2500 3250 2500
+Connection ~ 3500 2500
+$Comp
+L Device:C C2
+U 1 1 605A8CD5
+P 3250 3100
+F 0 "C2" H 3000 3100 50  0000 L CNN
+F 1 "1uF" H 3050 3000 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3288 2950 50  0001 C CNN
+F 3 "~" H 3250 3100 50  0001 C CNN
+	1    3250 3100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3250 2950 3250 2500
+Connection ~ 3250 2500
+Wire Wire Line
+	3250 3250 3250 3650
+Connection ~ 3250 3650
+Wire Wire Line
+	3250 3650 4350 3650
+NoConn ~ 3150 2400
+Wire Wire Line
+	2050 2500 2050 3650
+Wire Wire Line
+	3250 2500 3500 2500
+$EndSCHEMATC

@@ -2,6 +2,17 @@
 
 static DynamicJsonDocument g_configdoc(1024);
 
+typedef struct struct_esp_message {
+  char prefix = '.';
+  char type;
+  long sendTime;
+  uint8_t pc; // packe count
+  uint8_t p;  // package  
+  uint8_t len;
+  char message[200];
+  uint16_t checksum;
+} esp_message;
+
 Configuration::Configuration()
 {
 }
@@ -13,6 +24,31 @@ Configuration::~Configuration()
 DynamicJsonDocument *Configuration::getConfigDocument()
 {
   return &g_configdoc;
+}
+
+void Configuration::sendMessageWithChecksum(SimpleEspNowConnection *simpleEspConnection, const char *message)
+{
+  if(simpleEspConnection == NULL)
+    return;
+  
+  uint8_t packages = strlen(message) / 200 + 1;
+  long sendtime = millis();
+
+  for(int i = 0; i<packages; i++)
+  {
+    esp_message em;
+    
+    em.type = 'F';
+    em.sendTime = sendtime;
+    em.pc = packages;
+    em.p = i+1;
+    em.len = strlen(message);    
+
+    sprintf(em.message, message, strlen(message));
+    em.checksum = simpleEspConnection->calculateChecksum(message);
+  
+    simpleEspConnection->sendMessage((uint8_t*)&em, sizeof(em));  
+  }  
 }
   
 bool Configuration::initialize()
@@ -57,6 +93,17 @@ bool Configuration::store()
   Serial.println("serialized...");
   configFile.close();
     
+  return true;
+}
+
+bool Configuration::checkCompatibility()
+{
+  if(g_configdoc.containsKey("devices"))
+    return false;
+
+  if(g_configdoc.containsKey("sim800"))
+    return false;
+
   return true;
 }
 
@@ -105,6 +152,26 @@ bool Configuration::migrateToNewConfigurationStyle()
     setWlanParameter("password", "");
     update = true;
   }
+  if(!containsWlanKey("ip"))
+  {
+    setWlanParameter("ip", "");
+    update = true;
+  }
+  if(!containsWlanKey("dns"))
+  {
+    setWlanParameter("dns", "");
+    update = true;
+  }
+  if(!containsWlanKey("gateway"))
+  {
+    setWlanParameter("gateway", "");
+    update = true;
+  }
+  if(!containsWlanKey("subnet"))
+  {
+    setWlanParameter("subnet", "");
+    update = true;
+  }
   if(!containsWlanKey("MQTTbroker"))
   {
     setWlanParameter("MQTTbroker", "test.mosquitto.org");
@@ -123,6 +190,26 @@ bool Configuration::migrateToNewConfigurationStyle()
   if(!containsWlanKey("MQTTpassword"))
   {
     setWlanParameter("MQTTpassword", "");
+    update = true;
+  }
+
+  if(!g_configdoc.containsKey("sensorpowerpin"))
+  {
+    g_configdoc["sensorpowerpin"] = String(SENSORPOWERPIN);
+    update = true;
+  }
+  else
+  {
+    if(!g_configdoc["sensorpowerpin"].is<const char*>())
+    {
+      g_configdoc["sensorpowerpin"] = String(SENSORPOWERPIN);
+      update = true;
+    }
+  }
+  
+  if(g_configdoc["devicetype"] == "IM350")
+  {
+    g_configdoc["devicetype"] = "IM350/AM550";
     update = true;
   }
 
@@ -180,6 +267,11 @@ bool Configuration::containsWlanKey(char *name)
   return g_configdoc["wlan"].containsKey(name);
 }
 
+bool Configuration::containsCloudKey(char *name)
+{
+  return g_configdoc["cloud"].containsKey(name);
+}
+
 void Configuration::set(char *name, char *value)
 {
   g_configdoc[name] = value;
@@ -209,6 +301,15 @@ void Configuration::setWlanParameter(const char *name, const char *value)
   g_configdoc["wlan"][name] = v;
 }
 
+void Configuration::setCloudParameter(const char *name, const char *value)
+{
+  String v(value);
+
+  v.replace( " ", "" );
+  
+  g_configdoc["cloud"][name] = v;
+}
+
 void Configuration::setDeviceParameter(JsonObject dc)
 {
   g_configdoc["device"] = dc;
@@ -217,6 +318,11 @@ void Configuration::setDeviceParameter(JsonObject dc)
 void Configuration::setWlanParameter(JsonObject dc)
 {
   g_configdoc["wlan"] = dc;
+}
+ 
+void Configuration::setCloudParameter(JsonObject dc)
+{
+  g_configdoc["cloud"] = dc;
 }
  
 const char* Configuration::get(char *name)
@@ -237,9 +343,22 @@ JsonObject Configuration::getWlanParameter()
   return g_configdoc["wlan"];
 }
 
+JsonObject Configuration::getCloudParameter()
+{
+  return g_configdoc["cloud"];
+}
+
 const char* Configuration::getWlanParameter(const char *parameterName)
 {
   return g_configdoc["wlan"][parameterName];
+}
+
+const char* Configuration::getCloudParameter(const char *parameterName)
+{
+  if(g_configdoc["cloud"][parameterName].isNull())
+    return "";
+  else
+    return g_configdoc["cloud"][parameterName];
 }
 
 String Configuration::readLastVersionNumber()
@@ -359,7 +478,7 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
   
   for (JsonPair kv : documentRoot) 
   {
-    if(String(kv.key().c_str()) != "device")
+    if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan")
       reply += kv.key().c_str()+String(":")+kv.value().as<char*>()+"|";
   }
 
@@ -370,7 +489,11 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
     reply += "|devicetype: ";
   }
 
-  simpleEspConnection->sendMessage((char *)reply.c_str());
+//  simpleEspConnection->sendMessage((char *)reply.c_str());
+  sendMessageWithChecksum(simpleEspConnection,(char *)reply.c_str());                       
+
+  Serial.println("reply 1 = "+reply);
+
 
   // send device parameter
   if(g_configdoc["device"].size() > 0)
@@ -385,7 +508,10 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 
     reply.remove(reply.length()-1);
 
-    simpleEspConnection->sendMessage((char *)reply.c_str());
+  //  simpleEspConnection->sendMessage((char *)reply.c_str());
+    sendMessageWithChecksum(simpleEspConnection, (char *)reply.c_str());                       
+  
+    Serial.println("reply 2 = "+reply);
   }   
 }
 
@@ -412,4 +538,18 @@ void Configuration::sendSetup(PubSubClient *mqttclient, const char *subject)
       mqttclient->publish((String(subject)+"/config").c_str(), (kv.key().c_str()+String(":")+kv.value().as<char*>()).c_str());
     }
   }   
+}
+
+void Configuration::resetConfiguration()
+{
+#ifdef LITTLEFS  
+  LittleFS.remove("/version.txt");
+  LittleFS.remove("/reboot.txt");
+  LittleFS.remove("/shrdzm_config.json");
+#else
+  SPIFFS.remove("/version.txt");
+  SPIFFS.remove("/reboot.txt");
+  SPIFFS.remove("/shrdzm_config.json");
+#endif  
+    
 }

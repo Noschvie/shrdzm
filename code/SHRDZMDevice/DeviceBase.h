@@ -53,6 +53,7 @@ class DeviceBase
     virtual bool setDeviceParameter(JsonObject obj);
     JsonObject getActionParameter();
     const char * getDeviceTypeName(){return deviceTypeName.c_str();};
+    void setConfigurationObject(DynamicJsonDocument *configurationObject);
     virtual bool setAction(String action){return false;};
     virtual bool setPostAction(){return false;};
     virtual void prepare(){};
@@ -70,6 +71,8 @@ class DeviceBase
 
     JsonObject deviceParameter;
     JsonObject actionParameter;
+
+    DynamicJsonDocument *m_pConfigurationObject;
     
     StaticJsonDocument<JSON_OBJECT_SIZE(10)> doc;
     StaticJsonDocument<JSON_OBJECT_SIZE(10)> docAction;

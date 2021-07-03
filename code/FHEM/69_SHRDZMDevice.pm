@@ -177,10 +177,13 @@ sub SHRDZMDevice_GetUpdate ($$)
 	}
 	else
 	{
-		my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
-		my $t1 = gettimeofday()+($sl*2);
-	
-		InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+		if(ReadingsVal($hash->{NAME}, "interval", -1) > 0)
+		{
+			my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+			my $t1 = gettimeofday()+($sl*2);
+		
+			InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+		}
 	}
 }
 
@@ -211,10 +214,7 @@ sub SHRDZMDevice_Parse ($$)
 		
 		if($items[1] eq "value")
 		{	
-			RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
-
 			readingsBeginUpdate($hash);
-#			readingsBulkUpdate($hash, $parameter[0], $parameter[1], 1);	
 			my @value = split(":", $message);
 			readingsBulkUpdate($hash, $parameter[0], $value[1], 1);			
 			my $oldOnlineState = ReadingsVal($hash->{NAME}, "online", 0);
@@ -226,11 +226,16 @@ sub SHRDZMDevice_Parse ($$)
 			readingsEndUpdate($hash, 1);
 
 			
-			my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
-			my $t1 = gettimeofday()+($sl*2);
+			if(ReadingsVal($hash->{NAME}, "interval", -1) > 0)
+			{
+				RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
 			
-			InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
-		
+				my $sl = ReadingsVal($hash->{NAME}, "interval", 0);
+				my $t1 = gettimeofday()+($sl*2);
+				
+				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+			}
+			
 			return $hash->{NAME};
 		}
 		elsif($items[1] eq "paired")
@@ -318,11 +323,13 @@ sub SHRDZMDevice_Parse ($$)
 
 			if($parameter[0] =~ "interval")
 			{
-				RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
+				if(ReadingsVal($hash->{NAME}, "interval", -1) > 0)
+				{
+					RemoveInternalTimer($hash, "SHRDZMDevice_GetUpdate");
+					my $t1 = gettimeofday()+($parameter[1]*2);
 				
-				my $t1 = gettimeofday()+($parameter[1]*2);
-			
-				InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+					InternalTimer($t1, "SHRDZMDevice_GetUpdate", $hash);							
+				}				
 			}
 
 			return $hash->{NAME};

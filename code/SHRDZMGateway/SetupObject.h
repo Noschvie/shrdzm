@@ -12,6 +12,7 @@ class SetupObject
     String m_deviceName;
     String m_parameterName;
     String m_parameterValue;
+    unsigned long timestamp;
 
     public:
     SetupItem(String deviceName, String parameterName, String parameterValue)
@@ -19,12 +20,20 @@ class SetupObject
       m_deviceName = deviceName;
       m_parameterName = parameterName;
       m_parameterValue = parameterValue;
+      timestamp = millis();
+#ifdef DEBUG
+      Serial.printf("%s, %s, %s \n", m_deviceName.c_str(), m_parameterName.c_str(), m_parameterValue.c_str());
+#endif            
     };
     SetupItem(String deviceName, String command)
     {
       m_deviceName = deviceName;
       m_parameterName = command;
       m_parameterValue = "";
+#ifdef DEBUG
+      Serial.printf("%s, %s \n", m_deviceName.c_str(), m_parameterName.c_str());
+#endif            
+      timestamp = millis();
     };
   };
 
@@ -41,36 +50,68 @@ class SetupObject
   
   void AddItem( String deviceName, String parameterName, String parameterValue )
   {
+    bool bFoundSpace = false;
+    SetupItem *oldestItem = NULL;
+    
     for(int i = 0; i<20; i++)
     {
       if(items[i] == NULL)
       {
         items[i] = new SetupItem(deviceName, parameterName, parameterValue);
+        bFoundSpace = true;
         break;
+      }
+      else
+      {
+        if(oldestItem == NULL)
+          oldestItem = items[i];
+          
+        if(items[i]->timestamp < oldestItem->timestamp)
+          oldestItem = items[i];
       }
     }
 
-/*    if(m_simpleEspConnection != NULL)
+    if(!bFoundSpace && oldestItem != NULL) // search for the oldest one and take that
     {
-      m_simpleEspConnection->sendMessage("$PING$", deviceName);  
-    } */
+#ifdef DEBUG
+      Serial.printf("Oldest Item %s for %s removed.\n", oldestItem->m_parameterName.c_str(), oldestItem->m_deviceName.c_str());
+#endif      
+      RemoveItem(oldestItem);
+      AddItem(deviceName, parameterName, parameterValue);
+    }
   };
 
   void AddItem( String deviceName, String command )
   {
+    bool bFoundSpace = false;
+    SetupItem *oldestItem = NULL;
+    
     for(int i = 0; i<20; i++)
     {
       if(items[i] == NULL)
       {
         items[i] = new SetupItem(deviceName, command);
+        bFoundSpace = true;
         break;
       }
+      else
+      {
+        if(oldestItem == NULL)
+          oldestItem = items[i];
+          
+        if(items[i]->timestamp < oldestItem->timestamp)
+          oldestItem = items[i];
+      }
     }
-
-/*    if(m_simpleEspConnection != NULL)
+    
+    if(!bFoundSpace && oldestItem != NULL) // search for the oldest one and take that
     {
-      m_simpleEspConnection->sendMessage("$PING$", deviceName);  
-    }    */
+#ifdef DEBUG
+      Serial.printf("Oldest Item %s for %s removed.\n", oldestItem->m_parameterName.c_str(), oldestItem->m_deviceName.c_str());
+#endif
+      RemoveItem(oldestItem);
+      AddItem(deviceName, command);
+    }
   };
   
   void AddInitItem( String deviceName )

@@ -127,6 +127,7 @@ sub Define()
 		Log3($hash->{NAME}, 5, "NEW serial device : " . $args[3]);
 		$hash->{Protocol}= "serial";
 		$hash->{DeviceName}= $args[3];
+		CommandAttr(undef,"$name room SHRDZM");					
 		CommandAttr(undef,"$name upgradePath http\://shrdzm.pintarweb.net/upgrade.php");	
 		my $ret = undef;
 		

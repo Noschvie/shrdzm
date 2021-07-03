@@ -16,16 +16,21 @@
 
 Configuration configuration;
 
+//SoftwareSerial swSer(14,12);
 SoftwareSerial swSer(14,12);
 ESP8266WebServer webserver;
 WiFiClient espClient;
 PubSubClient mqttclient(espClient);
 
 RCSwitch mySwitch = RCSwitch();
-
 unsigned long lastRCMillis = 0;
-String subcribeTopicRCSEND;
-char websideBuffer[5000];
+Ticker configurationBlinker;
+
+#define WEBSITEBUFFER_SIZE 6000
+#define MAXLINELENGTH 512
+
+char websideBuffer[WEBSITEBUFFER_SIZE];
+char menuContextBuffer[3500];
 String deviceName;
 String ver, nam;
 String lastVersionNumber;
@@ -39,11 +44,22 @@ String subscribeTopicSet;
 String subscribeTopicConfig;
 String subscribeTopicRCSEND;
 unsigned long mqttNextTry = 0;
+String lastMessage = "";
+const uint16_t ajaxIntervall = 2;
+bool cloudConnected = false;
+char cloudTokenArray[300];
+String cloudID = "";
+bool writeConfiguration = false;
+String registerDeviceTypeBuffer = "";
+time_t now;                         
+tm tm; 
+char cmd[MAXLINELENGTH];
 
 void setup() 
 {  
+  memset(cloudTokenArray, 0, 300);
 #ifdef DEBUG_SHRDZM
-Serial.begin(9600); Serial.println();
+Serial.begin(SERIALBAUD); Serial.println();
 #endif
 
 #ifdef VERSION
@@ -59,7 +75,7 @@ Serial.begin(9600); Serial.println();
 #endif
 
   setDeviceName();
-
+  
 #ifdef MQTT_SUBSCRIBE_TOPIC
   MQTT_TOPIC = MQTT_SUBSCRIBE_TOPIC;
 #else
@@ -95,6 +111,14 @@ Serial.begin(9600); Serial.println();
   }
 #endif
 
+  lastVersionNumber = configuration.readLastVersionNumber();  
+  currVersion = ESP.getSketchMD5();
+
+  if(strcmp(lastVersionNumber.c_str(), currVersion.c_str()) != 0)
+  {
+    configuration.storeVersionNumber();
+  }
+
   if(!configuration.load())
   {
     DLN("configuration.initialize...");    
@@ -108,11 +132,16 @@ Serial.begin(9600); Serial.println();
     ESP.restart();          
   }
 
-#ifdef SERIALBAUD
-  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-#else
-  swSer.begin(9600, SWSERIAL_8N1, 14, 12, false);
-#endif
+  if(configuration.containsWlanKey("NTPServer") && String(configuration.getWlanParameter("NTPServer")) != "" )
+  {
+    if(configuration.containsWlanKey("TZ") && String(configuration.getWlanParameter("TZ")) != "" )
+    {
+      configTime(configuration.getWlanParameter("TZ"), configuration.getWlanParameter("NTPServer"));
+    }
+  }
+
+//  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
+  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 256);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 
@@ -142,11 +171,28 @@ Serial.begin(9600); Serial.println();
   delay(100);
   digitalWrite(RESET_PIN,HIGH);
 #endif  
+
+  // Enable RCSwitch
+#ifdef RCSWITCHPIN
+  mySwitch.enableReceive(RCSWITCHPIN);
+#endif
+
+#ifdef RCSENDPIN
+  mySwitch.enableTransmit(RCSENDPIN);
+#endif
+    
   
 }
 
 void loop() 
 {  
+  if(writeConfiguration)
+  {
+    writeConfiguration = false;
+    DLN("Store configuration...");
+    configuration.store();
+  }
+  
   if(configurationMode)
   {
     webserver.handleClient();
@@ -159,8 +205,19 @@ void loop()
     {
       apConnectingOngoing = false;
       DLN("Connected to AP. Starting Webserver...");
+
+      DV(WiFi.localIP());
+      DV(WiFi.dnsIP());
+      DV(WiFi.gatewayIP());
+      DV(WiFi.subnetMask());
       
       startServerListener();
+
+      if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && !cloudConnected)
+      {
+        DLN("Will start cloud connection");
+        cloudConnected = cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));        
+      }               
     } 
     else
     {
@@ -205,5 +262,7 @@ void loop()
 
   SwSerLoop();
   OTALoop();
+  RCSwitchLoop();
+  CloudLoop();
   
 }

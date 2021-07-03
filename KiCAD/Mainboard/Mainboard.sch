@@ -1,0 +1,208 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title "SHRDZM Mainboard"
+Date "2021-03-16"
+Rev "1.0"
+Comp "SHRDZM"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+NoConn ~ 5200 4450
+NoConn ~ 5200 4350
+NoConn ~ 5200 4250
+NoConn ~ 5200 4150
+NoConn ~ 5200 4050
+NoConn ~ 5200 3950
+$Comp
+L RF_Module:ESP-12F U1
+U 1 1 6050699E
+P 5800 3950
+F 0 "U1" H 5800 4931 50  0000 C CNN
+F 1 "ESP-12F" H 5800 4840 50  0000 C CNN
+F 2 "RF_Module:ESP-12E" H 5800 3950 50  0001 C CNN
+F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf" H 5450 4050 50  0001 C CNN
+	1    5800 3950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5800 3100 5800 3150
+$Comp
+L Switch:SW_Push SW1
+U 1 1 6053160F
+P 6850 4500
+F 0 "SW1" V 6804 4648 50  0000 L CNN
+F 1 "SW_Push" V 6895 4648 50  0000 L CNN
+F 2 "Button_Switch_SMD:SW_SPST_CK_RS282G05A3" H 6850 4700 50  0001 C CNN
+F 3 "~" H 6850 4700 50  0001 C CNN
+	1    6850 4500
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6400 4350 6400 5100
+Wire Wire Line
+	5000 3350 5200 3350
+Wire Wire Line
+	6550 4250 6400 4250
+Wire Wire Line
+	6550 4250 7100 4250
+Wire Wire Line
+	7100 4250 7100 4050
+Connection ~ 6550 4250
+Wire Wire Line
+	6850 4300 6850 4050
+Wire Wire Line
+	6850 4050 6400 4050
+Wire Wire Line
+	6850 4700 6550 4700
+Wire Wire Line
+	6550 4250 6550 4700
+Wire Wire Line
+	6550 4700 5800 4700
+Wire Wire Line
+	5800 4700 5800 4650
+Connection ~ 6550 4700
+Wire Wire Line
+	5200 3550 5100 3550
+Wire Wire Line
+	5100 3550 5100 3100
+Wire Wire Line
+	5100 3100 5800 3100
+Wire Wire Line
+	5100 3550 5100 4150
+Connection ~ 5100 3550
+Wire Wire Line
+	6400 3650 6950 3650
+Wire Wire Line
+	6950 3650 6950 3550
+Wire Wire Line
+	6400 3850 7000 3850
+Wire Wire Line
+	7000 3850 7000 3650
+Wire Wire Line
+	6400 3350 6750 3350
+Wire Wire Line
+	6750 3350 6750 3900
+Wire Wire Line
+	6750 3900 7050 3900
+Wire Wire Line
+	7050 3900 7050 3850
+Wire Wire Line
+	6400 3550 6650 3550
+Wire Wire Line
+	6650 3550 6650 3950
+Wire Wire Line
+	6650 3950 7100 3950
+Wire Wire Line
+	6400 4150 6700 4150
+Wire Wire Line
+	6700 4150 6700 4900
+Wire Wire Line
+	6700 4900 5350 4900
+Wire Wire Line
+	5350 4900 5350 4650
+Wire Wire Line
+	5350 4650 4850 4650
+Wire Wire Line
+	4850 4650 4850 3850
+Wire Wire Line
+	6400 3950 6450 3950
+Wire Wire Line
+	6450 3950 6450 4800
+Wire Wire Line
+	6450 4800 5450 4800
+Wire Wire Line
+	5450 4800 5450 4600
+Wire Wire Line
+	5450 4600 5050 4600
+Wire Wire Line
+	5050 4600 5050 3950
+$Comp
+L power:GND #PWR01
+U 1 1 6056CC32
+P 5800 5350
+F 0 "#PWR01" H 5800 5100 50  0001 C CNN
+F 1 "GND" H 5805 5177 50  0000 C CNN
+F 2 "" H 5800 5350 50  0001 C CNN
+F 3 "" H 5800 5350 50  0001 C CNN
+	1    5800 5350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5800 4700 5800 5350
+Connection ~ 5800 4700
+Wire Wire Line
+	6400 5100 5000 5100
+$Comp
+L Connector:Conn_01x06_Male J1
+U 1 1 605723C5
+P 4050 3850
+F 0 "J1" H 3750 4150 50  0000 C CNN
+F 1 "Conn_01x06_Male" H 3700 4000 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" H 4050 3850 50  0001 C CNN
+F 3 "~" H 4050 3850 50  0001 C CNN
+	1    4050 3850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4250 4150 5100 4150
+$Comp
+L Connector:Conn_01x06_Male J2
+U 1 1 605786DD
+P 7600 3750
+F 0 "J2" H 7572 3632 50  0000 R CNN
+F 1 "Conn_01x06_Male" H 7572 3723 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" H 7600 3750 50  0001 C CNN
+F 3 "~" H 7600 3750 50  0001 C CNN
+	1    7600 3750
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	6400 3450 7400 3450
+Wire Wire Line
+	6950 3550 7400 3550
+Wire Wire Line
+	7000 3650 7400 3650
+Wire Wire Line
+	6400 3750 7400 3750
+Wire Wire Line
+	7050 3850 7400 3850
+Wire Wire Line
+	7100 4050 7400 4050
+Wire Wire Line
+	7400 4050 7400 3950
+Wire Wire Line
+	7100 3950 7100 2750
+Wire Wire Line
+	7100 2750 4550 2750
+Wire Wire Line
+	4550 2750 4550 4050
+Wire Wire Line
+	4250 4050 4550 4050
+Wire Wire Line
+	4250 3950 5050 3950
+Wire Wire Line
+	4250 3850 4850 3850
+Wire Wire Line
+	5000 3350 5000 3650
+Wire Wire Line
+	4250 3750 5200 3750
+Wire Wire Line
+	4250 3650 5000 3650
+Connection ~ 5000 3650
+Wire Wire Line
+	5000 3650 5000 5100
+Text Label 7200 3450 0    50   ~ 0
+TX
+Text Label 7200 3650 0    50   ~ 0
+RX
+Text Label 4750 3650 0    50   ~ 0
+RST
+Text Label 4750 3750 0    50   ~ 0
+ADC
+$EndSCHEMATC

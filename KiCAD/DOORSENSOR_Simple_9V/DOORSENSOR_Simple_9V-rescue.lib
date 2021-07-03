@@ -1,0 +1,104 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# NTR4003NT1G-eec
+#
+DEF NTR4003NT1G-eec Q 0 40 Y Y 1 F N
+F0 "Q" 0 300 50 H V L CNN
+F1 "NTR4003NT1G-eec" 0 400 50 H V L CNN
+F2 "Package_TO_SOT_SMD:SOT-23" 0 500 50 H I L CNN
+F3 "" 0 600 50 H I L CNN
+F4 "Yes" 0 700 50 H I L CNN "automotive"
+F5 "Grade 0" 0 800 50 H I L CNN "automotive grade"
+F6 "Trans" 0 900 50 H I L CNN "category"
+F7 "830106" 0 1000 50 H I L CNN "ciiva ids"
+F8 "0.5A" 0 1100 50 H I L CNN "continuous drain current"
+F9 "False" 0 1200 50 H I L CNN "depletion mode"
+F10 "Discrete Semiconductors" 0 1300 50 H I L CNN "device class L1"
+F11 "Transistors" 0 1400 50 H I L CNN "device class L2"
+F12 "MOSFETs" 0 1500 50 H I L CNN "device class L3"
+F13 "MOSFET N-CH 30V 500MA SOT-23" 0 1600 50 H I L CNN "digikey description"
+F14 "NTR4003NT1GOSCT-ND" 0 1700 50 H I L CNN "digikey part number"
+F15 "30V" 0 1800 50 H I L CNN "drain to source breakdown voltage"
+F16 "1Ω" 0 1900 50 H I L CNN "drain to source resistance"
+F17 "30V" 0 2000 50 H I L CNN "drain to source voltage"
+F18 "https://www.onsemi.com/pub/Collateral/318-08.PDF" 0 2100 50 H I L CNN "footprint url"
+F19 "1.15nC @ 5V" 0 2200 50 H I L CNN "gate charge at vgs"
+F20 "20V" 0 2300 50 H I L CNN "gate to source voltage"
+F21 "1.1mm" 0 2400 50 H I L CNN "height"
+F22 "21pF @ 5V" 0 2500 50 H I L CNN "input capacitace at vds"
+F23 "Yes" 0 2600 50 H I L CNN "lead free"
+F24 "939a4efbd895d123" 0 2700 50 H I L CNN "library id"
+F25 "On Semiconductor" 0 2800 50 H I L CNN "manufacturer"
+F26 "0.7V" 0 2900 50 H I L CNN "max forward diode voltage"
+F27 "+150°C" 0 3000 50 H I L CNN "max junction temp"
+F28 "MOSFET NFET 30V .56A 1500M\\n\\n" 0 3100 50 H I L CNN "mouser description"
+F29 "863-NTR4003NT1G" 0 3200 50 H I L CNN "mouser part number"
+F30 "1" 0 3300 50 H I L CNN "number of N channels"
+F31 "1" 0 3400 50 H I L CNN "number of channels"
+F32 "SOT23-3" 0 3500 50 H I L CNN "package"
+F33 "0.69W" 0 3600 50 H I L CNN "power dissipation"
+F34 "1.7A" 0 3700 50 H I L CNN "pulse drain current"
+F35 "1407165756" 0 3800 50 H I L CNN "release date"
+F36 "14ns" 0 3900 50 H I L CNN "reverse recovery time"
+F37 "Yes" 0 4000 50 H I L CNN "rohs"
+F38 "300°C/W" 0 4100 50 H I L CNN "rthja max"
+F39 "0.01mm" 0 4200 50 H I L CNN "standoff height"
+F40 "+150°C" 0 4300 50 H I L CNN "temperature range high"
+F41 "-55°C" 0 4400 50 H I L CNN "temperature range low"
+F42 "1.4V" 0 4500 50 H I L CNN "threshold vgs max"
+F43 "0.8V" 0 4600 50 H I L CNN "threshold vgs min"
+F44 "0.33S" 0 4700 50 H I L CNN "transconductance"
+F45 "65.1ns" 0 4800 50 H I L CNN "turn off delay time"
+F46 "16.7ns" 0 4900 50 H I L CNN "turn on delay time"
+F47 "0.65V" 0 5000 50 H I L CNN "typ forward diode voltage"
+DRAW
+C 300 0 10 1 1 0 N
+C 600 -290 10 1 1 0 N
+C 600 -80 10 1 1 0 N
+C 600 80 10 1 1 0 N
+P 2 1 1 0 250 -270 260 -250 N
+P 2 1 1 0 250 -70 260 -90 N
+P 2 1 1 0 260 -250 340 -250 N
+P 2 1 1 0 260 -90 340 -90 N
+P 2 1 1 0 280 -200 300 -240 N
+P 2 1 1 0 280 -140 320 -140 N
+P 2 1 1 0 290 -200 310 -220 N
+P 2 1 1 0 300 -290 600 -290 N
+P 2 1 1 0 300 -250 300 -290 N
+P 2 1 1 0 300 -240 320 -200 N
+P 2 1 1 0 300 -200 280 -200 N
+P 2 1 1 0 300 -140 300 -200 N
+P 2 1 1 0 300 -100 280 -140 N
+P 2 1 1 0 300 -100 300 -130 N
+P 2 1 1 0 300 0 300 -100 N
+P 2 1 1 0 320 -200 290 -200 N
+P 2 1 1 0 320 -140 300 -100 N
+P 2 1 1 0 340 -250 360 -230 N
+P 2 1 1 0 340 -90 350 -110 N
+P 2 1 1 0 440 -100 440 100 N
+P 2 1 1 0 470 -80 600 -80 N
+P 2 1 1 0 470 -60 470 -100 N
+P 2 1 1 0 470 20 470 -20 N
+P 2 1 1 0 470 60 470 100 N
+P 2 1 1 0 470 80 600 80 N
+P 2 1 1 0 490 0 540 -30 N
+P 2 1 1 0 490 0 540 30 N
+P 2 1 1 0 500 0 600 0 N
+P 2 1 1 0 530 10 530 -20 N
+P 2 1 1 0 540 30 540 -30 N
+P 2 1 1 0 600 -80 670 -80 N
+P 2 1 1 0 650 -20 690 -20 N
+P 2 1 1 0 670 -80 670 80 N
+P 2 1 1 0 670 20 650 -20 N
+P 2 1 1 0 670 20 650 20 N
+P 2 1 1 0 670 20 690 20 N
+P 2 1 1 0 670 80 600 80 N
+P 2 1 1 0 690 -20 670 20 N
+X G 1 100 0 340 R 40 0 1 1 P
+X S 2 600 -400 400 U 40 0 1 1 P
+X D 3 600 200 120 D 40 0 1 1 P
+ENDDRAW
+ENDDEF
+#
+#End Library
