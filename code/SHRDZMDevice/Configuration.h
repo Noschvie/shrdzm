@@ -4,11 +4,14 @@
 #include "config/config.h"
 #include "SimpleEspNowConnection.h"
 
+#define MAX_ESP_BUFFERSIZE 500
+
 class Configuration
 {
   public:
     Configuration();
     ~Configuration();
+    char sendESPBuffer[MAX_ESP_BUFFERSIZE];
 
     bool load();
     bool store();
@@ -42,6 +45,7 @@ class Configuration
     void sendSetup(PubSubClient *mqttclient, const char *subject);
     void resetConfiguration();
    protected:
+    void sendMessageWithChecksum(SimpleEspNowConnection *simpleEspConnection, const char *message);
 
 };
 

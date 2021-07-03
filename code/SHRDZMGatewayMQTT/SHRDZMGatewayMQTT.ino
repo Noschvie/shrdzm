@@ -27,6 +27,7 @@ unsigned long lastRCMillis = 0;
 Ticker configurationBlinker;
 
 #define WEBSITEBUFFER_SIZE 6000
+#define MAXLINELENGTH 512
 
 char websideBuffer[WEBSITEBUFFER_SIZE];
 char menuContextBuffer[3500];
@@ -52,7 +53,7 @@ bool writeConfiguration = false;
 String registerDeviceTypeBuffer = "";
 time_t now;                         
 tm tm; 
-char cmd[256];
+char cmd[MAXLINELENGTH];
 
 void setup() 
 {  
@@ -140,7 +141,7 @@ Serial.begin(SERIALBAUD); Serial.println();
   }
 
 //  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
-  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 350);
+  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 256);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 

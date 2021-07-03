@@ -1,5 +1,7 @@
 //String cmd = "";
 
+char serBuffer[MAXLINELENGTH];
+
 void SwSerLoop()
 {
 //  while (swSer.available()) 
@@ -9,27 +11,22 @@ void SwSerLoop()
     
     if ( r == '*' ) 
     {
-//      cmd = readSerialSS();
-//      String cmd = readSerialSS();
-
-//      sendSensorData(cmd);   
-      readSerialSS();   
+      readSerialSS();  
+      yield(); 
       sendSensorData();      
 //      sendSensorData(&cmd);      
     }
     else if(r == '#' ) 
     {
       readGatewayReply();
+      yield(); 
       sendGatewayUpdate();
 //      sendGatewayUpdate(&cmd);
     }
     else if(r == '~' ) 
     {
-//      String cmd = readSerialSS();
-//      readSerialSS();
-
-//      DLN("Gateway message : "+cmd);
       readSerialSS();
+      yield(); 
       handleGatewayMessage();
 //      handleGatewayMessage(&cmd);
     }
@@ -38,45 +35,17 @@ void SwSerLoop()
 
 void readSerialSS()
 {
-//  String cmd = "";
-//  cmd = "";
   byte inByte = 0;
   int counter = 0;
   bool finished = false;
   unsigned int timeoutStart = millis();
 
-  while (!finished) 
-  {
-    if(swSer.available())
-    {
-      char inChar = (char)swSer.read();
-      
-      if (inChar == '\n') 
-      {
-        finished = true;
-      }
-      else
-      {
-      //  cmd += inChar;
-        if(counter > 2)
-        {          
-          cmd[counter-3] = inChar;
-        }
+  swSer.readBytes(cmd, 3);
+  
+  int len = swSer.readBytesUntil('\n', cmd, MAXLINELENGTH);
+  cmd[len] = '\0';
 
-        counter++;
-        
-//        timeoutStart = millis();
-      }    
-    }
-    else if(timeoutStart + 2000 < millis())
-    {
-      finished = true;
-    }    
-  } 
-
-  cmd[counter-3] = '\0';
-
-//  DV(cmd);
+  DV(cmd);
 }
 
 void readGatewayReply()

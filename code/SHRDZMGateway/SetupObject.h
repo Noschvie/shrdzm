@@ -21,12 +21,18 @@ class SetupObject
       m_parameterName = parameterName;
       m_parameterValue = parameterValue;
       timestamp = millis();
+#ifdef DEBUG
+      Serial.printf("%s, %s, %s \n", m_deviceName.c_str(), m_parameterName.c_str(), m_parameterValue.c_str());
+#endif            
     };
     SetupItem(String deviceName, String command)
     {
       m_deviceName = deviceName;
       m_parameterName = command;
       m_parameterValue = "";
+#ifdef DEBUG
+      Serial.printf("%s, %s \n", m_deviceName.c_str(), m_parameterName.c_str());
+#endif            
       timestamp = millis();
     };
   };

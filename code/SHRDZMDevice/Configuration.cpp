@@ -2,6 +2,17 @@
 
 static DynamicJsonDocument g_configdoc(1024);
 
+typedef struct struct_esp_message {
+  char prefix = '.';
+  char type;
+  long sendTime;
+  uint8_t pc; // packe count
+  uint8_t p;  // package  
+  uint8_t len;
+  char message[200];
+  uint16_t checksum;
+} esp_message;
+
 Configuration::Configuration()
 {
 }
@@ -13,6 +24,31 @@ Configuration::~Configuration()
 DynamicJsonDocument *Configuration::getConfigDocument()
 {
   return &g_configdoc;
+}
+
+void Configuration::sendMessageWithChecksum(SimpleEspNowConnection *simpleEspConnection, const char *message)
+{
+  if(simpleEspConnection == NULL)
+    return;
+  
+  uint8_t packages = strlen(message) / 200 + 1;
+  long sendtime = millis();
+
+  for(int i = 0; i<packages; i++)
+  {
+    esp_message em;
+    
+    em.type = 'F';
+    em.sendTime = sendtime;
+    em.pc = packages;
+    em.p = i+1;
+    em.len = strlen(message);    
+
+    sprintf(em.message, message, strlen(message));
+    em.checksum = simpleEspConnection->calculateChecksum(message);
+  
+    simpleEspConnection->sendMessage((uint8_t*)&em, sizeof(em));  
+  }  
 }
   
 bool Configuration::initialize()
@@ -453,7 +489,9 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
     reply += "|devicetype: ";
   }
 
-  simpleEspConnection->sendMessage((char *)reply.c_str());
+//  simpleEspConnection->sendMessage((char *)reply.c_str());
+  sendMessageWithChecksum(simpleEspConnection,(char *)reply.c_str());                       
+
   Serial.println("reply 1 = "+reply);
 
 
@@ -470,7 +508,9 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 
     reply.remove(reply.length()-1);
 
-    simpleEspConnection->sendMessage((char *)reply.c_str());
+  //  simpleEspConnection->sendMessage((char *)reply.c_str());
+    sendMessageWithChecksum(simpleEspConnection, (char *)reply.c_str());                       
+  
     Serial.println("reply 2 = "+reply);
   }   
 }

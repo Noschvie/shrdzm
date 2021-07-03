@@ -12,7 +12,6 @@
 
 #define DEBUG_SHRDZM
 
-
 #include "config/config.h"
 
 Configuration configuration;
@@ -78,6 +77,40 @@ String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
+
+typedef struct struct_esp_message {
+  char prefix = '.';
+  char type;
+  long sendTime;
+  uint8_t pc; // package count
+  uint8_t p;  // package
+  uint8_t len;
+  char message[200];
+  uint16_t checksum;
+} esp_message;
+
+/// Send ESP Message with checksum
+void sendMessageWithChecksum(const char *message)
+{
+  uint8_t packages = strlen(message) / 200 + 1;
+  long sendtime = millis();
+
+  for(int i = 0; i<packages; i++)
+  {
+    esp_message em;
+    
+    em.type = 'F';
+    em.sendTime = sendtime;
+    em.pc = packages;
+    em.p = i+1;
+    em.len = strlen(message);    
+
+    sprintf(em.message, message, strlen(message));
+    em.checksum = simpleEspConnection.calculateChecksum(message);
+  
+    simpleEspConnection.sendMessage((uint8_t*)&em, sizeof(em));  
+  }  
+}
 
 /// Configuration Webserver
 void startConfigurationAP()
@@ -1296,7 +1329,8 @@ void sendSetup()
   if(!gatewayMode)
   {
     DLN("Send INIT");
-    simpleEspConnection.sendMessage((char *)"$I$");
+//    simpleEspConnection.sendMessage((char *)"$I$");
+    sendMessageWithChecksum((char *)"$I$");
     configuration.sendSetup(&simpleEspConnection);
   }
   else
@@ -1327,7 +1361,8 @@ void sendSetup()
 
       if(!gatewayMode)
       {
-        simpleEspConnection.sendMessage((char *)reply.c_str());
+      //  simpleEspConnection.sendMessage((char *)reply.c_str());
+        sendMessageWithChecksum((char *)reply.c_str());
         DV(reply);
       }      
       
@@ -1349,7 +1384,10 @@ void sendSetup()
         reply.remove(reply.length()-1);
     
         if(!gatewayMode)
-          simpleEspConnection.sendMessage((char *)reply.c_str());    
+        {
+         // simpleEspConnection.sendMessage((char *)reply.c_str());    
+         sendMessageWithChecksum((char *)reply.c_str());
+        }
       }      
     }        
   }
@@ -1357,7 +1395,10 @@ void sendSetup()
   String s = String("$V$")+ver+"-"+ESP.getSketchMD5();
 
   if(!gatewayMode)
-    simpleEspConnection.sendMessage((char *)s.c_str());
+  {
+   // simpleEspConnection.sendMessage((char *)s.c_str());
+   sendMessageWithChecksum((char *)s.c_str());   
+  }
   else
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/version").c_str(), (ver+"-"+ESP.getSketchMD5()).c_str());
   
@@ -1365,7 +1406,10 @@ void sendSetup()
   // send supported devices
   s = String("$X$")+String(SUPPORTED_DEVICES);
   if(!gatewayMode)
-    simpleEspConnection.sendMessage((char *)s.c_str());  
+  {
+//    simpleEspConnection.sendMessage((char *)s.c_str());  
+    sendMessageWithChecksum((char *)s.c_str());   
+  }
   else
     mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensors").c_str(), (String(SUPPORTED_DEVICES)).c_str());
 
@@ -1519,7 +1563,8 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   {
     if(configuration.containsKey("gateway"))
     {
-      simpleEspConnection.sendMessage("$PING$");
+      // simpleEspConnection.sendMessage("$PING$");
+      sendMessageWithChecksum("$PING$");        
     }
       
     return;
@@ -2015,7 +2060,8 @@ DLN("before readLastRebootInfo...");
   if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0)  
   {
     DLN("Send $F$");
-    simpleEspConnection.sendMessage("$F$");
+//    simpleEspConnection.sendMessage("$F$");
+    sendMessageWithChecksum("$F$");            
   }
 
   clockmillis = millis();  
@@ -2058,8 +2104,11 @@ void getMeasurementData()
                 cloudAddMeasurement(deviceName.c_str(), sd->di[i].nameI.c_str(), sd->di[i].valueI.c_str());
             }
           }
-          else                
-            simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
+          else   
+          {             
+           // simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
+           sendMessageWithChecksum((char *)("$D$"+reply).c_str());                       
+          }
         }
         delete sd;
         sd = NULL;  
@@ -2070,7 +2119,9 @@ void getMeasurementData()
       // send message about last measurement;
       if(!gatewayMode)
       {
-        simpleEspConnection.sendMessage("$F$");
+//        simpleEspConnection.sendMessage("$F$");
+        sendMessageWithChecksum("$F$");                       
+        
         DLN("Send $F$");
         
         if(!preparing)
