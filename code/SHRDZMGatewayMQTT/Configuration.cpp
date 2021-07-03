@@ -27,6 +27,7 @@ bool Configuration::initialize()
 bool Configuration::store()
 {
   serializeJson(g_configdoc, Serial);
+  Serial.println();
 
 #ifdef LITTLEFS  
   File configFile = LittleFS.open("/shrdzm_config.json", "w");
@@ -70,7 +71,8 @@ bool Configuration::load()
     configFile.close();    
 
     serializeJson(g_configdoc, Serial);    
-
+    Serial.println();
+    
     if(!g_configdoc["configuration"]["wlan"].containsKey("ssid"))
     {
 #ifdef LITTLEFS  

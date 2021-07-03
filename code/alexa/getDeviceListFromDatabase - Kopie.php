@@ -28,6 +28,7 @@ function DeviceList($token)
 	$conn = $db_connection->dbConnection();
 
 	$messageString = "";
+//	$returnData = msg(0, "600", "Unknown error");
 
 	try{
 		

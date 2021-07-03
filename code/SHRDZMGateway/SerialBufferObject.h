@@ -26,7 +26,7 @@ class SerialBufferObject
         Serial.print(i->m_text.c_str());
         Serial.print('\n');
         RemoveItem(i);
-        delay(100);
+        delay(200);
         yield();
       }    
   }

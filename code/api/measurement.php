@@ -51,6 +51,7 @@ else
 	if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Authorization'])))
 	{
 		$token = explode(" ", trim($allHeaders['Authorization']));
+				
 		if(isset($token[1]) && !empty(trim($token[1])))
 		{
 			$userInfo = fetchUserByToken($conn, trim($token[1]));
@@ -84,6 +85,14 @@ else
                 $returnData = msg(0,422,'Invalid Name!');				
 			}
 		}
+		else
+		{
+			loging2file( "no token" );
+		}
+	}
+	else
+	{
+		loging2file( "token not in header ".implode(",",$allHeaders) );
 	}
 }
 

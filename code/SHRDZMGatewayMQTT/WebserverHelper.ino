@@ -75,7 +75,7 @@ label {\
 }\
 label {\
   display: inline-block;\
-  width: 7em;\
+  width: 14em;\
 }\
 input {\
   margin: 0 0 1em .2em;\
@@ -93,6 +93,13 @@ input.factoryresetbutton, textarea {\
 background: cyan;\
 border: 2px solid red;\
 color: black;\
+cursor: pointer;\
+}\
+input.submitbutton, textarea {\
+background: lightgray;\
+border: 2px solid black;\
+color: black;\
+cursor: pointer;\
 }\
 button {\
   margin-top: 1.5em;\
@@ -105,8 +112,8 @@ button {\
   border-radius: 5px;\
 }\
 .submitbutton {\
-  background-color: Gainsboro;\
-  border: 1px solid black;\
+  background-color: Gray;\
+  border: 2px solid black;\
   border-radius: 5px;\
 }\
 .main {\
@@ -125,6 +132,7 @@ button {\
     </a></li>\
   <li><a href='./general'>General</a></li>\
   <li><a href='./settings'>Settings</a></li>\
+  <li><a href='./cloud'>Cloud</a></li>\
   <li><a href='./NTP'>NTP</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
@@ -277,7 +285,8 @@ void handleRoot()
       "<h1>General</h1>\
       <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
       <br /><br /><br /><br />\
-Firmware Version : %s-%s<br><br>\
+Firmware Version : %s-%s<br>\
+Chip ID : %s<br><br>\
 MQTTTopic Set : %s<br>\
 MQTTTopic Config : %s<br>\
 MQTTTopic RCSEND : %s<br>\
@@ -313,6 +322,7 @@ Subnet : %s<br>\
       </form>\
       ",
       ver.c_str(),
+      String(ESP.getChipId()).c_str(),
       ESP.getSketchMD5().c_str(),
       subscribeTopicSet.c_str(),
       subscribeTopicConfig.c_str(),
@@ -381,38 +391,156 @@ void handleReboot()
   ESP.restart();  
 }
 
-void handleSettings()
+void handleCloud()
 {
-  DLN("handleSettings");
+
+  
   if(webserver.args() != 0)
   {
-    if(webserver.hasArg("ssid"))
-      configuration.setWlanParameter("ssid", webserver.arg("ssid").c_str());
-    else
-      configuration.setWlanParameter("ssid", "");
-        
-    if(webserver.hasArg("password"))
-      configuration.setWlanParameter("password", webserver.arg("password").c_str());
-    else
-      configuration.setWlanParameter("password", "");    
-    if(webserver.hasArg("MQTTbroker"))
-      configuration.setWlanParameter("MQTTbroker", webserver.arg("MQTTbroker").c_str());
-    if(webserver.hasArg("MQTTport"))
-      configuration.setWlanParameter("MQTTport", webserver.arg("MQTTport").c_str());
-    if(webserver.hasArg("MQTTuser"))
-      configuration.setWlanParameter("MQTTuser", webserver.arg("MQTTuser").c_str());
-    if(webserver.hasArg("MQTTpassword"))
-      configuration.setWlanParameter("MQTTpassword", webserver.arg("MQTTpassword").c_str());
+    if( webserver.hasArg("cloudEnabledChanged"))
+    {
+      DV(String(webserver.arg("cloudEnabledChanged")));
+      if(String(webserver.arg("cloudEnabledChanged")) == "1") 
+      {
+        if( webserver.hasArg("cloudenabled"))
+        {
+          if(String(webserver.arg("cloudenabled")) == "on") 
+          {
+            configuration.setCloudParameter("enabled", "true");
 
+            if(cloudRegisterNewUser(webserver.arg("user").c_str(), "", webserver.arg("password").c_str()))
+            {
+              cloudConnected = cloudLogin(webserver.arg("user").c_str(), webserver.arg("password").c_str());
+              if(cloudConnected)
+              {
+                configuration.setCloudParameter("userid", cloudID.c_str());
+              }
+            }
+          }
+          else
+          {
+            configuration.setCloudParameter("enabled", "false");
+          }
+          DV(String(webserver.arg("cloudenabled")));
+        }
+        else
+        {
+          configuration.setCloudParameter("enabled", "false");
+        }
+      }      
+    }
+    if( webserver.hasArg("resetCloudSettings"))
+    {
+      DV(String(webserver.arg("resetCloudSettings")));
+      if(String(webserver.arg("resetCloudSettings")) == "true") 
+      {
+        configuration.setCloudParameter("user", deviceName.c_str());
+        configuration.setCloudParameter("password", String(ESP.getChipId()).c_str());
+      }
+    }
+    
     writeConfiguration = true;          
+  }  
+
+  
+  sprintf(menuContextBuffer,  
+      "<h1>Cloud</h1><br/>\
+      Cloud Settings are optional. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a> and <a href=\"https://skills-store.amazon.de/deeplink/dp/B096S1675W?deviceType=app&share&refSuffix=ss_copy\" target=\"_blank\">Alexa</a>\
+      <form name='cloudForm' method='post'>\
+      <input type='hidden' id='resetCloudSettings' name='resetCloudSettings' value='false'/>\
+      <br/>\
+      <p>\
+      <input type='checkbox' onClick='toggleCloudEnabled(this)' id='cloudenabled' name='cloudenabled' %s/>\
+      <input type='hidden' id='cloudEnabledChanged' name='cloudEnabledChanged' value='0' />\
+      <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
+      <label for='user'>User Name</label></div><br/><br/>\
+      <div><input type='text' id='password' name='password' placeholder='Password' size='30' value='%s'>\
+      <label for='user'>Password</label></div><br/><br/>\
+      Unique User ID = %s<br/><br/>\
+      <br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Cloud Settings' /><br />\      
+      <br /> <input class='submitbutton' type='submit' value='Save Cloud Settings!' />\      
+      </p>\
+      <script>\
+      function submitResetCloudSettings()\
+      {\
+         document.getElementById('resetCloudSettings').value = 'true';\
+      }\      
+      function toggleCloudEnabled(f)\
+      {\
+        document.getElementById('cloudEnabledChanged').value = '1';\
+        f.form.submit();\
+      }\
+      </script>\
+      </form>\
+      <br/>\
+      <hr/>\
+      ", 
+      String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("user"),
+      configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid")
+  );  
+
+  char * temp = getWebsite(menuContextBuffer);
+
+  DV(String(strlen(temp)));
+  
+  webserver.send(200, "text/html", temp); 
+}
+
+void handleSettings()
+{
+  if(webserver.args() != 0)
+  {
+    if(webserver.hasArg("wlanform"))
+    {
+      DLN("WLAN Settings changed");
+      if(webserver.hasArg("ssid"))
+        configuration.setWlanParameter("ssid", webserver.arg("ssid").c_str());
+      else
+        configuration.setWlanParameter("ssid", "");
+          
+      if(webserver.hasArg("password"))
+        configuration.setWlanParameter("password", webserver.arg("password").c_str());
+      else
+        configuration.setWlanParameter("password", "");          
+
+      writeConfiguration = true;        
+    }
+    if(webserver.hasArg("mqttform"))
+    {
+      DLN("MQTT Settings changed");
+
+      if(webserver.hasArg("MQTTbroker"))
+        configuration.setWlanParameter("MQTTbroker", webserver.arg("MQTTbroker").c_str());
+      if(webserver.hasArg("MQTTport"))
+        configuration.setWlanParameter("MQTTport", webserver.arg("MQTTport").c_str());
+      if(webserver.hasArg("MQTTuser"))
+        configuration.setWlanParameter("MQTTuser", webserver.arg("MQTTuser").c_str());
+      if(webserver.hasArg("MQTTpassword"))
+        configuration.setWlanParameter("MQTTpassword", webserver.arg("MQTTpassword").c_str());
+
+      writeConfiguration = true;        
+    }
   }
 
-
-  DLN("vor sprintf");
-
   sprintf(menuContextBuffer,  
-      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
+      "<h1>Settings</h1><br/>\
+      <script>\
+      function showWLANPassword() {\
+        var x = document.getElementById('password');\
+        if (x.type === 'password') {\
+          x.type = 'text';\
+        } else {\
+          x.type = 'password';\
+        }\
+      }\
+      </script>\ 
+      <p><strong>WLAN</strong><br />\
       <form method='post'>\
+      <input type='hidden' name='wlanform' value='1' />\
       <input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
       <label for='ssid'>SSID</label><br/>\
       <br/>\
@@ -420,10 +548,14 @@ void handleSettings()
       <label for='password'>Password</label><br/>\
       <br/>\
       <input type='checkbox' onclick='showWLANPassword()'>Show Password\
-      <br/>\
+      <br/><br /> <input class='submitbutton' type='submit' value='Save WLAN Settings!' />\      
+      </p>\      
+      </form>\
       <br/>\
       <hr/>\
-      </p>\
+      <p><strong>MQTT</strong><br />\      
+      <form method='post'>\
+      <input type='hidden' name='mqttform' value='1' />\      
       <input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
       <label for='MQTTbroker'>MQTT Broker</label><br/>\
       <br/>\
@@ -435,19 +567,11 @@ void handleSettings()
       <br/>\
       <input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
       <label for='MQTTuser'>MQTT Password</label><br/><br/><br/>\
-      <hr/>\
-      <br/><br /> <input type='submit' value='Save Configuration!' />\
-      <script>\
-      function showWLANPassword() {\
-        var x = document.getElementById('password');\
-        if (x.type === 'password') {\
-          x.type = 'text';\
-        } else {\
-          x.type = 'password';\
-        }\
-      }\
-      </script>\ 
+      <br /> <input class='submitbutton' type='submit' value='Save MQTT Settings!' />\      
+      </p>\      
       </form>\
+      <br/>\
+      <hr/>\
       ", 
       configuration.getWlanParameter("ssid"),
       configuration.getWlanParameter("password"),
@@ -457,15 +581,12 @@ void handleSettings()
       configuration.getWlanParameter("MQTTpassword")
   );  
 
-  DLN("nach sprintf");
 
   char * temp = getWebsite(menuContextBuffer);
-  DLN("nach getWebsite");
 
   webserver.sendHeader("Content-Length", String(strlen(temp)));
 
   DV(String(strlen(temp)));
-
   
   webserver.send(200, "text/html", temp); 
   DLN("nach webserver.send");
@@ -734,7 +855,7 @@ void handleNTP()
       <input type='text' id='tz' name='tz' placeholder='Time Zone' size='30' value='%s'>\
       <label for='tz'>Time Zone</label><br/>\
       <br/>\
-      <br/><input type='submit' value='Save Configuration!' />\
+      <br/><input class='submitbutton' type='submit' value='Save Configuration!' />\
       </form>\
       ",
       configuration.getWlanParameter("NTPServer"),
@@ -756,6 +877,7 @@ void startConfigurationAP()
   webserver.on("/reboot", handleReboot);
   webserver.on("/general", handleRoot);
   webserver.on("/settings", handleSettings);
+  webserver.on("/cloud", handleCloud);
   webserver.on("/NTP", handleNTP);
   
   webserver.onNotFound(handleNotFound); 
@@ -787,6 +909,7 @@ void startServerListener()
   webserver.on("/reboot", handleReboot);
   webserver.on("/general", handleRoot);
   webserver.on("/settings", handleSettings);
+  webserver.on("/cloud", handleCloud);
   webserver.on("/NTP", handleNTP);  
   webserver.on("/j.js", handleJs);      
   webserver.on("/json", handleJson);  
