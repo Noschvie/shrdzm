@@ -1,4 +1,6 @@
 char serBuffer[MAXLINELENGTH];
+uint8_t sum1 = 0;
+uint8_t sum2 = 0;
 
 void SwSerLoop()
 {
@@ -8,9 +10,11 @@ void SwSerLoop()
     
     if ( r == '*' ) 
     {
-      readSerialSS();  
-      yield(); 
-      sendSensorData();      
+      if(readSerialSS())
+      {
+        yield(); 
+        sendSensorData();      
+      }
     }
     else if(r == '#' ) 
     {
@@ -20,26 +24,50 @@ void SwSerLoop()
     }
     else if(r == '~' ) 
     {
-      readSerialSS();
-      yield(); 
-      handleGatewayMessage();
+      if(readSerialSS())
+      {
+        yield(); 
+        handleGatewayMessage();
+      }
     }
   }
 }
 
-void readSerialSS()
+bool readSerialSS()
 {
   byte inByte = 0;
   int counter = 0;
-  bool finished = false;
-  unsigned int timeoutStart = millis();
-
+  uint16_t checksum = 0;
+    
   swSer.readBytes(cmd, 3);
+  if(cmd[0] == 'A')// checksum added
+  {
+    memcpy(&checksum, cmd+1, 2);
+  }
   
   int len = swSer.readBytesUntil('\n', cmd, MAXLINELENGTH);
   cmd[len] = '\0';
 
+  if(checksum != 0)
+  {
+    sum1 = 0;
+    sum2 = 0;
+    
+    for(int i = 0; i<strlen(cmd); i++)
+    {
+      sum1 = (sum1 + cmd[i]) % 255;
+      sum2 = (sum2 + sum1) % 255;
+    }        
+
+    if(((sum2 << 8) | sum1) != checksum)
+    {
+      return false;
+    }
+  }
+
   DV(cmd);
+
+  return true;
 }
 
 void readGatewayReply()

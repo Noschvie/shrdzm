@@ -680,11 +680,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$Multi package not supported in this version. Please update.";
       serialBufferObject.AddItem(s);
 
-/*      Serial.write(s.c_str(), s.length());
-      delay(100);
-      Serial.print('\n');
-      delay(100);  */
-      
       return;
     }
 
@@ -692,11 +687,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     {
       String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$Checksum different!";
       serialBufferObject.AddItem(s);
-
-/*      Serial.write(s.c_str(), s.length());
-      delay(100);
-      Serial.print('\n');
-      delay(100);  */
 
       return;
     }
@@ -757,8 +747,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
         if(nf > 0)
         {
           String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(f+1, nf);
-//          Serial.write(s.c_str(), s.length());
-//          Serial.print('\n');
             serialBufferObject.AddItem(s);
 
 
@@ -775,10 +763,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       }while(run);
   
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer.substring(buffer.lastIndexOf('|')+1);
-//      Serial.write(s.c_str(), s.length());
-//      Serial.print('\n');
       serialBufferObject.AddItem(s);
-
 
       // send via GSM    
       if(simEnabled)
@@ -790,8 +775,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     else
     {
       String s = "*000["+prefix+"]$"+simpleEspConnection.macToStr(ad)+"$"+buffer;
-//      Serial.write(s.c_str(), s.length());
-//      Serial.print('\n');
       serialBufferObject.AddItem(s);
 
       // send via GSM    
@@ -818,8 +801,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$V$")  // Version
   {
     String s = "*000[V]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-//    Serial.write(s.c_str(), s.length());
-//    Serial.print('\n');
     serialBufferObject.AddItem(s);
 
     if(simEnabled)
@@ -831,8 +812,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$X$")  // Supported devices
   {
     String s = "*000[X]$"+simpleEspConnection.macToStr(ad)+"$"+m.substring(3);
-//    Serial.write(s.c_str(), s.length());
-//    Serial.print('\n');
     serialBufferObject.AddItem(s);
 
     if(simEnabled)
@@ -844,8 +823,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else if(m.substring(0,3) == "$I$")  // Init due to new firmware
   {
     String s = "*000[I]$"+simpleEspConnection.macToStr(ad)+"$INIT";
-//    Serial.write(s.c_str(), s.length());
-//    Serial.print('\n');
     serialBufferObject.AddItem(s);
     
     if(simEnabled)
@@ -857,10 +834,6 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
   else
   {
     String s = "*000[E]$"+simpleEspConnection.macToStr(ad)+"$"+m;
-/*    Serial.write(s.c_str(), s.length());
-    delay(100);
-    Serial.print('\n');
-    delay(100);  */
     serialBufferObject.AddItem(s);    
   }
 }
@@ -1160,15 +1133,19 @@ void setup()
   WiFi.macAddress(pmac);
   myAddress = simpleEspConnection.macToStr(pmac);
 
+
   String s = "~000[G]$address:"+myAddress;
-  Serial.write(s.c_str(), s.length());
+  serialBufferObject.AddItem(s);
+/*  Serial.write(s.c_str(), s.length());
   Serial.write('\n');
   delay(100);
+*/
 
   s = "~000[V]$version:"+ver+"-"+currVersion;
-  Serial.write(s.c_str(), s.length());
+  serialBufferObject.AddItem(s);
+/*  Serial.write(s.c_str(), s.length());
   Serial.write('\n');
-  delay(100);
+  delay(100); */
 
   simpleEspConnection.begin();
   simpleEspConnection.setPairingBlinkPort(2);

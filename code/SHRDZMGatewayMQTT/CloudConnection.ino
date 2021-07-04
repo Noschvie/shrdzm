@@ -163,8 +163,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     HTTPClient http;
   
     String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-    DV(finalAddress);
-    DV(content);
+//    DV(finalAddress);
+//    DV(content);
         
     if(http.begin(finalAddress))
     {
@@ -183,8 +183,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
         return false;
       }
           
-      DV(httpResponseCode);
-      DV(http.getString());
+//      DV(httpResponseCode);
+//      DV(http.getString());
 
       *reply = http.getString();
       http.end();
