@@ -61,6 +61,7 @@ bool readSerialSS()
 
     if(((sum2 << 8) | sum1) != checksum)
     {
+      sendChecksumError();
       return false;
     }
   }
@@ -154,6 +155,11 @@ void handleGatewayMessage()
   }
 
   delete splitter;
+}
+
+void sendChecksumError()
+{
+  mqttclient.publish((String(MQTT_TOPIC)+"/LastError").c_str(), "Checksum Error");
 }
 
 void sendSensorData()
