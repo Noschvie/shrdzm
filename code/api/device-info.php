@@ -34,7 +34,7 @@ if($_SERVER["REQUEST_METHOD"] != "POST")
 {
     $returnData = msg(0,404,'Page Not Found!');
 }
-elseif(!isset($data->name) || empty(trim($data->name)))
+elseif(!isset($data->name) || empty($data->name))
 {
     $fields = ['fields' => ['name']];
     $returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);
@@ -50,21 +50,28 @@ else
 			$userInfo = fetchUserByToken($conn, trim($token[1]));
 			if(isset($userInfo))
 			{
-				$devicename = trim($data->name);				
-				$userid = $userInfo["user"]["id"];
+				$devicename = $data->name;				
 		
 				try
 				{
-					$check_device = "SELECT `name` FROM `devices` WHERE `name`=:devicename";
+					$check_device = "SELECT * FROM `devices` WHERE `name`=:devicename";
 					$check_device_stmt = $conn->prepare($check_device);
 					$check_device_stmt->bindValue(':devicename', $devicename,PDO::PARAM_STR);
 					$check_device_stmt->execute();
 					
-					if($check_device_stmt->rowCount()):
-						$returnData = msg(1,200,'Device exist',$userInfo);
-					else:
+					if($check_device_stmt->rowCount())
+					{						
+						$row = $check_device_stmt->fetch(PDO::FETCH_ASSOC);
+						
+						if($row["userid"] == $userInfo["user"]["id"])						
+							$returnData = msg(1,200,'Device exist',$userInfo);
+						else
+							$returnData = msg(1,42,'Unknown device'); 
+					}
+					else
+					{
 						$returnData = msg(1,42,'Unknown device');
-					endif;
+					}
 				}
 				catch(PDOException $e){
 					$returnData = msg(0,500,$e->getMessage());

@@ -42,8 +42,8 @@ else:
     $name = trim($data->name);
     $password = trim($data->password);
 
-    if(strlen($password) < 8):
-        $returnData = msg(0,422,'Your password must be at least 8 characters long!');
+    if(strlen($password) < 6):
+        $returnData = msg(0,422,'Your password must be at least 6 characters long!');
 
     elseif(strlen($name) < 3):
         $returnData = msg(0,422,'Your name must be at least 3 characters long!');
