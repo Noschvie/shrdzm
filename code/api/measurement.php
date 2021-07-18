@@ -39,12 +39,11 @@ elseif(!isset($data->name)
     || !isset($data->value) 
     || empty(trim($data->name))
     || empty(trim($data->reading))
-    || empty(trim($data->value))
+//    || empty($data->value)
     )
 {
-
-    $fields = ['fields' => ['name','reading','value']];
-    $returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);	
+	$fields = ['fields' => ['name','reading','value']];
+	$returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);	
 }
 else
 {

@@ -30,6 +30,7 @@
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
 #include "StringSplitter.h"
+#include <asyncHTTPrequest.h>
 //#include "FS.h"
 
 #ifdef LITTLEFS

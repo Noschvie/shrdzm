@@ -10,7 +10,7 @@
 
 */
 
-#define DEBUG_SHRDZM
+//#define DEBUG_SHRDZM
 
 #include "config/config.h"
 
@@ -77,6 +77,7 @@ String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
+asyncHTTPrequest request;
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -129,7 +130,7 @@ void startConfigurationAP()
   server.on("/settings", handleSettings);
   server.on("/gateway", handleGateway);
   server.on("/NTP", handleNTP);
-  server.on("/experimental", handleExperimental);
+  server.on("/cloud", handleCloud);
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -268,7 +269,7 @@ button {\
   <li><a href='./settings'>Settings</a></li>\
   <li><a href='./gateway'>Gateway</a></li>\
   <li><a href='./NTP'>NTP</a></li>\
-  <li><a href='./experimental'>Experimental</a></li>\
+  <li><a href='./cloud'>Cloud</a></li>\
   <li><a href='./about'>About</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
@@ -649,7 +650,7 @@ void handleSettings()
   server.send(200, "text/html", temp);  
 }
 
-void handleExperimental()
+void handleCloud()
 {
   if((String(configuration.getCloudParameter("enabled")) == "true") &&
       cloudID != String(configuration.getCloudParameter("userid")))
@@ -789,7 +790,7 @@ void handleExperimental()
 
     
   sprintf(menuContextBuffer,  
-      "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br /><br />\
+      "<h1>Cloud</h1><p><strong>Configuration</strong><br /><br /><br />\
       <hr/>\
       Cloud Settings. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a>\
       <br/><br/>\
@@ -1193,6 +1194,11 @@ void startGatewayWebserver()
                        atoi(configuration.getWlanParameter("MQTTport")));
 
   mqttclient.setCallback(mqttcallback);
+
+#ifdef DEBUG_SHRDZM
+  request.setDebug(true);
+#endif  
+  request.onReadyStateChange(requestCB);  
 }
 
 ///////////////////////////
@@ -2160,7 +2166,7 @@ void handleGatewayLoop()
       server.on("/settings", handleSettings);
       server.on("/gateway", handleGateway);
       server.on("/NTP", handleNTP);
-      server.on("/experimental", handleExperimental);
+      server.on("/cloud", handleCloud);
 
       server.on("/j.js", handleJs);      
       server.on("/json", handleJson);

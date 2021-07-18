@@ -1,6 +1,6 @@
 #include "config/config.h"
 
-#define DEBUG_SHRDZM
+//#define DEBUG_SHRDZM
 
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
@@ -112,8 +112,11 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
 {
   DLN("Will now try to add mesurement on "+String(CloudApiAddress));
-
   String reply;
+
+ // return cloudSendAsyncRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
+  //////// !!!!!!!!!!!!!!!
+  
   return cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
 }
 
@@ -144,6 +147,43 @@ bool cloudLogin(const char* user, const char* password )
     
   return true;
 }
+
+////////// Async Handling //////////////////
+bool cloudSendAsyncRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
+{
+  if(WiFi.status()== WL_CONNECTED)
+  {
+    String finalAddress = String(CloudApiAddress) + String("/") + String(address);
+//    request.setTimeout(1);
+
+    request.open("POST", finalAddress.c_str());
+    String auth = "Bearer " + cloudToken;    
+
+    request.setReqHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
+    request.setReqHeader("Content-Type","application/json");
+    request.send(content);
+//    state = waitPost;    
+
+    return true;
+  }
+    
+/*    if(request.readyState() == 0 || request.readyState() == 4)
+    {
+        request.open("GET", "http://worldtimeapi.org/api/timezone/Europe/London.txt");
+        request.send();
+    }*/
+}
+
+void requestCB(void* optParm, asyncHTTPrequest* request, int readyState)
+{
+    if(readyState == 4)
+    {
+        Serial.println(request->responseText());
+        Serial.println();
+        request->setDebug(false);
+    }
+}
+////////////////////////////////////////////
 
 bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
 {
