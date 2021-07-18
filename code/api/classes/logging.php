@@ -1,14 +1,21 @@
 <?php
-
 function logging2file($text)
 {
 	$serverName = $_SERVER['SERVER_NAME'];
+	$documentRoot = $_SERVER['DOCUMENT_ROOT'];
 	
-	$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+	if($serverName == "api.shrdzm.com")
+	{
+		$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+	}
+	else
+	{
+		$logfileName = '../../priv/logs/'.date('Y-m-d').'_shrdzm.log';
+	}
 	
 	$logdatei_handle = fopen ( $logfileName, "a+" );
 	
-	fputs ( $logdatei_handle, date('Y-m-d H:i:s')." [".$serverName."] ".$text."\n" );
+	fputs ( $logdatei_handle, date('Y-m-d H:i:s')." [".$serverName.",".$documentRoot."] ".$text."\n" );
 
 	fclose ( $logdatei_handle );	
 }
@@ -16,12 +23,20 @@ function logging2file($text)
 function loging2file($text)
 {
 	$serverName = $_SERVER['SERVER_NAME'];
+	$documentRoot = $_SERVER['DOCUMENT_ROOT'];
 	
-	$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+	if($serverName == "api.shrdzm.com")
+	{
+		$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+	}
+	else
+	{
+		$logfileName = '../../priv/logs/'.date('Y-m-d').'_shrdzm.log';
+	}
 	
 	$logdatei_handle = fopen ( $logfileName, "a+" );
 	
-	fputs ( $logdatei_handle, date('Y-m-d H:i:s')." [".$serverName."] ".$text."\n" );
+	fputs ( $logdatei_handle, date('Y-m-d H:i:s')." [".$serverName.",".$documentRoot."] ".$text."\n" );
 
 	fclose ( $logdatei_handle );	
 }

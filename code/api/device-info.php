@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: POST");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
+
 function msg($success,$status,$message,$extra = []){
     return array_merge([
         'success' => $success,
@@ -16,6 +17,7 @@ function msg($success,$status,$message,$extra = []){
 require __DIR__.'/classes/Database.php';
 require __DIR__.'/classes/logging.php';
 require __DIR__.'/fetchUserByToken.php';
+
 
 $allHeaders = getallheaders();
 $db_connection = new Database();
@@ -40,7 +42,7 @@ elseif(!isset($data->name) || empty($data->name))
     $returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);
 }
 else
-{
+{	
 	if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Authorization'])))
 	{
 		$token = explode(" ", trim($allHeaders['Authorization']));
@@ -51,6 +53,7 @@ else
 			if(isset($userInfo))
 			{
 				$devicename = $data->name;				
+		
 		
 				try
 				{

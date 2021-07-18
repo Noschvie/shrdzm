@@ -20,6 +20,7 @@ bool Configuration::initialize()
   g_configdoc["configuration"]["wlan"]["MQTTport"] = "1883";
   g_configdoc["configuration"]["wlan"]["MQTTuser"] = "";
   g_configdoc["configuration"]["wlan"]["MQTTpassword"] = "";
+  g_configdoc["configuration"]["wlan"]["MQTTpassword"] = "";
 
   return true;
 }
@@ -202,7 +203,10 @@ JsonObject Configuration::getCloudParameter()
 
 const char* Configuration::getWlanParameter(const char *parameterName)
 {
-  return g_configdoc["configuration"]["wlan"][parameterName];
+  if(g_configdoc["configuration"]["wlan"][parameterName].isNull())
+    return "";
+  else
+    return g_configdoc["configuration"]["wlan"][parameterName];
 }
 
 const char* Configuration::getCloudParameter(const char *parameterName)

@@ -76,8 +76,17 @@ function DeviceList($token)
 
 $entityBody = file_get_contents ( 'php://input' );
 $entityBodyJSON = json_decode($entityBody);		
+$allHeaders = getallheaders();
 
-$replyToSender = json_encode ( DeviceList($entityBodyJSON->accessToken) );
+if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Authorization'])))
+{
+	$token = explode(" ", trim($allHeaders['Authorization']));
+	$replyToSender = json_encode ( DeviceList($token[1]) );
+}
+else
+{
+	$replyToSender = json_encode ( msg(0, 401, "Unauthorized") );	
+}
 
 header ( 'Content-Type: application/json' );
 echo $replyToSender;

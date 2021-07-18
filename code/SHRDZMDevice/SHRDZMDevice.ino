@@ -132,6 +132,11 @@ void startConfigurationAP()
   server.on("/experimental", handleExperimental);
   server.onNotFound(handleNotFound);
   server.begin();
+
+
+#ifdef LEDPIN
+    pinMode(LEDPIN, OUTPUT);
+#endif
   
   configurationBlinker.attach(0.2, changeConfigurationBlinker);
 }
@@ -2257,14 +2262,14 @@ void handleGatewayLoop()
     }
 
   // get measurement data
-    loopDone = dev->loop();
+/*    loopDone = dev->loop();
     if(dev->isNewDataAvailable())
     {
 //      initDeviceType(
 //      initDeviceType(configuration.get("devicetype"), true, false);
       
       getMeasurementData();
-    } 
+    } */
   }  
 
   if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
@@ -2441,6 +2446,15 @@ void gotoInfiniteSleep()
 {
   int sleepSecs;
   DLN("Up for "+String(millis())+" ms, going down for sleep and hope will not be waked up by myself... \n"); 
+
+  if(!configuration.containsKey("interval"))
+  {
+    configuration.resetConfiguration();
+    ESP.restart();
+    delay(500);
+
+    return;
+  }
 
   sleepSecs = atoi(configuration.get("interval"))*(-1);
   if(atoi(configuration.get("sensorpowerpin")) != 99)

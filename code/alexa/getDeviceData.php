@@ -21,10 +21,7 @@ function getDeviceDataParameterList($conn, $type)
 	$fetch_device_data_parameter_list = 'SELECT parameter FROM `devicetypeparameter` WHERE `type`="'.$type.'"';
 	$query_device_data_parameter_list = $conn->prepare($fetch_device_data_parameter_list);
 	$query_device_data_parameter_list->execute();
-	
-			logging2file($fetch_device_data_parameter_list);
-	
-	
+		
 	$deviceDataParameterList = array();
 	
 	if($query_device_data_parameter_list->rowCount())
@@ -81,8 +78,6 @@ function GetLastDeviceData($token, $alias, $name, $count)
 						$query_last_value_from_device = $conn->prepare($fetch_last_value_from_device);
 						$query_last_value_from_device->execute();
 
-			logging2file($fetch_last_value_from_device);
-						
 						if($query_last_value_from_device->rowCount())
 						{
 							while ($rowValue = $query_last_value_from_device->fetch(PDO::FETCH_ASSOC))
@@ -132,24 +127,32 @@ function GetLastDeviceData($token, $alias, $name, $count)
 
 $entityBody = file_get_contents ( 'php://input' );
 $entityBodyJSON = json_decode($entityBody);	
-		
-if(!isset($entityBodyJSON->userID) 
-    || !isset($entityBodyJSON->accessToken) 
-    || !isset($entityBodyJSON->count) 
-    || (!isset($entityBodyJSON->alias) && !isset($entityBodyJSON->name)) 
-    || empty(trim($entityBodyJSON->userID))
-    || empty(trim($entityBodyJSON->accessToken))
-    )
+$allHeaders = getallheaders();
+
+if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Authorization'])))
 {
-    $fields = ['fields' => ['userID','accessToken','name','alias']];
-    $replyToSender = json_encode(msg(0,422,'Please Fill in all Required Fields!',$fields));		
+	$token = explode(" ", trim($allHeaders['Authorization']));
+		
+	if(!isset($entityBodyJSON->userID) 
+		|| !isset($entityBodyJSON->count) 
+		|| (!isset($entityBodyJSON->alias) && !isset($entityBodyJSON->name)) 
+		|| empty(trim($entityBodyJSON->userID))
+		)
+	{
+		$fields = ['fields' => ['userID','name','alias','count']];
+		$replyToSender = json_encode(msg(0,422,'Please Fill in all Required Fields!',$fields));		
+	}
+	else
+	{
+		$alias = isset($entityBodyJSON->alias) ? $entityBodyJSON->alias : "";	
+		$name = isset($entityBodyJSON->name) ? $entityBodyJSON->name : "";	
+			
+		$replyToSender = json_encode ( GetLastDeviceData($token[1], $alias, $name, $entityBodyJSON->count) );
+	}
 }
 else
 {
-	$alias = isset($entityBodyJSON->alias) ? $entityBodyJSON->alias : "";	
-	$name = isset($entityBodyJSON->name) ? $entityBodyJSON->name : "";	
-		
-	$replyToSender = json_encode ( GetLastDeviceData($entityBodyJSON->accessToken, $alias, $name, $entityBodyJSON->count) );
+	$replyToSender = json_encode ( msg(0, 401, "Unauthorized") );	
 }
 
 header ( 'Content-Type: application/json' );
