@@ -2,7 +2,7 @@
 
 //#define SIMULATION
 #define UART_RXD_INV (BIT(19)) 
-//#define DEBUG_SHRDZM
+#define DEBUG_SHRDZM
 
 const byte firstByte = 0x7E; 
 const byte lastByte = 0x7E; 

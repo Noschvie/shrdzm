@@ -1,6 +1,6 @@
 #include "config/config.h"
 
-//#define DEBUG_SHRDZM
+#define DEBUG_SHRDZM
 
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )

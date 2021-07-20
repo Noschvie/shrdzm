@@ -10,7 +10,7 @@
 
 */
 
-//#define DEBUG_SHRDZM
+#define DEBUG_SHRDZM
 
 #include "config/config.h"
 
@@ -651,6 +651,100 @@ void handleSettings()
 }
 
 void handleCloud()
+{
+  if(server.args() != 0)
+  {
+    if( server.hasArg("cloudEnabledChanged"))
+    {
+      DV(String(server.arg("cloudEnabledChanged")));
+      if(String(server.arg("cloudEnabledChanged")) == "1") 
+      {
+        if( server.hasArg("cloudenabled"))
+        {
+          if(String(server.arg("cloudenabled")) == "on") 
+          {
+            configuration.setCloudParameter("enabled", "true");
+
+            if(cloudRegisterNewUser(server.arg("user").c_str(), "", server.arg("password").c_str()))
+            {
+              cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
+              if(cloudConnected)
+              {
+                configuration.setCloudParameter("userid", cloudID.c_str());
+              }
+            }
+          }
+          else
+          {
+            configuration.setCloudParameter("enabled", "false");
+          }
+          DV(String(server.arg("cloudenabled")));
+        }
+        else
+        {
+          configuration.setCloudParameter("enabled", "false");
+        }
+      }      
+    }
+    if( server.hasArg("resetCloudSettings"))
+    {
+      DV(String(server.arg("resetCloudSettings")));
+      if(String(server.arg("resetCloudSettings")) == "true") 
+      {
+        configuration.setCloudParameter("user", deviceName.c_str());
+        configuration.setCloudParameter("password", String(ESP.getChipId()).c_str());
+      }
+    }
+    
+    writeConfiguration = true;          
+  }  
+  
+  sprintf(menuContextBuffer,  
+      "<h1>Cloud</h1><br/>\
+      Cloud Settings are optional. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a> and <a href=\"https://skills-store.amazon.de/deeplink/dp/B096S1675W?deviceType=app&share&refSuffix=ss_copy\" target=\"_blank\">Alexa</a>\
+      <form name='cloudForm' method='post'>\
+      <input type='hidden' id='resetCloudSettings' name='resetCloudSettings' value='false'/>\
+      <br/>\
+      <p>\
+      <input type='checkbox' onClick='toggleCloudEnabled(this)' id='cloudenabled' name='cloudenabled' %s/>\
+      <input type='hidden' id='cloudEnabledChanged' name='cloudEnabledChanged' value='0' />\
+      <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
+      <br/>\
+      <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
+      <label for='user'>User Name</label></div><br/><br/>\
+      <div><input type='text' id='password' name='password' placeholder='Password' size='30' value='%s'>\
+      <label for='user'>Password</label></div><br/><br/>\
+      Unique User ID = %s<br/><br/>\
+      <br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Cloud Settings' /><br />\      
+      <br /> <input class='submitbutton' type='submit' value='Save Cloud Settings!' />\      
+      </p>\
+      <script>\
+      function submitResetCloudSettings()\
+      {\
+         document.getElementById('resetCloudSettings').value = 'true';\
+      }\      
+      function toggleCloudEnabled(f)\
+      {\
+        document.getElementById('cloudEnabledChanged').value = '1';\
+        f.form.submit();\
+      }\
+      </script>\
+      </form>\
+      <br/>\
+      <hr/>\
+      ", 
+      String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("user"),
+      configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid")
+  );  
+
+  char * temp = getWebsite(menuContextBuffer);
+
+  server.send(200, "text/html", temp);    
+}
+
+void handleCloud_old()
 {
   if((String(configuration.getCloudParameter("enabled")) == "true") &&
       cloudID != String(configuration.getCloudParameter("userid")))
