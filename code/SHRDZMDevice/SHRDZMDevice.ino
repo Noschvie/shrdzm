@@ -257,10 +257,12 @@ void handleRoot()
   informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
   informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
   informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
-  informationTable += "Unknown";
-  informationTable += F("</span></p><br>");    
-  informationTable += "Last Measurement : <br>";
-  informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
+  informationTable += F("Unknown");
+  informationTable += F("</span><br>");    
+  if(WiFi.localIP().toString() != F("(IP unset)"))
+    informationTable += F("Date/Time : <span id='timestamp'>Unknown</span>");
+  informationTable += F("</p><br><br>Last Measurement : <br>");
+  informationTable += F("<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>");
 
   if(WiFi.localIP().toString() != F("(IP unset)"))
   {
@@ -495,6 +497,8 @@ void handleCloud()
                   if(cloudConnected)
                   {
                     configuration.setCloudParameter("userid", cloudID.c_str());
+                    configuration.setCloudParameter("user", server.arg("user").c_str());
+                    configuration.setCloudParameter("password", server.arg("password").c_str());
                     cloudRegisterDevice(deviceName.c_str(), configuration.get("devicetype"));
                   }
                 }
@@ -510,22 +514,22 @@ void handleCloud()
             if(gatewayipset)
             {
               cloudUnregisterDevice(deviceName.c_str());
-              cloudUnregisterUser(configuration.getCloudParameter("userid"), configuration.getCloudParameter("password"));
+              cloudUnregisterUser(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));
             }
             configuration.setCloudParameter("enabled", "false");
-/*            configuration.setCloudParameter("userid", "");
-            configuration.setCloudParameter("user", "");
+            configuration.setCloudParameter("userid", "");
+/*            configuration.setCloudParameter("user", "");
             configuration.setCloudParameter("password", ""); */
           }
         }
         else
         {
           cloudUnregisterDevice(deviceName.c_str());
-          cloudUnregisterUser(configuration.getCloudParameter("userid"), configuration.getCloudParameter("password"));
+          cloudUnregisterUser(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));
           configuration.setCloudParameter("enabled", "false");
           configuration.setCloudParameter("userid", "");
-          configuration.setCloudParameter("user", "");
-          configuration.setCloudParameter("password", "");
+/*          configuration.setCloudParameter("user", "");
+          configuration.setCloudParameter("password", "");*/
         }
       }      
     }
@@ -563,7 +567,21 @@ void handleCloud()
 
 void handleNTP()
 {
-  sprintf(menuContextBuffer, handleNTP_template);  
+  if(server.args() != 0)
+  {
+    if(server.hasArg("ntpserver"))
+      configuration.setWlanParameter("NTPServer", server.arg("ntpserver").c_str());
+
+    if(server.hasArg("tz"))
+      configuration.setWlanParameter("TZ", server.arg("tz").c_str());
+        
+    writeConfiguration = true;          
+  }
+    
+  sprintf(menuContextBuffer, handleNTP_template,
+        configuration.getWlanParameter("NTPServer"),
+        configuration.getWlanParameter("TZ")      
+      );  
 
   char * temp = getWebsite(menuContextBuffer);
 
@@ -818,6 +836,14 @@ void startGatewayWebserver()
                        atoi(configuration.getWlanParameter("MQTTport")));
 
   mqttclient.setCallback(mqttcallback);
+
+  if(configuration.containsWlanKey("NTPServer") && String(configuration.getWlanParameter("NTPServer")) != "" )
+  {
+    if(configuration.containsWlanKey("TZ") && String(configuration.getWlanParameter("TZ")) != "" )
+    {
+      configTime(configuration.getWlanParameter("TZ"), configuration.getWlanParameter("NTPServer"));
+    }
+  }
 
 #ifdef DEBUG_SHRDZM
   request.setDebug(true);
@@ -1641,7 +1667,7 @@ Serial.begin(SERIAL_BAUD); Serial.println();
 
   if(gatewayMode)
   {
-    startGatewayWebserver();
+    startGatewayWebserver();    
     mqttNextTry = 0;
     clockmillis = millis();      
     return;

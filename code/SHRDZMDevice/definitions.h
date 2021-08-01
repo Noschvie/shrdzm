@@ -1,5 +1,3 @@
-// <select name='devices' onchange='this.form.submit()'>\
-
 
 const static char settings_template[] PROGMEM = 
 {      
@@ -123,8 +121,12 @@ const static char handleNTP_template[] PROGMEM =
 {
 "<h1>NTP</h1><p><strong>Configuration</strong><br /><br />\
 <form method='post' id='settingsForm'>\
-<br/><br/><div><label for='ntpserver'>NTP Server</label>\
-<input type='text' id='ntpserver' name='ntpserver' size='20' value='at.pool.ntp.org'></div>\
+<br/><br/><div>\
+<input type='text' id='ntpserver' name='ntpserver' placeholder='NTP Server' size='20' value='%s'>\
+<label for='ntpserver'>NTP Server</label></div>\
+<br/><br/><div>\
+<input type='text' id='tz' name='tz' placeholder='Time Zone' size='30' value='%s'>\
+<label for='tz'>Time Zone</label></div><br/>\
 <br/><br/>\
 <input type='hidden' id='save' name='save' value='false'/>\
 <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\

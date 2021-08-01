@@ -6,6 +6,8 @@
 #define NAME		"SHRDZMDevice"
 
 #define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
+#define NTP_SERVER "at.pool.ntp.org"
+#define TZ "CET-1CEST,M3.5.0,M10.5.0/3"
 
 #define LITTLEFS
 

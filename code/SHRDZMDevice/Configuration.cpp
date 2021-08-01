@@ -192,6 +192,16 @@ bool Configuration::migrateToNewConfigurationStyle()
     setWlanParameter("MQTTpassword", "");
     update = true;
   }
+  if(!containsWlanKey("NTPServer"))
+  {
+    setWlanParameter("NTPServer", String(NTP_SERVER).c_str());
+    update = true;
+  }
+  if(!containsWlanKey("TZ"))
+  {
+    setWlanParameter("TZ", String(TZ).c_str());
+    update = true;
+  }  
   if(!containsCloudKey("enabled"))
   {
     setCloudParameter("enabled", "false");

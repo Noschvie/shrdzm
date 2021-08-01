@@ -30,7 +30,7 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
 
 bool cloudUnregisterUser(const char* user, const char* password )
 {
-  DLN("Will now try to unregister new User on "+String(CloudApiAddress));
+  DLN("Will now try to unregister User on "+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
@@ -48,7 +48,10 @@ bool cloudUnregisterUser(const char* user, const char* password )
   if(doc["success"].as<unsigned int>() == 1)
     return true;
   else
+  {
+    DV(reply);
     return false;
+  }
 }
 
 bool cloudRegisterDevice(const char* devicename, const char* type )
@@ -64,7 +67,7 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
 
 bool cloudUnregisterDevice(const char* devicename)
 {
-  DLN("Will now try to register Device on "+String(CloudApiAddress));
+  DLN("Will now try to unregister Device on "+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
@@ -208,7 +211,11 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
       int httpResponseCode = http.POST(content);
 
       if(httpResponseCode != 200)
+      {
+        DV(httpResponseCode);
+        DV(http.getString());
         return false;
+      }
           
 //      DV(httpResponseCode);
 //      DV(http.getString());
