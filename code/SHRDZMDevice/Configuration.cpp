@@ -1,6 +1,6 @@
 #include "configuration.h"
 
-static DynamicJsonDocument g_configdoc(1024);
+static DynamicJsonDocument g_configdoc(1524);
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -192,6 +192,26 @@ bool Configuration::migrateToNewConfigurationStyle()
     setWlanParameter("MQTTpassword", "");
     update = true;
   }
+  if(!containsCloudKey("enabled"))
+  {
+    setCloudParameter("enabled", "false");
+    update = true;
+  }
+  if(!containsCloudKey("userid"))
+  {
+    setCloudParameter("userid", "");
+    update = true;
+  }
+  if(!containsCloudKey("user"))
+  {
+    setCloudParameter("user", m_deviceName.c_str());
+    update = true;
+  }
+  if(!containsCloudKey("password"))
+  {
+    setCloudParameter("password", String(ESP.getChipId()).c_str());
+    update = true;
+  }
 
   if(!g_configdoc.containsKey("sensorpowerpin"))
   {
@@ -243,6 +263,49 @@ bool Configuration::load()
 
     serializeJson(g_configdoc, Serial);    
     Serial.println();
+
+    // check validity
+    if(g_configdoc.containsKey("interval"))
+    {
+      if(g_configdoc["interval"] == nullptr)
+        return false;
+    }
+    else
+      return false;
+    
+    if(g_configdoc.containsKey("preparetime"))
+    {
+      if(g_configdoc["preparetime"] == nullptr)
+        return false;
+    }
+    else
+      return false;
+
+    if(g_configdoc.containsKey("sensorpowerpin"))
+    {
+      if(g_configdoc["sensorpowerpin"] == nullptr)
+        return false;
+    }
+    else
+      return false;
+
+    if(g_configdoc.containsKey("pairingpin"))
+    {
+      if(g_configdoc["pairingpin"] == nullptr)
+        return false;
+    }
+    else
+      return false;
+
+    if(g_configdoc.containsKey("devicetype"))
+    {
+      if(g_configdoc["devicetype"] == nullptr)
+        return false;
+    }
+    else
+      return false;
+
+      
   }
   else
   {    
@@ -286,28 +349,31 @@ void Configuration::removeAllDeviceParameter()
 void Configuration::setDeviceParameter(const char *name, const char *value)
 {
   String v(value);
+  String k(name);
 
   v.replace( " ", "" );
   
-  g_configdoc["device"][name] = v;
+  g_configdoc["device"][k] = v;
 }
 
 void Configuration::setWlanParameter(const char *name, const char *value)
 {
   String v(value);
+  String k(name);
 
   v.replace( " ", "" );
   
-  g_configdoc["wlan"][name] = v;
+  g_configdoc["wlan"][k] = v;
 }
 
 void Configuration::setCloudParameter(const char *name, const char *value)
 {
   String v(value);
+  String k(name);
 
   v.replace( " ", "" );
   
-  g_configdoc["cloud"][name] = v;
+  g_configdoc["cloud"][k] = v;
 }
 
 void Configuration::setDeviceParameter(JsonObject dc)
@@ -328,9 +394,9 @@ void Configuration::setCloudParameter(JsonObject dc)
 const char* Configuration::get(char *name)
 {
   if(g_configdoc.containsKey(name))
-    return g_configdoc[name];  
+    return g_configdoc[name].as<char*>();  
   else
-    return NULL;
+    return "";
 }
 
 JsonObject Configuration::getDeviceParameter()
@@ -508,7 +574,6 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 
     reply.remove(reply.length()-1);
 
-  //  simpleEspConnection->sendMessage((char *)reply.c_str());
     sendMessageWithChecksum(simpleEspConnection, (char *)reply.c_str());                       
   
     Serial.println("reply 2 = "+reply);

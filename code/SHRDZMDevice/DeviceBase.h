@@ -74,8 +74,8 @@ class DeviceBase
 
     DynamicJsonDocument *m_pConfigurationObject;
     
-    StaticJsonDocument<JSON_OBJECT_SIZE(10)> doc;
-    StaticJsonDocument<JSON_OBJECT_SIZE(10)> docAction;
+    StaticJsonDocument<JSON_OBJECT_SIZE(15)> doc;
+    StaticJsonDocument<JSON_OBJECT_SIZE(15)> docAction;
 };
 
 #endif

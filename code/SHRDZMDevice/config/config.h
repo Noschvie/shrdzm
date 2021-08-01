@@ -7,10 +7,10 @@
 
 #define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
 
-//#define LITTLEFS
+#define LITTLEFS
 
 #define SLEEP_SECS 10
-//#define SLEEP_SECS 2 * 60 
+#define SERIAL_BAUD 115200
 #define SEND_TIMEOUT 1000  // 245 millis seconds timeout 
 #define LEDPIN 		2
 #define PAIRING_PIN	13
@@ -29,6 +29,7 @@
 
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
+#include "../definitions.h"
 #include "StringSplitter.h"
 #include <asyncHTTPrequest.h>
 //#include "FS.h"

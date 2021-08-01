@@ -22,6 +22,8 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
 
   if(doc["success"].as<unsigned int>() == 1)
     return true;
+  else if(doc["status"].as<unsigned int>() == 422)
+    return true;
   else
     return false;
 }
@@ -111,7 +113,6 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
 
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
 {
-  DLN("Will now try to add mesurement on "+String(CloudApiAddress));
   String reply;
 
  // return cloudSendAsyncRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
@@ -192,8 +193,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     HTTPClient http;
   
     String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-    DV(finalAddress);
-    DV(content);
+//    DV(finalAddress);
+//    DV(content);
         
     if(http.begin(finalAddress))
     {
@@ -209,8 +210,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
       if(httpResponseCode != 200)
         return false;
           
-      DV(httpResponseCode);
-      DV(http.getString());
+//      DV(httpResponseCode);
+//      DV(http.getString());
 
       *reply = http.getString();
       http.end();
