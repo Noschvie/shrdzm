@@ -130,15 +130,15 @@ void startConfigurationAP()
   WiFi.hostname(APName.c_str());        
   WiFi.softAP(APName);     
 
-  DLN("Start configuration AP...");
+  DLN(F("Start configuration AP..."));
   
-  server.on("/", handleRoot);
-  server.on("/reboot", handleReboot);
-  server.on("/general", handleRoot);
-  server.on("/settings", handleSettings);
-  server.on("/gateway", handleGateway);
-  server.on("/NTP", handleNTP);
-  server.on("/cloud", handleCloud);
+  server.on(F("/"), handleRoot);
+  server.on(F("/reboot"), handleReboot);
+  server.on(F("/general"), handleRoot);
+  server.on(F("/settings"), handleSettings);
+  server.on(F("/gateway"), handleGateway);
+  server.on(F("/NTP"), handleNTP);
+  server.on(F("/cloud"), handleCloud);
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -158,7 +158,7 @@ char* getWebsite(char* content, bool update = false)
 
   sprintf(websideBuffer,  
     website_template,
-    update ? "<script src=\"j.js\"></script>" : "", 
+    update ? F("<script src=\"j.js\"></script>") : F(""), 
     deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
@@ -175,13 +175,14 @@ void handleJson() {
   sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );
 
   message += (F("{\"mqttconnectionstate\":"));
-  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
+  message += (mqttclient.connected() ? F("\"Connected\"") : F("\"Not Connected\""));  
+//  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
   message += (F(",\"lastmessage\":"));
   message += lastMessage+"";  
   message += (F(",\"timestamp\":\""));
   message += String(t);  
   message += (F("\"}")); // End of JSON
-  server.send(200, "application/json", message);
+  server.send(200, F("application/json"), message);
 }
 
 void handleJs()
@@ -212,9 +213,9 @@ void handleRoot()
 {
   char content[2500];
 
-  if(server.hasArg("factoryreset"))
+  if(server.hasArg(F("factoryreset")))
   {
-    if(String(server.arg("factoryreset")) == F("true")) // factory reset was pressed
+    if(String(server.arg(F("factoryreset"))) == F("true")) // factory reset was pressed
     {
       snprintf(content, 300,
        factoryreset_template      
@@ -230,12 +231,12 @@ void handleRoot()
     }
   }
 
-  if(server.hasArg("upgrade") && server.hasArg("upgradepath"))
+  if(server.hasArg(F("upgrade")) && server.hasArg(F("upgradepath")))
   {
-    if(String(server.arg("upgrade")) == F("true")) // Upgrade was pressed
+    if(String(server.arg(F("upgrade"))) == F("true")) // Upgrade was pressed
     {
-      DLN("Upgrade from "+String(server.arg("upgradepath"))+" will be started...");
-      if(updateFirmwareByMQTT(server.arg("upgradepath")))
+      DLN("Upgrade from "+String(server.arg(F("upgradepath")))+" will be started...");
+      if(updateFirmwareByMQTT(server.arg(F("upgradepath"))))
       {        
         firmwareUpdate = true;
 
@@ -285,7 +286,7 @@ void handleRoot()
 
 void handleNotFound() 
 {
-  String message = "File Not Found\n\n";
+  String message = F("File Not Found\n\n");
   message += F("URI: ");
   message += server.uri();
   message += F("\nMethod: ");
@@ -330,21 +331,21 @@ void handleSettings()
     settingDev = NULL;
   }
 
-  if(server.hasArg("devicechanged"))
+  if(server.hasArg(F("devicechanged")))
   {
-    if(String(server.arg("devicechanged")) == "true") // now to save the parameter to the configuration
+    if(String(server.arg(F("devicechanged"))) == F("true")) // now to save the parameter to the configuration
     {
       configuration.removeAllDeviceParameter();
     }
   }  
   
   // check selected device
-  if(server.hasArg("devices"))
-    deviceType = server.arg("devices");
+  if(server.hasArg(F("devices")))
+    deviceType = server.arg(F("devices"));
   else
     deviceType = configuration.get("devicetype");       
 
-  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
+  if(deviceType != "" && deviceType != F("UNKNOWN") && settingDev == NULL)
   {
     settingDev = createDeviceObject(deviceType.c_str());        
     settingDev->initialize();
@@ -357,9 +358,9 @@ void handleSettings()
   }
     
   // check if save was pressed
-  if(server.hasArg("save"))
+  if(server.hasArg(F("save")))
   {
-    if(String(server.arg("save")) == "true") // now to save the parameter to the configuration
+    if(String(server.arg(F("save"))) == F("true")) // now to save the parameter to the configuration
     {
       configuration.set("devicetype", (char *)deviceType.c_str()); 
       
@@ -414,7 +415,7 @@ void handleSettings()
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
     for (JsonPair kv : documentRoot) 
     {
-      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype" && String(kv.key().c_str()) != "cloud")
+      if(String(kv.key().c_str()) != F("device") && String(kv.key().c_str()) != F("wlan") && String(kv.key().c_str()) != F("devicetype") && String(kv.key().c_str()) != F("cloud"))
       {
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
         if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
@@ -431,7 +432,7 @@ void handleSettings()
     // Show device parameter
     if(!deviceParameter.isNull())
     {
-      parameterBuffer += "<br/>";
+      parameterBuffer += F("<br/>");
       for (JsonPair kv : deviceParameter)
       {
         parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
@@ -476,16 +477,16 @@ void handleCloud()
   
   if(server.args() != 0)
   {
-    if( server.hasArg("cloudEnabledChanged"))
+    if( server.hasArg(F("cloudEnabledChanged")))
     {
-      DV(String(server.arg("cloudEnabledChanged")));
-      if(String(server.arg("cloudEnabledChanged")) == "1") 
+      DV(String(server.arg(F("cloudEnabledChanged"))));
+      if(String(server.arg(F("cloudEnabledChanged"))) == F("1")) 
       {
-        if( server.hasArg("cloudenabled"))
+        if( server.hasArg(F("cloudenabled")))
         {
-          if(String(server.arg("cloudenabled")) == "on") 
+          if(String(server.arg(F("cloudenabled"))) == F("on"))
           {
-            if(server.arg("user") != "" && server.arg("password") != "")
+            if(server.arg(F("user")) != "" && server.arg(F("password")) != "")
             {
               configuration.setCloudParameter("enabled", "true");
 
@@ -497,8 +498,8 @@ void handleCloud()
                   if(cloudConnected)
                   {
                     configuration.setCloudParameter("userid", cloudID.c_str());
-                    configuration.setCloudParameter("user", server.arg("user").c_str());
-                    configuration.setCloudParameter("password", server.arg("password").c_str());
+                    configuration.setCloudParameter("user", server.arg(F("user")).c_str());
+                    configuration.setCloudParameter("password", server.arg(F("password")).c_str());
                     cloudRegisterDevice(deviceName.c_str(), configuration.get("devicetype"));
                   }
                 }
@@ -533,9 +534,9 @@ void handleCloud()
         }
       }      
     }
-    if( server.hasArg("resetCloudSettings"))
+    if( server.hasArg(F("resetCloudSettings")))
     {
-      if(String(server.arg("resetCloudSettings")) == "true") 
+      if(String(server.arg(F("resetCloudSettings"))) == F("true"))
       {
         if(gatewayipset)
         {
@@ -562,18 +563,18 @@ void handleCloud()
 
   char * temp = getWebsite(menuContextBuffer);
 
-  server.send(200, "text/html", temp);    
+  server.send(200, F("text/html"), temp);    
 }
 
 void handleNTP()
 {
   if(server.args() != 0)
   {
-    if(server.hasArg("ntpserver"))
-      configuration.setWlanParameter("NTPServer", server.arg("ntpserver").c_str());
+    if(server.hasArg(F("ntpserver")))
+      configuration.setWlanParameter("NTPServer", server.arg(F("ntpserver")).c_str());
 
-    if(server.hasArg("tz"))
-      configuration.setWlanParameter("TZ", server.arg("tz").c_str());
+    if(server.hasArg(F("tz")))
+      configuration.setWlanParameter("TZ", server.arg(F("tz")).c_str());
         
     writeConfiguration = true;          
   }
@@ -586,14 +587,14 @@ void handleNTP()
   char * temp = getWebsite(menuContextBuffer);
 
   DLN("after getWebsite size = "+String(strlen(temp)));
-  server.send(200, "text/html", temp);  
+  server.send(200, F("text/html"), temp);  
 }
 
 void handleGateway()
 {
   if(server.args() != 0)
   {
-    if( server.arg("wlanenabled") == "1")
+    if( server.arg(F("wlanenabled")) == "1")
     {
       configuration.setWlanParameter("enabled", "true");
       configuration.set("gateway", (char *)deviceName.c_str());
@@ -601,44 +602,44 @@ void handleGateway()
     else
       configuration.setWlanParameter("enabled", "false");
 
-    if(server.hasArg("ssid"))
-      configuration.setWlanParameter("ssid", server.arg("ssid").c_str());
+    if(server.hasArg(F("ssid")))
+      configuration.setWlanParameter("ssid", server.arg(F("ssid")).c_str());
     else
       configuration.setWlanParameter("ssid", "");
         
-    if(server.hasArg("password"))
-      configuration.setWlanParameter("password", server.arg("password").c_str());
+    if(server.hasArg(F("password")))
+      configuration.setWlanParameter("password", server.arg(F("password")).c_str());
     else
       configuration.setWlanParameter("password", "");    
 
-    if(server.hasArg("ip"))
-      configuration.setWlanParameter("ip", server.arg("ip").c_str());
+    if(server.hasArg(F("ip")))
+      configuration.setWlanParameter("ip", server.arg(F("ip")).c_str());
     else
       configuration.setWlanParameter("ip", "");    
     
-    if(server.hasArg("dns"))
-      configuration.setWlanParameter("dns", server.arg("dns").c_str());
+    if(server.hasArg(F("dns")))
+      configuration.setWlanParameter("dns", server.arg(F("dns")).c_str());
     else
       configuration.setWlanParameter("dns", "");    
     
-    if(server.hasArg("gateway"))
-      configuration.setWlanParameter("gateway", server.arg("gateway").c_str());
+    if(server.hasArg(F("gateway")))
+      configuration.setWlanParameter("gateway", server.arg(F("gateway")).c_str());
     else
       configuration.setWlanParameter("gateway", "");    
     
-    if(server.hasArg("subnet"))
-      configuration.setWlanParameter("subnet", server.arg("subnet").c_str());
+    if(server.hasArg(F("subnet")))
+      configuration.setWlanParameter("subnet", server.arg(F("subnet")).c_str());
     else
       configuration.setWlanParameter("subnet", "");    
     
     if(server.hasArg("MQTTbroker"))
-      configuration.setWlanParameter("MQTTbroker", server.arg("MQTTbroker").c_str());
-    if(server.hasArg("MQTTport"))
-      configuration.setWlanParameter("MQTTport", server.arg("MQTTport").c_str());
-    if(server.hasArg("MQTTuser"))
-      configuration.setWlanParameter("MQTTuser", server.arg("MQTTuser").c_str());
-    if(server.hasArg("MQTTpassword"))
-      configuration.setWlanParameter("MQTTpassword", server.arg("MQTTpassword").c_str());
+      configuration.setWlanParameter("MQTTbroker", server.arg(F("MQTTbroker")).c_str());
+    if(server.hasArg(F("MQTTport")))
+      configuration.setWlanParameter("MQTTport", server.arg(F("MQTTport")).c_str());
+    if(server.hasArg(F("MQTTuser")))
+      configuration.setWlanParameter("MQTTuser", server.arg(F("MQTTuser")).c_str());
+    if(server.hasArg(F("MQTTpassword")))
+      configuration.setWlanParameter("MQTTpassword", server.arg(F("MQTTpassword")).c_str());
 
     writeConfiguration = true;    
   }
@@ -654,13 +655,13 @@ void handleGateway()
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
-      configuration.getWlanParameter("MQTTpassword") 
+      configuration.getWlanParameter("MQTTpassword")
   );  
 
   char * temp = getWebsite(menuContextBuffer);
 
   DLN("after getWebsite size = "+String(strlen(temp)));
-  server.send(200, "text/html", temp);
+  server.send(200, F("text/html"), temp);
 }
 
 ///////////////////////////
@@ -741,7 +742,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     {
       if(splitter->getItemAtIndex(0) == deviceName)
       {
-        if(splitter->getItemAtIndex(1) == "configuration")
+        if(splitter->getItemAtIndex(1) == F("configuration"))
         {
           sendSetup();
         }
@@ -749,7 +750,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     }
     else if(itemCount == 3)
     {
-      if(splitter->getItemAtIndex(1) == "upgrade")
+      if(splitter->getItemAtIndex(1) == F("upgrade"))
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");   
 
@@ -791,7 +792,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
       }
     }    
   }
-  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == F("pair "))
   {
     mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
     sendSetup();
@@ -1080,7 +1081,7 @@ bool updateFirmwareByMQTT(String message)
 {
   host = message;
   
-  if(host.substring(0,7) != "http://")
+  if(host.substring(0,7) != F("http://"))
   {
     DLN("Upgrade : only http address supported! ");
     return false;    
@@ -1088,7 +1089,7 @@ bool updateFirmwareByMQTT(String message)
 
   host = host.substring(7);
 
-  if(host.substring(host.length()-4) != ".php")
+  if(host.substring(host.length()-4) != F(".php"))
   {
     DLN("Upgrade : only php update script supported");
     return false;    
@@ -1120,7 +1121,7 @@ bool updateFirmware(String message)
 
   DLN("SSID:"+SSID+" password:"+password+" host:"+host);
 
-  if(host.substring(0,7) != "http://")
+  if(host.substring(0,7) != F("http://"))
   {
     DLN("Upgrade : only http address supported!");
     return false;    
@@ -1128,7 +1129,7 @@ bool updateFirmware(String message)
 
   host = host.substring(7);
 
-  if(host.substring(host.length()-4) != ".php")
+  if(host.substring(host.length()-4) != F(".php"))
   {
     DLN("Upgrade : only php update script supported");
     return false;    
@@ -1156,7 +1157,7 @@ bool updateFirmware(String message)
 
 void setConfig(String cmd)
 {
-  if(cmd == "configuration")
+  if(cmd == F("configuration"))
   {
     DLN("need to send the setup...");
     sendSetup();     
@@ -1172,15 +1173,15 @@ void setConfig(String cmd)
 
   DLN("setConfig Name="+pname+", Value="+pvalue);
 
-  if( pname == "interval" || 
-      pname == "sensorpowerpin" || 
-      pname == "devicetype" || 
-      pname == "preparetime" || 
-      pname == "processtime" || 
-      pname == "batterycheck" || 
-      pname == "gateway")
+  if( pname == F("interval") || 
+      pname == F("sensorpowerpin") || 
+      pname == F("devicetype") || 
+      pname == F("preparetime") || 
+      pname == F("processtime") || 
+      pname == F("batterycheck") || 
+      pname == F("gateway"))
   {
-    if(pname == "devicetype")
+    if(pname == F("devicetype"))
     {
       newDeviceType = pvalue;
       setNewDeviceType = true;
@@ -1206,7 +1207,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   DLN("MESSAGE:"+String((char *)message));
 
-  if(String((char *)message) == "$SLEEP$") // force to go sleep
+  if(String((char *)message) == F("$SLEEP$")) // force to go sleep
   {
     canGoDown = true;
     DLN("FORCE SLEEP MODE");
@@ -1214,11 +1215,11 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     return;
   }
   
-  if(String((char *)message) == "$S$") // ask for settings
+  if(String((char *)message) == F("$S$")) // ask for settings
   {
     sendSetup();
   }
-  else if(String((char *)message) == "$PING$") // ping
+  else if(String((char *)message) == F("$PING$")) // ping
   {
     if(configuration.containsKey("gateway"))
     {
@@ -1228,7 +1229,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       
     return;
   }
-  else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
+  else if(String((char *)message).substring(0,5) == F("$SDT$")) // set device type
   {
     newDeviceType = String((char *)message).substring(5);
     setNewDeviceType = true;
@@ -1236,7 +1237,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     configuration.store();        
     sendSetup();
   }
-  else if(String((char *)message).substring(0,4) == "$SC$") // set configuration
+  else if(String((char *)message).substring(0,4) == F("$SC$")) // set configuration
   {
     if(dev != NULL)
     {
@@ -1263,7 +1264,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       setConfig(String((char *)message).substring(4));
     }
   }  
-  else if(String((char *)message).substring(0,3) == "$U$") // update firmware
+  else if(String((char *)message).substring(0,3) == F("$U$")) // update firmware
   {
     firmwareUpdate = true;   
 
@@ -1655,7 +1656,7 @@ Serial.begin(SERIAL_BAUD); Serial.println();
 
   configuration.storeLastRebootInfo("normal");
   
-  if(lastRebootInfo == "connectiontimeout" && !pairingOngoing)
+  if(lastRebootInfo == F("connectiontimeout") && !pairingOngoing)
   {
     startConfigurationAP();
     return;
@@ -1732,7 +1733,7 @@ void getMeasurementData()
     if(dev != NULL)
     {
       SensorData* sd = dev->readParameter();
-      lastMessage = "\"";
+      lastMessage = F("\"");
   
       if(sd != NULL)
       {
@@ -1767,7 +1768,7 @@ void getMeasurementData()
         sd = NULL;  
       }
 
-      lastMessage += "\"";      
+      lastMessage += F("\"");      
 
       // send message about last measurement;
       if(!gatewayMode)
@@ -1801,16 +1802,16 @@ void handleGatewayLoop()
       DV(WiFi.subnetMask());
       
       
-      server.on("/", handleRoot);
-      server.on("/reboot", handleReboot);
-      server.on("/general", handleRoot);
-      server.on("/settings", handleSettings);
-      server.on("/gateway", handleGateway);
-      server.on("/NTP", handleNTP);
-      server.on("/cloud", handleCloud);
+      server.on(F("/"), handleRoot);
+      server.on(F("/reboot"), handleReboot);
+      server.on(F("/general"), handleRoot);
+      server.on(F("/settings"), handleSettings);
+      server.on(F("/gateway"), handleGateway);
+      server.on(F("/NTP"), handleNTP);
+      server.on(F("/cloud"), handleCloud);
 
-      server.on("/j.js", handleJs);      
-      server.on("/json", handleJson);
+      server.on(F("/j.js"), handleJs);      
+      server.on(F("/json"), handleJson);
       
       server.onNotFound(handleNotFound);
       server.begin();     

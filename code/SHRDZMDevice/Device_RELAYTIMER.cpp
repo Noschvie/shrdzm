@@ -2,13 +2,13 @@
 
 Device_RELAYTIMER::Device_RELAYTIMER()
 {  
-  deviceTypeName = "RELAYTIMER";
+  deviceTypeName = F("RELAYTIMER");
   
   actionParameter = docAction.to<JsonObject>();  
-  actionParameter["relay12"] = "TRIGGER";
-  actionParameter["relay02"] = "TRIGGER";
-  actionParameter["relay04"] = "TRIGGER";
-  actionParameter["relay05"] = "TRIGGER";
+  actionParameter["relay12"] = F("TRIGGER");
+  actionParameter["relay02"] = F("TRIGGER");
+  actionParameter["relay04"] = F("TRIGGER");
+  actionParameter["relay05"] = F("TRIGGER");
 
   port = -1;
   state = false;
@@ -22,7 +22,7 @@ Device_RELAYTIMER::Device_RELAYTIMER()
 
 Device_RELAYTIMER::~Device_RELAYTIMER()
 {
-  Serial.println("RELAYTIMER Instance deleted");
+  Serial.println(F("RELAYTIMER Instance deleted"));
 }
 
 bool Device_RELAYTIMER::setDeviceParameter(JsonObject obj)
@@ -41,13 +41,13 @@ bool Device_RELAYTIMER::initialize()
 bool Device_RELAYTIMER::setAction(String action)
 {
   String sPort = getValue(action, ':', 0);
-  if(sPort == "relay02")
+  if(sPort == F("relay02"))
     port = 2;
-  else if(sPort == "relay04")
+  else if(sPort == F("relay04"))
     port = 4;
-  else if(sPort == "relay05")
+  else if(sPort == F("relay05"))
     port = 5;
-  else if(sPort == "relay12")
+  else if(sPort == F("relay12"))
     port = 12;
 
   if(port != -1)
@@ -113,11 +113,11 @@ SensorData* Device_RELAYTIMER::readParameterTypes()
 {
   SensorData *al = new SensorData(5);
 
-  al->di[0].nameI = "relay02";
-  al->di[1].nameI = "relay04";
-  al->di[2].nameI = "relay05";
-  al->di[3].nameI = "relay12";
-  al->di[4].nameI = "lastuptime";
+  al->di[0].nameI = F("relay02");
+  al->di[1].nameI = F("relay04");
+  al->di[2].nameI = F("relay05");
+  al->di[3].nameI = F("relay12");
+  al->di[4].nameI = F("lastuptime");
 
   return al;
 }
@@ -126,12 +126,12 @@ SensorData* Device_RELAYTIMER::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(3);
 
-  al->di[0].nameI = "interval";
-  al->di[0].valueI = "15";
-  al->di[1].nameI = "preparetime";
-  al->di[1].valueI = "0";
-  al->di[2].nameI = "processtime";
-  al->di[2].valueI = "1.5";
+  al->di[0].nameI = F("interval");
+  al->di[0].valueI = F("15");
+  al->di[1].nameI = F("preparetime");
+  al->di[1].valueI = F("0");
+  al->di[2].nameI = F("processtime");
+  al->di[2].valueI = F("1.5");
 
   return al;
 }
@@ -142,7 +142,7 @@ SensorData* Device_RELAYTIMER::readParameter()
   {
     SensorData *al = new SensorData(1);
 
-    al->di[0].nameI = "lastuptime";
+    al->di[0].nameI = F("lastuptime");
     al->di[0].valueI = String(millis());  
 
     dataAvailable = false;
@@ -156,22 +156,22 @@ SensorData* Device_RELAYTIMER::readParameter()
   
   SensorData *al = new SensorData(processFinished ? 2 : 1);
 
-  String sstate = state ? "ON" : "OFF";
+  String sstate = state ? F("ON") : F("OFF");
 
   if(port == 2)
-    al->di[0].nameI = "relay02";
+    al->di[0].nameI = F("relay02");
   else if(port == 4)
-    al->di[0].nameI = "relay04";
+    al->di[0].nameI = F("relay04");
   else if(port == 5)
-    al->di[0].nameI = "relay05";
+    al->di[0].nameI = F("relay05");
   else if(port == 12)
-    al->di[0].nameI = "relay12";
+    al->di[0].nameI = F("relay12");
 
   al->di[0].valueI = sstate;  
 
   if(processFinished)
   {
-    al->di[1].nameI = "lastuptime";
+    al->di[1].nameI = F("lastuptime");
     al->di[1].valueI = String(millis());  
   }
 

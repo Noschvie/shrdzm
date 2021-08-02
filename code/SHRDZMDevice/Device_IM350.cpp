@@ -24,10 +24,10 @@ GCM<AES128> *gcmaes128 = 0;
 //  String ckSimulation = "62F9445B069BA866068B8036F2612030"; // AM550
 
   // Helmut (Wels)
-  String c1 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000BE34111B482F835CF05AACA84AE6BEDD7EE0F17132CEC104495BD7E9C7F258775072AB713296B1E4CC9BE98468E24D194237365949209A5D6CA42584EB9BB7F5F7E50E5304886F3DA7A9342D157553B2E48A175D907E";  
+//  String c1 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000BE34111B482F835CF05AACA84AE6BEDD7EE0F17132CEC104495BD7E9C7F258775072AB713296B1E4CC9BE98468E24D194237365949209A5D6CA42584EB9BB7F5F7E50E5304886F3DA7A9342D157553B2E48A175D907E";  
 //  String c2 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000BE34111B482F835CF05AACA84AE6BEDD7EE0F17132CEC104495BD7E9C7F258775072AB713296B1E4CC9BE98468E24D194237365949209A5D6CA42584EB9BB7F5F7E50E5304886F3DA7A9342D157553B2E48A175D907E";  
-  String c2 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000C06514BA5DA79232B4036C892317BA7AAF692564DC5DDE0AC93A0997E52F44A5A1FC0505E81AE07CEBFB2845FB73D2D2B8608CE8DC9E6761AC970D3658CE754AA82421E1F05A7BE06D5CDE45995D3E7A596D896D317E";    
-  String ckSimulation = "5A9AFEB2A17E6CF0CBAF98C8300ED9D7"; // Wels
+//  String c2 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000C06514BA5DA79232B4036C892317BA7AAF692564DC5DDE0AC93A0997E52F44A5A1FC0505E81AE07CEBFB2845FB73D2D2B8608CE8DC9E6761AC970D3658CE754AA82421E1F05A7BE06D5CDE45995D3E7A596D896D317E";    
+//  String ckSimulation = "5A9AFEB2A17E6CF0CBAF98C8300ED9D7"; // Wels
   
   int number = 1;
 #endif
@@ -43,7 +43,7 @@ Device_IM350::Device_IM350()
 
 Device_IM350::~Device_IM350()
 {
-  Serial.println("IM350 Instance deleted");
+  Serial.println(F("IM350 Instance deleted"));
 }
 
 bool Device_IM350::isNewDataAvailable()
@@ -55,28 +55,28 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
 { 
   inverted = false;
   
-  if(obj.containsKey("requestpin"))
+  if(obj.containsKey(F("requestpin")))
   {
-    pinMode(atoi(obj["requestpin"]), OUTPUT);
-    digitalWrite(atoi(obj["requestpin"]), LOW);   
+    pinMode(atoi(obj[F("requestpin")]), OUTPUT);
+    digitalWrite(atoi(obj[F("requestpin")]), LOW);   
   }
-  if(obj.containsKey("cipherkey"))
+  if(obj.containsKey(F("cipherkey")))
   {
-    String codeBuffer(obj["cipherkey"].as<char*>());
+    String codeBuffer(obj[F("cipherkey")].as<char*>());
     codeBuffer.replace( " ", "" );
     
     if(codeBuffer.length() == 32)
     {
         memcpy(m_cipherkey, codeBuffer.c_str(), 32);
 
-        obj["cipherkey"] = codeBuffer;
+        obj[F("cipherkey")] = codeBuffer;
     }
     else
       return false;
   }  
-  if(obj.containsKey("invertrx"))
+  if(obj.containsKey(F("invertrx")))
   {
-    String codeBuffer(obj["invertrx"].as<char*>());
+    String codeBuffer(obj[F("invertrx")].as<char*>());
     
     if(codeBuffer[0] == 'Y' || 
        codeBuffer[0] == 'y' ||
@@ -85,22 +85,22 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
        codeBuffer[0] == 't'
        )
     {
-      obj["invertrx"] = "YES";
+      obj[F("invertrx")] = F("YES");
       inverted = true;
     }
     else
     {
-      obj["invertrx"] = "NO";
+      obj[F("invertrx")] = F("NO");
     }    
   }  
 
-  if(obj.containsKey("rxpin"))
+  if(obj.containsKey(F("rxpin")))
   {
-    if(obj["rxpin"].as<uint8_t>() != 3) // if not pin 3, software serial is needed
+    if(obj[F("rxpin")].as<uint8_t>() != 3) // if not pin 3, software serial is needed
     {
-      Serial.println("Device is running with SoftwareSerial");
+      Serial.println(F("Device is running with SoftwareSerial"));
 
-      mySoftwareSerial.begin(115200, SWSERIAL_8N1, obj["rxpin"].as<uint8_t>(), -1, inverted, 256);
+      mySoftwareSerial.begin(115200, SWSERIAL_8N1, obj[F("rxpin")].as<uint8_t>(), -1, inverted, 256);
       softwareSerialUsed = true;
     }
     else
@@ -124,12 +124,12 @@ void Device_IM350::prepare()
 bool Device_IM350::initialize()
 {
   deviceParameter = doc.to<JsonObject>();
-  deviceParameter["requestpin"] = "5";
-  deviceParameter["cipherkey"] = "00000000000000000000000000000000";
-  deviceParameter["rxpin"] = "3";
-  deviceParameter["invertrx"] = "NO";
-  deviceParameter["sendRawData"] = "NO";
-  deviceParameter["autoRebootMinutes"] = "0";
+  deviceParameter[F("requestpin")] = F("5");
+  deviceParameter[F("cipherkey")] = F("00000000000000000000000000000000");
+  deviceParameter[F("rxpin")] = F("3");
+  deviceParameter[F("invertrx")] = F("NO");
+  deviceParameter[F("sendRawData")] = F("NO");
+  deviceParameter[F("autoRebootMinutes")] = F("0");
 
   return true;
 }
@@ -138,12 +138,12 @@ SensorData* Device_IM350::readParameterTypes()
 {
   SensorData *al = new SensorData(6);
 
-  al->di[0].nameI = "counter_reading_p_in";
-  al->di[1].nameI = "counter_reading_p_out";
-  al->di[2].nameI = "counter_reading_q_in";
-  al->di[3].nameI = "counter_reading_q_out";
-  al->di[4].nameI = "current_power_usage_in";
-  al->di[5].nameI = "current_power_usage_out";
+  al->di[0].nameI = F("counter_reading_p_in");
+  al->di[1].nameI = F("counter_reading_p_out");
+  al->di[2].nameI = F("counter_reading_q_in");
+  al->di[3].nameI = F("counter_reading_q_out");
+  al->di[4].nameI = F("current_power_usage_in");
+  al->di[5].nameI = F("current_power_usage_out");
 
   return al;
 }
@@ -152,8 +152,8 @@ SensorData* Device_IM350::readInitialSetupParameter()
 {
   SensorData *al = new SensorData(1);
 
-  al->di[0].nameI = "interval";
-  al->di[0].valueI = "120";
+  al->di[0].nameI = F("interval");
+  al->di[0].valueI = F("120");
 
   return al; 
 }
@@ -181,16 +181,16 @@ SensorData* Device_IM350::readParameter()
     number = 1;
   }  
 #else
-  String ck = deviceParameter["cipherkey"];
+  String ck = deviceParameter[F("cipherkey")];
 
-  if(!deviceParameter["autoRebootMinutes"].isNull())
+  if(!deviceParameter[F("autoRebootMinutes")].isNull())
   {
-    if(strcmp(deviceParameter["autoRebootMinutes"],"0") != 0)
+    if(strcmp(deviceParameter[F("autoRebootMinutes")],"0") != 0)
     {
       // Check whether to reboot first
-      if(millis() > (atol(deviceParameter["autoRebootMinutes"]) * 1000 * 60))
+      if(millis() > (atol(deviceParameter[F("autoRebootMinutes")]) * 1000 * 60))
       {
-        Serial.println("Will reboot now");
+        Serial.println(F("Will reboot now"));
         
         delay(500); 
         ESP.restart();      
@@ -198,17 +198,17 @@ SensorData* Device_IM350::readParameter()
     }
   }
 
-  if(ck == "00000000000000000000000000000000" || ck.length() != 32)
+  if(ck == F("00000000000000000000000000000000") || ck.length() != 32)
   {
     al = new SensorData(1);
     
-    al->di[0].nameI = "lasterror";
-    al->di[0].valueI = "cipherkey not set!";  
+    al->di[0].nameI = F("lasterror");
+    al->di[0].valueI = F("cipherkey not set!");  
     
     return al;
   }
 
-  digitalWrite(atoi(deviceParameter["requestpin"]), LOW);
+  digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW);
 
   // clean serial buffer
   if(softwareSerialUsed)
@@ -218,7 +218,6 @@ SensorData* Device_IM350::readParameter()
     while(mySoftwareSerial.available() > 0)
     {
       byte trash = mySoftwareSerial.read();
-      Serial.print(".");
     }
   }
   else
@@ -242,7 +241,7 @@ SensorData* Device_IM350::readParameter()
   pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
 
   // enable request
-  digitalWrite(atoi(deviceParameter["requestpin"]), HIGH); 
+  digitalWrite(atoi(deviceParameter[F("requestpin")]), HIGH); 
   digitalWrite(LED_BUILTIN, LOW);
   
   uint32_t timeout=2000;
@@ -298,7 +297,7 @@ SensorData* Device_IM350::readParameter()
   }
 
   // disable request
-  digitalWrite(atoi(deviceParameter["requestpin"]), LOW); 
+  digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW); 
   digitalWrite(LED_BUILTIN, HIGH);
 
 
@@ -344,17 +343,17 @@ SensorData* Device_IM350::readParameter()
   {
     al = new SensorData(1);
     
-    al->di[0].nameI = "lasterror";    
-    al->di[0].valueI = "No data read";  
+    al->di[0].nameI = F("lasterror");    
+    al->di[0].valueI = F("No data read");  
             
     return al;    
   }
   else if (dt == unknown)
   {
-    if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+    if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
     {    
       al = new SensorData(2);
-      al->di[1].nameI = "data";
+      al->di[1].nameI = F("data");
       al->di[1].valueI = data;
     }
     else
@@ -362,8 +361,8 @@ SensorData* Device_IM350::readParameter()
       al = new SensorData(1);
     }
     
-    al->di[0].nameI = "lasterror";    
-    al->di[0].valueI = "No supported SmartMeter Type identified - No end Byte found";  
+    al->di[0].nameI = F("lasterror");    
+    al->di[0].valueI = F("No supported SmartMeter Type identified - No end Byte found");  
             
     return al;
   }  
@@ -374,10 +373,10 @@ SensorData* Device_IM350::readParameter()
   decrypt_text(&Vector_SM);
   parse_message(buffer);
 
-  if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"],"YES") == 0)
+  if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"], "YES") == 0)
   {
     al = new SensorData(8);
-    al->di[7].nameI = "encoded";
+    al->di[7].nameI = F("encoded");
     al->di[7].valueI = String(data.c_str());          
   }
   else
@@ -386,26 +385,26 @@ SensorData* Device_IM350::readParameter()
   }
 
 
-  al->di[0].nameI = "counter_reading_p_in";
+  al->di[0].nameI = F("counter_reading_p_in");
   al->di[0].valueI = String(counter_reading_p_in);  
 
-  al->di[1].nameI = "counter_reading_p_out";
+  al->di[1].nameI = F("counter_reading_p_out");
   al->di[1].valueI = String(counter_reading_p_out);  
 
-  al->di[2].nameI = "counter_reading_q_in";
+  al->di[2].nameI = F("counter_reading_q_in");
   al->di[2].valueI = String(counter_reading_q_in);  
 
-  al->di[3].nameI = "counter_reading_q_out";
+  al->di[3].nameI = F("counter_reading_q_out");
   al->di[3].valueI = String(counter_reading_q_out);  
 
-  al->di[4].nameI = "counter_power_usage_in";
+  al->di[4].nameI = F("counter_power_usage_in");
   al->di[4].valueI = String(current_power_usage_in);  
 
-  al->di[5].nameI = "counter_power_usage_out";
+  al->di[5].nameI = F("counter_power_usage_out");
   al->di[5].valueI = String(current_power_usage_out); 
 
   timeToString(str, sizeof(str));
-  al->di[6].nameI = "uptime";
+  al->di[6].nameI = F("uptime");
   al->di[6].valueI = String(str); 
 
   return al;  
