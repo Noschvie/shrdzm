@@ -176,7 +176,6 @@ void handleJson() {
 
   message += (F("{\"mqttconnectionstate\":"));
   message += (mqttclient.connected() ? F("\"Connected\"") : F("\"Not Connected\""));  
-//  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
   message += (F(",\"lastmessage\":"));
   message += lastMessage+"";  
   message += (F(",\"timestamp\":\""));
@@ -347,7 +346,8 @@ void handleSettings()
 
   if(deviceType != "" && deviceType != F("UNKNOWN") && settingDev == NULL)
   {
-    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev = createDeviceObject(deviceType.c_str());  
+    settingDev->setConfigurationObject(configuration.getConfigDocument());
     settingDev->initialize();
   }
   else

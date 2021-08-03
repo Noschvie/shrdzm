@@ -37,6 +37,7 @@ Device_IM350::Device_IM350()
   softwareSerialUsed = false;
   inverted = false;
   dt = unknown;
+  m_pConfigurationObject = NULL;
   
   done = false;
 }
@@ -113,7 +114,10 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
   }  
 
   DeviceBase::setDeviceParameter(obj);
-  
+
+  if(m_pConfigurationObject != NULL)
+    interval = atoi((*m_pConfigurationObject)["interval"]);
+
   return true;
 }
 
@@ -200,11 +204,15 @@ SensorData* Device_IM350::readParameter()
 
   if(ck == F("00000000000000000000000000000000") || ck.length() != 32)
   {
-    al = new SensorData(1);
+    al = new SensorData(2);
     
     al->di[0].nameI = F("lasterror");
     al->di[0].valueI = F("cipherkey not set!");  
     
+    timeToString(str, sizeof(str));
+    al->di[1].nameI = F("uptime");
+    al->di[1].valueI = String(str);       
+
     return al;
   }
 
@@ -341,28 +349,36 @@ SensorData* Device_IM350::readParameter()
 
   if(data == "")
   {
-    al = new SensorData(1);
+    al = new SensorData(2);
     
     al->di[0].nameI = F("lasterror");    
     al->di[0].valueI = F("No data read");  
             
+    timeToString(str, sizeof(str));
+    al->di[1].nameI = F("uptime");
+    al->di[1].valueI = String(str);       
+
     return al;    
   }
   else if (dt == unknown)
   {
     if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
     {    
-      al = new SensorData(2);
-      al->di[1].nameI = F("data");
-      al->di[1].valueI = data;
+      al = new SensorData(3);
+      al->di[2].nameI = F("data");
+      al->di[2].valueI = data;      
     }
     else
     {
-      al = new SensorData(1);
+      al = new SensorData(2);
     }
     
     al->di[0].nameI = F("lasterror");    
     al->di[0].valueI = F("No supported SmartMeter Type identified - No end Byte found");  
+
+    timeToString(str, sizeof(str));
+    al->di[1].nameI = F("uptime");
+    al->di[1].valueI = String(str);       
             
     return al;
   }  
@@ -373,15 +389,61 @@ SensorData* Device_IM350::readParameter()
   decrypt_text(&Vector_SM);
   parse_message(buffer);
 
+  // check time 
+  time_t now;                         
+  tm tm; 
+  uint32_t lastHourWatt = 0;
+  
+  if(interval > 0)
+  {
+    time(&now);
+    localtime_r(&now, &tm);
+  
+    uint16_t timespanAfterHour = tm.tm_min * 60 + tm.tm_sec;
+    Serial.printf("timespanAfterHour is %d\n", timespanAfterHour);
+  
+    if(tm.tm_min * 60 + tm.tm_sec <= interval)
+    {
+      Serial.println(F("--------------------------------------------------"));
+      Serial.println(F("Now I have to store the counter_reading_p_in"));
+      Serial.println(counter_reading_p_in);    
+      Serial.println(F("--------------------------------------------------"));
+
+      uint32_t lastHourWatt = counter_reading_p_in - writeHourValue(String(counter_reading_p_in).c_str());
+    }  
+
+//    Serial.printf("oldValue = %d\n", writeHourValue(String(counter_reading_p_in).c_str()));
+  }
+  
   if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"], "YES") == 0)
   {
-    al = new SensorData(8);
-    al->di[7].nameI = F("encoded");
-    al->di[7].valueI = String(data.c_str());          
+    if(lastHourWatt != 0)
+    {
+      al = new SensorData(9);
+      al->di[8].nameI = F("lastHourWatt");
+      al->di[8].valueI = String(data.c_str());          
+      al->di[7].nameI = F("encoded");
+      al->di[7].valueI = String(data.c_str());          
+    }
+    else
+    {
+      al = new SensorData(8);
+      al->di[7].nameI = F("encoded");
+      al->di[7].valueI = String(data.c_str());          
+    }
   }
   else
   {
-    al = new SensorData(7);
+    if(lastHourWatt != 0)
+    {
+      al = new SensorData(8);
+      al->di[7].nameI = F("lastHourWatt");
+      al->di[7].valueI = String(lastHourWatt);       
+    }
+    else  
+    {
+      al = new SensorData(7);
+    }
   }
 
 
@@ -407,11 +469,56 @@ SensorData* Device_IM350::readParameter()
   al->di[6].nameI = F("uptime");
   al->di[6].valueI = String(str); 
 
+
   return al;  
 }
 
 
 /////////////////////////////
+uint32_t Device_IM350::writeHourValue(const char *value)
+{
+  char content[20];
+  memset(content, 0, 20);
+#ifdef LITTLEFS  
+  File hourFile = LittleFS.open("/IM350_hour.txt", "r");
+#else
+  File hourFile = SPIFFS.open("/IM350_hour.txt", "r");
+#endif
+  Serial.println("file opened...");
+  
+  if (hourFile) 
+  {
+    for(int i=0;i<hourFile.size();i++) //Read upto complete file size
+    {
+      content[i] += (char)hourFile.read();
+      if(i == 19)
+      {
+        hourFile.close();      
+        return 0;
+      }
+    }  
+  }
+  
+  hourFile.close();  
+
+#ifdef LITTLEFS  
+  LittleFS.remove("/IM350_hour.txt");
+  hourFile = LittleFS.open("/IM350_hour.txt", "w");
+#else
+  SPIFFS.remove("/IM350_hour.txt");
+  hourFile = SPIFFS.open("/IM350_hour.txt", "w");  
+#endif
+  
+  if (hourFile) 
+  {
+    hourFile.write(value, strlen(value));
+  }
+
+  hourFile.close();  
+
+  return atol(content);
+}
+
 void Device_IM350::timeToString(char* string, size_t size)
 {
   unsigned long nowMillis = millis();

@@ -51,6 +51,7 @@ class Device_IM350 : public DeviceBase
     void parse_message(byte array[]);
     void hexToBytes(const char* code, byte* result);  
     void timeToString(char* string, size_t size);
+    uint32_t writeHourValue(const char *value);
     devicetype dt;
 
     bool softwareSerialUsed;
@@ -58,7 +59,8 @@ class Device_IM350 : public DeviceBase
     bool inverted;
     bool done;
     byte buffer[90];
-    byte message[123];    
+    byte message[123];  
+    int interval;
     
     char m_cipherkey[33];
     byte m_blockCipherKey[16];
