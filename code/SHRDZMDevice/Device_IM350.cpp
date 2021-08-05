@@ -393,6 +393,7 @@ SensorData* Device_IM350::readParameter()
   time_t now;                         
   tm tm; 
   uint32_t lastHourWatt = 0;
+  uint32_t lastDayWatt = 0;
   
   if(interval > 0)
   {
@@ -404,24 +405,31 @@ SensorData* Device_IM350::readParameter()
   
     if(tm.tm_min * 60 + tm.tm_sec <= interval)
     {
-      Serial.println(F("--------------------------------------------------"));
-      Serial.println(F("Now I have to store the counter_reading_p_in"));
-      Serial.println(counter_reading_p_in);    
-      Serial.println(F("--------------------------------------------------"));
-
-      uint32_t lastHourWatt = counter_reading_p_in - writeHourValue(String(counter_reading_p_in).c_str());
+      lastHourWatt = counter_reading_p_in - writeHourValue(String(counter_reading_p_in).c_str());
     }  
 
-//    Serial.printf("oldValue = %d\n", writeHourValue(String(counter_reading_p_in).c_str()));
+    if(tm.tm_min * 60 * 24 + tm.tm_sec <= interval)
+    {
+      lastDayWatt = counter_reading_p_in - writeDayValue(String(counter_reading_p_in).c_str());
+    }  
   }
   
   if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"], "YES") == 0)
   {
     if(lastHourWatt != 0)
     {
-      al = new SensorData(9);
-      al->di[8].nameI = F("lastHourWatt");
-      al->di[8].valueI = String(data.c_str());          
+      if(lastDayWatt != 0)
+      {
+        al = new SensorData(10);
+        al->di[9].nameI = F("counter_reading_p_inDayLast");
+        al->di[9].valueI = String((float)lastDayWatt/1000);          
+      }
+      else
+      {
+        al = new SensorData(9);
+      }
+      al->di[8].nameI = F("counter_reading_p_inHourLast");
+      al->di[8].valueI = String(lastHourWatt);          
       al->di[7].nameI = F("encoded");
       al->di[7].valueI = String(data.c_str());          
     }
@@ -436,8 +444,17 @@ SensorData* Device_IM350::readParameter()
   {
     if(lastHourWatt != 0)
     {
-      al = new SensorData(8);
-      al->di[7].nameI = F("lastHourWatt");
+      if(lastDayWatt != 0)
+      {
+        al = new SensorData(9);
+        al->di[8].nameI = F("counter_reading_p_inDayLast");
+        al->di[8].valueI = String((float)lastDayWatt/1000);          
+      }
+      else
+      {
+        al = new SensorData(8);
+      }
+      al->di[7].nameI = F("counter_reading_p_inHourLast");
       al->di[7].valueI = String(lastHourWatt);       
     }
     else  
@@ -515,6 +532,50 @@ uint32_t Device_IM350::writeHourValue(const char *value)
   }
 
   hourFile.close();  
+
+  return atol(content);
+}
+
+uint32_t Device_IM350::writeDayValue(const char *value)
+{
+  char content[20];
+  memset(content, 0, 20);
+#ifdef LITTLEFS  
+  File dayFile = LittleFS.open("/IM350_day.txt", "r");
+#else
+  File dayFile = SPIFFS.open("/IM350_day.txt", "r");
+#endif
+  Serial.println("file opened...");
+  
+  if (dayFile) 
+  {
+    for(int i=0;i<dayFile.size();i++) //Read upto complete file size
+    {
+      content[i] += (char)dayFile.read();
+      if(i == 19)
+      {
+        dayFile.close();      
+        return 0;
+      }
+    }  
+  }
+  
+  dayFile.close();  
+
+#ifdef LITTLEFS  
+  LittleFS.remove("/IM350_day.txt");
+  dayFile = LittleFS.open("/IM350_day.txt", "w");
+#else
+  SPIFFS.remove("/IM350_day.txt");
+  dayFile = SPIFFS.open("/IM350_day.txt", "w");  
+#endif
+  
+  if (dayFile) 
+  {
+    dayFile.write(value, strlen(value));
+  }
+
+  dayFile.close();  
 
   return atol(content);
 }

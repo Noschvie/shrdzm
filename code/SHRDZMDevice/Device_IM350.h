@@ -52,6 +52,7 @@ class Device_IM350 : public DeviceBase
     void hexToBytes(const char* code, byte* result);  
     void timeToString(char* string, size_t size);
     uint32_t writeHourValue(const char *value);
+    uint32_t writeDayValue(const char *value);
     devicetype dt;
 
     bool softwareSerialUsed;
