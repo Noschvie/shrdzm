@@ -381,17 +381,18 @@ void handleSettings()
         {
           if(server.hasArg(kv.key().c_str()))
           {
-            deviceParameter[kv.key().c_str()] = server.arg(kv.key().c_str());
-            DV(deviceParameter[kv.key().c_str()].as<char*>());
-//            configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
+//            deviceParameter[kv.key().c_str()] = server.arg(kv.key().c_str());
+//            DV(server.arg(kv.key().c_str()));
+//            DV(deviceParameter[kv.key().c_str()].as<char*>());
+            configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
           }
           else
           {
-//            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
           }
         }    
-        configuration.removeAllDeviceParameter();
-        configuration.setDeviceParameter(deviceParameter);
+//        configuration.removeAllDeviceParameter();
+//        configuration.setDeviceParameter(deviceParameter);
       }  
 
       configuration.store();
@@ -1505,7 +1506,7 @@ void setup()
 #ifdef DEBUG_SHRDZM
 Serial.begin(SERIAL_BAUD); Serial.println();
 #endif
-  DV("setup start");  
+  DV("setup start ");  
   
   bool writeConfigAndReboot = false;
   
