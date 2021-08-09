@@ -1522,7 +1522,7 @@ Serial.begin(SERIAL_BAUD); Serial.println();
   nam = "SHRDZMDevice";  
 #endif
 
-
+  WiFi.persistent(false);
 
   // set device name
   WiFi.mode(WIFI_STA);  
