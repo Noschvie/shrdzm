@@ -408,7 +408,7 @@ SensorData* Device_IM350::readParameter()
       lastHourWatt = counter_reading_p_in - writeHourValue(String(counter_reading_p_in).c_str());
     }  
 
-    if(tm.tm_min * 60 * 24 + tm.tm_sec <= interval)
+    if((tm.tm_min * 60) + (tm.tm_hour * 60 * 60) + tm.tm_sec <= interval)
     {
       lastDayWatt = counter_reading_p_in - writeDayValue(String(counter_reading_p_in).c_str());
     }  
