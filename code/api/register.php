@@ -15,6 +15,7 @@ function msg($success,$status,$message,$extra = []){
 
 // INCLUDING DATABASE AND MAKING OBJECT
 require __DIR__.'/classes/Database.php';
+require __DIR__.'/classes/logging.php';
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 
@@ -84,7 +85,12 @@ else:
                 $insert_stmt->execute();
 
                 $returnData = msg(1,201,'You have successfully registered.');
-
+				
+				logging2file( "new user registered = ".$name );
+				
+				$command = '/opt/fhem/fhem.pl 127.0.0.1:7072 "set Telegram send ~~~new user '.$name.' registered.~~~"';
+				
+				shell_exec($command);
             endif;
 
         }

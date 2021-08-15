@@ -96,7 +96,7 @@ function GetLastDeviceData($token, $alias, $name, $count)
 										
 									$counter++;		
 								
-									$returnDataString .= '{"timestamp" : "'.$rowValue['timestamp'].'", "name" : "'.$row['name'].'", "alias" : "'.$row['alias'].'", "value" : "'.$rowValue['value'].'", "unit" : "'.$rowParameter['unit'].'", "unit_native" : "'.$rowParameter['unit_native'].'", "desc" : "'.$rowParameter['alias_de'].'"}';								
+									$returnDataString .= '{"timestamp" : "'.$rowValue['timestamp'].'", "name" : "'.$row['name'].'", "alias" : "'.$row['alias'].'", "reading" : "'.$rowValue['reading'].'", "value" : "'.$rowValue['value'].'", "unit" : "'.$rowParameter['unit'].'", "unit_native" : "'.$rowParameter['unit_native'].'", "desc" : "'.$rowParameter['alias_de'].'"}';								
 								}
 							}						
 						}					
@@ -146,7 +146,10 @@ if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Aut
 	{
 		$alias = isset($entityBodyJSON->alias) ? $entityBodyJSON->alias : "";	
 		$name = isset($entityBodyJSON->name) ? $entityBodyJSON->name : "";	
-			
+	
+		logging2file("alias = ".$alias);
+		logging2file("name = ".$name);
+	
 		$replyToSender = json_encode ( GetLastDeviceData($token[1], $alias, $name, $entityBodyJSON->count) );
 	}
 }

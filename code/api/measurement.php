@@ -86,12 +86,12 @@ else
 		}
 		else
 		{
-			loging2file( "no token" );
+			logging2file( "no token" );
 		}
 	}
 	else
 	{
-		loging2file( "token not in header ".implode(",",$allHeaders) );
+		logging2file( "token not in header ".implode(",",$allHeaders) );
 	}
 }
 

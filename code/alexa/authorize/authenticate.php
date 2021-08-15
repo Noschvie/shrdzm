@@ -52,6 +52,8 @@
 				$code = $row['alexa_userid'];
 				
 				loging2file($username.' registered for '.$REMOTE_ADDR.' ('.gethostbyaddr($REMOTE_ADDR).')');
+				$command = '/opt/fhem/fhem.pl 127.0.0.1:7072 "set Telegram send ~~~new alexa user '.$username.' registered.~~~"';
+				shell_exec($command);
 				
 			else:
 				echo "Invalid password";

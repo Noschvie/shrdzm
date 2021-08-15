@@ -4,7 +4,7 @@ function loging2file($text)
 {
 	$serverName = $_SERVER['SERVER_NAME'];
 	
-	$logfileName = '/var/log/apache2/'.date('Y-m-d').'_echo_shrdzm.log';
+	$logfileName = '/var/log/shrdzm/'.date('Y-m-d').'_echo_shrdzm.log';
 	
 	$logdatei_handle = fopen ( $logfileName, "a+" );
 	
@@ -17,7 +17,7 @@ function logging2file($text)
 {
 	$serverName = $_SERVER['SERVER_NAME'];
 	
-	$logfileName = '/var/log/apache2/'.date('Y-m-d').'_echo_shrdzm.log';
+	$logfileName = '/var/log/shrdzm/'.date('Y-m-d').'_echo_shrdzm.log';
 	
 	$logdatei_handle = fopen ( $logfileName, "a+" );
 	

@@ -6,7 +6,7 @@ function logging2file($text)
 	
 	if($serverName == "api.shrdzm.com")
 	{
-		$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+		$logfileName = '/var/log/shrdzm/'.date('Y-m-d').'_shrdzm.log';
 	}
 	else
 	{
@@ -27,7 +27,7 @@ function loging2file($text)
 	
 	if($serverName == "api.shrdzm.com")
 	{
-		$logfileName = '/var/log/apache2/'.date('Y-m-d').'_shrdzm.log';
+		$logfileName = '/var/log/shrdzm/'.date('Y-m-d').'_shrdzm.log';
 	}
 	else
 	{
