@@ -34,6 +34,7 @@
 #endif
 
 #include "..\Configuration.h"
+#include "..\definitions.h"
 
 
 #ifdef DEBUG_SHRDZM

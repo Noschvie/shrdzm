@@ -6,6 +6,19 @@ void changeConfigurationBlinker()
 }
 
 char* getWebsite(char* content, bool update = false)
+{
+  int len = strlen(content);
+
+  DLN("Content len = "+String(len));
+
+  sprintf(websideBuffer,  
+    website_template,
+    update ? F("<script src=\"j.js\"></script>") : F(""), 
+    deviceName.c_str(), deviceName.c_str(), content);
+
+  return websideBuffer;
+}
+/*char* getWebsite(char* content, bool update = false)
 {  
   int len = strlen(content);
 
@@ -155,9 +168,10 @@ button {\
   deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
-}
+}*/
 
-void handleJson(AsyncWebServerRequest *request) {
+void handleJson(AsyncWebServerRequest *request) 
+{
   // Output: send data to browser as JSON
   String message = "";
 
@@ -221,7 +235,7 @@ void handleRoot(AsyncWebServerRequest *request)
       </html>\
       ");
         
-      request->send(200, "text/html", menuContextBuffer);
+      request->send(200, F("text/html"), menuContextBuffer);
 
       configuration.resetConfiguration();
 
