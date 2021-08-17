@@ -198,12 +198,6 @@ void loop()
     DLN("Store configuration...");
     configuration.store();
   }
-  
-  if(configurationMode)
-  {
-//    webserver.handleClient();
-    return;  
-  }
 
   if(shouldReboot)
   {
@@ -211,6 +205,11 @@ void loop()
     delay(100);
     ESP.restart();
   }  
+  
+  if(configurationMode)
+  {
+    return;  
+  }
 
   if(apConnectingOngoing)
   {

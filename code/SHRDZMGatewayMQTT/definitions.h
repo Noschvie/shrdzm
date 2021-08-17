@@ -120,7 +120,6 @@ button {\
   <li><a href='./general'>General</a></li>\
   <li><a href='./wifi'>WiFi</a></li>\
   <li><a href='./cloud'>Cloud</a></li>\
-  <li><a href='./mqtt'>MQTT</a></li>\
   <li><a href='./NTP'>NTP</a></li>\
   <li><a href='./reboot'>Reboot</a></li>\
   <br/>\
@@ -138,3 +137,131 @@ button {\
 </body>\
 </html>"
 };
+
+const static char handleRoot_template[] PROGMEM = 
+{
+"<h1>General</h1>\
+<img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
+<br /><br /><br /><br />\
+Firmware Version : %s-%s<br>\
+Chip ID : %s<br><br>\
+MQTTTopic Set : %s<br>\
+MQTTTopic Config : %s<br>\
+MQTTTopic RCSEND : %s<br>\
+MQTTTopic Sensordata : %s/<i><b>SensorID</b></i>/sensor/<br><br>\
+MQTT Connection State :  <span id='mqttconnectionstate'>Unknown</span><br>\
+Cloud Update :  %s<br><br>\
+Date/Time :  <span id='timestamp'>Unknown</span><br><br>\
+Last Measurement : <br>\
+<textarea readonly style='background-color:white;' id='lastmessage' name='lastmessage' cols='65' rows='10'></textarea><br><br>\
+<br><br>IP : %s<br>\
+DNS : %s<br>\
+Gateway : %s<br>\
+Subnet : %s<br>\
+<br/><br/>\
+<form method='post' id='factoryReset'>\
+<input type='hidden' id='factoryreset' name='factoryreset' value='false'/>\
+<input class='factoryresetbutton' type='submit' onclick='submitForm()' value='Factory Reset!' />\
+<br>\  
+%s\
+<script>\
+function submitForm()\
+{\
+document.getElementById('factoryreset').value = 'true';\
+}\
+function submitFormUpgradeMQTT()\
+{\
+document.getElementById('upgradeMQTT').value = 'true';\
+}\       
+function submitFormUpgradeESPNow()\
+{\
+document.getElementById('upgradeESPNow').value = 'true';\
+}\       
+</script>\
+</form>"
+};
+
+const static char handleCloud_template[] PROGMEM = 
+{
+"<h1>Cloud</h1><br/>\
+Cloud Settings are optional. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a> and <a href=\"https://skills-store.amazon.de/deeplink/dp/B096S1675W?deviceType=app&share&refSuffix=ss_copy\" target=\"_blank\">Alexa</a>\
+<form name='cloudForm' method='post'>\
+<input type='hidden' id='resetCloudSettings' name='resetCloudSettings' value='false'/>\
+<br/>\
+<p>\
+<input type='checkbox' onClick='toggleCloudEnabled(this)' id='cloudenabled' name='cloudenabled' %s/>\
+<input type='hidden' id='cloudEnabledChanged' name='cloudEnabledChanged' value='0' />\
+<div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
+<br/>\
+<div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
+<label for='user'>User Name</label></div><br/><br/>\
+<div><input type='text' id='password' name='password' placeholder='Password' size='30' value='%s'>\
+<label for='user'>Password</label></div><br/><br/>\
+Unique User ID = %s<br/><br/>\
+<br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Cloud Settings' /><br />\      
+<br /> <input class='submitbutton' type='submit' value='Save Cloud Settings!' />\      
+</p>\
+<script>\
+function submitResetCloudSettings()\
+{\
+document.getElementById('resetCloudSettings').value = 'true';\
+}\      
+function toggleCloudEnabled(f)\
+{\
+document.getElementById('cloudEnabledChanged').value = '1';\
+f.form.submit();\
+}\
+</script>\
+</form>\
+<br/>\
+<hr/>"
+};
+
+const static char handleWiFi_template[] PROGMEM = 
+{
+"<h1>WiFi</h1><br/>\
+<script>\
+function showWLANPassword() {\
+var x = document.getElementById('password');\
+if (x.type === 'password') {\
+x.type = 'text';\
+} else {\
+x.type = 'password';\
+}\
+}\
+</script>\ 
+<p><strong>WLAN</strong><br />\
+<form method='post'>\
+<input type='hidden' name='wlanform' value='1' />\
+<input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
+<label for='ssid'>SSID</label><br/>\
+<br/>\
+<input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
+<label for='password'>Password</label><br/>\
+<br/>\
+<input type='checkbox' onclick='showWLANPassword()'>Show Password\
+<br/><br /> <input class='submitbutton' type='submit' value='Save WLAN Settings!' />\      
+</p>\      
+</form>\
+<br/>\
+<hr/>\
+<p><strong>MQTT</strong><br />\      
+<form method='post'>\
+<input type='hidden' name='mqttform' value='1' />\      
+<input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
+<label for='MQTTbroker'>MQTT Broker</label><br/>\
+<br/>\
+<input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
+<label for='MQTTbroker'>MQTT Port</label><br/>\
+<br/>\
+<input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
+<label for='MQTTuser'>MQTT User</label><br/>\
+<br/>\
+<input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
+<label for='MQTTuser'>MQTT Password</label><br/><br/><br/>\
+<br /> <input class='submitbutton' type='submit' value='Save MQTT Settings!' />\      
+</p>\      
+</form>\
+<br/>\
+<hr/>"
+}; 

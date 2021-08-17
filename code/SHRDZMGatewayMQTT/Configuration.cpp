@@ -16,6 +16,7 @@ bool Configuration::initialize()
   
   g_configdoc["configuration"]["wlan"]["ssid"] = "";
   g_configdoc["configuration"]["wlan"]["password"] = "";
+  g_configdoc["configuration"]["wlan"]["MQTTenabled"] = "true";
   g_configdoc["configuration"]["wlan"]["MQTTbroker"] = "test.mosquitto.org";
   g_configdoc["configuration"]["wlan"]["MQTTport"] = "1883";
   g_configdoc["configuration"]["wlan"]["MQTTuser"] = "";
@@ -94,6 +95,11 @@ bool Configuration::load()
       setWlanParameter("TZ", String(TZ).c_str());
       store();
     }
+    if(!g_configdoc["configuration"]["wlan"].containsKey("MQTTenabled"))
+    {
+      setWlanParameter("MQTTenabled", "true");
+      store();
+    }      
   }
   else
   {    
