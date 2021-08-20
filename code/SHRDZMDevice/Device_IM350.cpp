@@ -413,6 +413,30 @@ SensorData* Device_IM350::readParameter()
       lastDayWatt = counter_reading_p_in - writeDayValue(String(counter_reading_p_in).c_str());
     }  
   }
+
+  if(current_power_usage_in > 10000) // not a valid value
+  {
+    if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+    {    
+      al = new SensorData(3);
+      al->di[2].nameI = F("data");
+      al->di[2].valueI = data;      
+    }
+    else
+    {
+      al = new SensorData(2);
+    }
+    
+    al->di[0].nameI = F("lasterror");    
+    al->di[0].valueI = F("Invalid data");  
+
+    timeToString(str, sizeof(str));
+    al->di[1].nameI = F("uptime");
+    al->di[1].valueI = String(str);       
+            
+    return al;
+  }
+
   
   if(!deviceParameter["sendRawData"].isNull() && strcmp(deviceParameter["sendRawData"], "YES") == 0)
   {
