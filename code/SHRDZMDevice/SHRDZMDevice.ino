@@ -175,7 +175,10 @@ void handleJson() {
   sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );
 
   message += (F("{\"mqttconnectionstate\":"));
-  message += (mqttclient.connected() ? F("\"Connected\"") : F("\"Not Connected\""));  
+  if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
+    message += (mqttclient.connected() ? F("\"Connected\"") : F("\"Not Connected\""));  
+  else
+    message += F("\"Disabled\"");    
   message += (F(",\"lastmessage\":"));
   message += lastMessage+"";  
   message += (F(",\"timestamp\":\""));
@@ -603,6 +606,13 @@ void handleGateway()
     else
       configuration.setWlanParameter("enabled", "false");
 
+    if( server.arg(F("mqttenabled")) == "1")
+    {
+      configuration.setWlanParameter("MQTTenabled", "true");
+    }
+    else
+      configuration.setWlanParameter("MQTTenabled", "false");
+
     if(server.hasArg(F("ssid")))
       configuration.setWlanParameter("ssid", server.arg(F("ssid")).c_str());
     else
@@ -653,6 +663,7 @@ void handleGateway()
       configuration.getWlanParameter("dns"),
       configuration.getWlanParameter("gateway"),
       configuration.getWlanParameter("subnet"),
+      String(configuration.getWlanParameter("MQTTenabled")) == "false" ? "" : "checked",
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
@@ -1839,24 +1850,27 @@ void handleGatewayLoop()
   }
 
   if(WiFi.status() == WL_CONNECTED)
-  {    
-    if(!mqttclient.connected())
-    {
-      if(millis() > mqttNextTry)
+  {        
+    if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
+    {  
+      if(!mqttclient.connected())
       {
-        if(!mqttreconnect())
+        if(millis() > mqttNextTry)
         {
-          mqttNextTry = millis() + 5000;
-          return;
+          if(!mqttreconnect())
+          {
+            mqttNextTry = millis() + 5000;
+            return;
+          }
         }
       }
+      else
+        mqttclient.loop();
     }
-    else
-      mqttclient.loop();
   }
   else
     return;
-
+  
   if(setNewDeviceType)
   {
     initDeviceType(newDeviceType.c_str(), true);

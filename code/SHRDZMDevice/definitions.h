@@ -91,6 +91,12 @@ WLAN Settings if Device acts as it's own gateway.\
 <div><input type='text' id='subnet' name='subnet' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
 <label for='gateway'>Subnet</label></div><br/>\
 <br/><br/>\
+<hr/>\
+<br/><br/>\
+<input type='checkbox' id='mqttenabled' name='mqttenabled' value='1' %s/>\
+<input type='hidden' name='mqttenabled' value='0' />\
+<div><label for='mqttenabled'>MQTT Enable (only affected if Device acts as it's on gateway)</label></div><br/>\
+<br/><br/>\
 <div><input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
 <label for='MQTTbroker'>MQTT Broker</label></div><br/>\
 <br/>\

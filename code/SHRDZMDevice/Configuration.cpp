@@ -64,7 +64,7 @@ bool Configuration::initialize()
   s = PAIRING_PIN;
   g_configdoc["pairingpin"] = String(s);
 
-  g_configdoc["devicetype"] = "UNKNOWN";
+  g_configdoc["devicetype"] = "UNKNOWN";  
 
   return true;
 }
@@ -130,7 +130,7 @@ bool Configuration::migrateToNewConfigurationStyle()
     if(g_configdoc["configuration"].containsKey("batterycheck"))
       g_configdoc["batterycheck"] = g_configdoc["configuration"]["batterycheck"];
     if(g_configdoc["configuration"].containsKey("device"))
-      g_configdoc["device"] = g_configdoc["configuration"]["device"];
+      g_configdoc["device"] = g_configdoc["configuration"]["device"];    
 
     g_configdoc.remove("configuration");
 
@@ -170,6 +170,11 @@ bool Configuration::migrateToNewConfigurationStyle()
   if(!containsWlanKey("subnet"))
   {
     setWlanParameter("subnet", "");
+    update = true;
+  }  
+  if(!containsWlanKey("MQTTenabled"))
+  {
+    setWlanParameter("MQTTenabled", "true");
     update = true;
   }
   if(!containsWlanKey("MQTTbroker"))
