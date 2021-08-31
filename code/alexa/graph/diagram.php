@@ -40,13 +40,15 @@ function GetDeviceData($days, $device, $reading)
 $plot = new PHPlot($size[0], $size[1]);
 
 
-if(!isset($timeframe))
+if(!isset($timeframe) || $timeframe == '?')
 	$timeframe = "1";
 
 GetDeviceData($timeframe, $device, $reading);
 
 $plot->SetDataType('data-data');
-$plot->SetLineWidths(2);
+$plot->SetLineWidths(3);
+$plot->SetLineStyles('solid');
+$plot->SetPointSizes(0);
 
 
 $plot->SetXLabelType('time', '%H:%M');
@@ -66,6 +68,7 @@ $plot->SetFontTTF('y_title', 'DejaVuSansMono.ttf', 20);
 $plot->SetYTitle($unit);
 $plot->SetBrowserCache(False);
 $plot->SetDrawXGrid(True);
+$plot->SetPlotAreaWorld(NULL, 0, NULL, NULL);
 
 //$plot->SetXTickLabelPos('none');
 $plot->SetXDataLabelPos('none');

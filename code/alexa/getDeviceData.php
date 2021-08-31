@@ -39,6 +39,7 @@ function GetLastDeviceData($token, $alias, $name, $count)
 {
 	$db_connection = new Database();
 	$conn = $db_connection->dbConnection();
+	$dataFound = false;
 
 	try{
 		
@@ -64,7 +65,9 @@ function GetLastDeviceData($token, $alias, $name, $count)
 
 			if($query_devices->rowCount())
 			{
-				$returnDataString = '{ "success" : 1, "status" : 201, "message" : "OK", "data" : [';
+//				$returnDataString = '{ "success" : 1, "status" : 201, "message" : "OK", "data" : [';
+				$returnDataString = '{ "data" : [';
+
 				$counter = 0;
 								
 				while ($row = $query_devices->fetch(PDO::FETCH_ASSOC))				
@@ -80,6 +83,8 @@ function GetLastDeviceData($token, $alias, $name, $count)
 
 						if($query_last_value_from_device->rowCount())
 						{
+							$dataFound = true;
+							
 							while ($rowValue = $query_last_value_from_device->fetch(PDO::FETCH_ASSOC))
 							{
 								$fetch_devicetype_parameter = 'SELECT * FROM `devicetypeparameter` WHERE `type`="'.$row['type'].'" and parameter="'.$rowValue['reading'].'"';
@@ -103,7 +108,12 @@ function GetLastDeviceData($token, $alias, $name, $count)
 					}
 				}		
 
-				$returnDataString .= "]}";
+				if($dataFound == true)
+					$returnDataString .= '], "success" : 1, "status" : 201, "message" : "OK" }';
+				else
+					$returnDataString .= '], "success" : 0, "status" : 408, "message" : "no data" }';
+
+//				$returnDataString .= "]}";
 				$returnData = json_decode($returnDataString);				
 			}
 			else

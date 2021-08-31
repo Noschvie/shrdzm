@@ -117,7 +117,15 @@ void controlConnectionBlinker(bool enabled)
 {
 #ifdef LEDPIN
     pinMode(LEDPIN, OUTPUT);  
-    enabled ? configurationBlinker.attach(2.0, changeConfigurationBlinker) : configurationBlinker.detach();
+    if(enabled)
+    {
+      configurationBlinker.attach(2.0, changeConfigurationBlinker);
+    }
+    else
+    {
+      configurationBlinker.detach(); 
+      digitalWrite(LEDPIN, HIGH);
+    }
 #endif    
 }
 
