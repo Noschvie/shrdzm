@@ -1,4 +1,4 @@
-#include "Device_DOORSENSOR.h"
+#include "Device_DOORSENSOR.h"   
 
 struct rst_info {
   uint32 reason;
@@ -8,7 +8,7 @@ struct rst_info {
   uint32 epc3;
   uint32 excvaddr;
   uint32 depc;
-};      
+};   
 
 Device_DOORSENSOR::Device_DOORSENSOR()
 {  
