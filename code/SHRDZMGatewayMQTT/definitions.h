@@ -240,6 +240,18 @@ x.type = 'password';\
 <label for='password'>Password</label><br/>\
 <br/>\
 <input type='checkbox' onclick='showWLANPassword()'>Show Password\
+<br/><br/>\
+<div><input type='text' id='ip' name='ip' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+<label for='ip'>Static IP</label></div><br/>\
+<br/>\
+<div><input type='text' id='dns' name='dns' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+<label for='ip'>DNS</label></div><br/>\
+<br/>\
+<div><input type='text' id='gateway' name='gateway' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+<label for='gateway'>Gateway</label></div><br/>\
+<br/>\
+<div><input type='text' id='subnet' name='subnet' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
+<label for='gateway'>Subnet</label></div><br/>\
 <br/><br /> <input class='submitbutton' type='submit' value='Save WLAN Settings!' />\      
 </p>\      
 </form>\

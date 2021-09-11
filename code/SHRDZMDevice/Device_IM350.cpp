@@ -414,7 +414,7 @@ SensorData* Device_IM350::readParameter()
     }  
   }
 
-  if(current_power_usage_in > 10000) // not a valid value
+  if(current_power_usage_in > 100000) // not a valid value
   {
     if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
     {    

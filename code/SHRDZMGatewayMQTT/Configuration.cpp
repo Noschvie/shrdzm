@@ -100,6 +100,26 @@ bool Configuration::load()
       setWlanParameter("MQTTenabled", "true");
       store();
     }      
+    if(!g_configdoc["configuration"]["wlan"].containsKey("ip"))
+    {
+      setWlanParameter("ip", "");
+      store();
+    }
+    if(!g_configdoc["configuration"]["wlan"].containsKey("dns"))
+    {
+      setWlanParameter("dns", "");
+      store();
+    }
+    if(!g_configdoc["configuration"]["wlan"].containsKey("gateway"))
+    {
+      setWlanParameter("gateway", "");
+      store();
+    }
+    if(!g_configdoc["configuration"]["wlan"].containsKey("subnet"))
+    {
+      setWlanParameter("subnet", "");
+      store();
+    }      
   }
   else
   {    

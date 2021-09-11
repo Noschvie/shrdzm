@@ -330,30 +330,50 @@ void handleWiFi(AsyncWebServerRequest *request)
     if(request->hasArg("wlanform"))
     {
       DLN("WLAN Settings changed");
-      if(request->hasArg("ssid"))
-        configuration.setWlanParameter("ssid", request->arg("ssid").c_str());
+      if(request->hasArg(F("ssid")))
+        configuration.setWlanParameter("ssid", request->arg(F("ssid")).c_str());
       else
         configuration.setWlanParameter("ssid", "");
           
-      if(request->hasArg("password"))
-        configuration.setWlanParameter("password", request->arg("password").c_str());
+      if(request->hasArg(F("password")))
+        configuration.setWlanParameter("password", request->arg(F("password")).c_str());
       else
         configuration.setWlanParameter("password", "");          
 
+      if(request->hasArg(F("ip")))
+        configuration.setWlanParameter("ip", request->arg(F("ip")).c_str());
+      else
+        configuration.setWlanParameter("ip", "");    
+      
+      if(request->hasArg(F("dns")))
+        configuration.setWlanParameter("dns", request->arg(F("dns")).c_str());
+      else
+        configuration.setWlanParameter("dns", "");    
+      
+      if(request->hasArg(F("gateway")))
+        configuration.setWlanParameter("gateway", request->arg(F("gateway")).c_str());
+      else
+        configuration.setWlanParameter("gateway", "");    
+      
+      if(request->hasArg(F("subnet")))
+        configuration.setWlanParameter("subnet", request->arg(F("subnet")).c_str());
+      else
+        configuration.setWlanParameter("subnet", "");    
+
       writeConfiguration = true;        
     }
-    if(request->hasArg("mqttform"))
+    if(request->hasArg(F("mqttform")))
     {
       DLN("MQTT Settings changed");
 
-      if(request->hasArg("MQTTbroker"))
-        configuration.setWlanParameter("MQTTbroker", request->arg("MQTTbroker").c_str());
-      if(request->hasArg("MQTTport"))
-        configuration.setWlanParameter("MQTTport", request->arg("MQTTport").c_str());
-      if(request->hasArg("MQTTuser"))
-        configuration.setWlanParameter("MQTTuser", request->arg("MQTTuser").c_str());
-      if(request->hasArg("MQTTpassword"))
-        configuration.setWlanParameter("MQTTpassword", request->arg("MQTTpassword").c_str());
+      if(request->hasArg(F("MQTTbroker")))
+        configuration.setWlanParameter("MQTTbroker", request->arg(F("MQTTbroker")).c_str());
+      if(request->hasArg(F("MQTTport")))
+        configuration.setWlanParameter("MQTTport", request->arg(F("MQTTport")).c_str());
+      if(request->hasArg(F("MQTTuser")))
+        configuration.setWlanParameter("MQTTuser", request->arg(F("MQTTuser")).c_str());
+      if(request->hasArg(F("MQTTpassword")))
+        configuration.setWlanParameter("MQTTpassword", request->arg(F("MQTTpassword")).c_str());
 
       writeConfiguration = true;        
     }
@@ -363,6 +383,10 @@ void handleWiFi(AsyncWebServerRequest *request)
       handleWiFi_template,
       configuration.getWlanParameter("ssid"),
       configuration.getWlanParameter("password"),
+      configuration.getWlanParameter("ip"),
+      configuration.getWlanParameter("dns"),
+      configuration.getWlanParameter("gateway"),
+      configuration.getWlanParameter("subnet"),      
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
@@ -446,10 +470,26 @@ void startGatewayWebserver()
 {
   WiFi.mode(WIFI_STA);
   DLN("after WIFI_STA ");
+  IPAddress ip;
+  IPAddress dns;
+  IPAddress gateway;
+  IPAddress subnet;
 
   String APName = "SHRDZMGatewayMQTT-"+deviceName;
   
   WiFi.hostname(APName.c_str());
+
+  StringSplitter *ipparts = new StringSplitter(configuration.getWlanParameter("ip"), '.', 4);
+  if(ipparts->getItemCount() == 4)
+  {
+    ip.fromString(configuration.getWlanParameter("ip"));
+    dns.fromString(configuration.getWlanParameter("dns"));
+    gateway.fromString(configuration.getWlanParameter("gateway"));
+    subnet.fromString(configuration.getWlanParameter("subnet"));
+    
+    WiFi.config(ip, dns, gateway, subnet);
+  }
+  
   WiFi.begin(configuration.getWlanParameter("ssid"), configuration.getWlanParameter("password"));
   DLN("after Wifi.begin");  
 
