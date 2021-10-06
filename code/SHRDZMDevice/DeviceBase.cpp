@@ -53,6 +53,18 @@ String SensorData::getDataItem(String name)
   return "";
 }
 
+const char* SensorData::getDataItemPtr(const char *name)
+{
+  for(int i = 0; i< size; i++)
+  {
+//    if(di[i].nameI == name)
+    if(strcmp(di[i].nameI.c_str(),name) == 0)
+      return di[i].valueI.c_str();
+  }
+
+  return NULL;
+}
+
 void DeviceBase::PrintText(String text)
 {
   Serial.println(text);

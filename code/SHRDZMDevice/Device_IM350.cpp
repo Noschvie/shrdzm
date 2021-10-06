@@ -1,22 +1,23 @@
 #include "Device_IM350.h"
 
-//#define SIMULATION
 #define UART_RXD_INV (BIT(19)) 
 #define DEBUG_SHRDZM
 
 const byte firstByte = 0x7E; 
+const byte firstByteSagemcom = 0xDB; 
 const byte lastByte = 0x7E; 
+const int lenNormal = 123;
+const int lenSagemcom = 511;
 
 Vector_GCM Vector_SM;
 GCM<AES128> *gcmaes128 = 0;
-
-#ifdef SIMULATION
 
   // IM350
 //  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92916FC1EF62AB5F476F8A59772745CC99365500ACF5EBEEA82F95581762C2D18804A1E7F7700FB10752F04D9344779C6A332C973EAF3CF375095D1821E87C68909EE47759AD925976C42E4D92FF9727E4213FDEE5F1ABE45D9D97F5E5E7E";
 //  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";
 //  String c1 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92A57400A90D827A575C749DAB31F44F3C4B83D9B15F9FD20D9FE147F5AD3A0432A65208408AE177E31AF4CD985DAD92F7647BB5ED8F619F629059606BBC55128D5E9A23BB992F564D098BBE8E759ECC0A01B259A02599A236EC45475A07E";  
 //  String ckSimulation = "612888F59306A7855AC5C08CB3A96B39"; // IM350
+//    String adSimulation = "D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF"; // IM350
 
   // AM550
 //  String c1 = "7EA077CF022313BB45E6E700DB0849534B69745CF6C95F200000046BB45F8F43980519E16E36BC0C7198EB0E9CF1E0DF6A227D63C3F24852486F4A0CE8AA187991BF1C44544F62BBBB75BEEB4CDB549D7CF525CD95E6D82D2BE1C7F2ED84505402317F84AEB2A285508EC1B072553C39CD928F1F492941F67E";  
@@ -28,9 +29,12 @@ GCM<AES128> *gcmaes128 = 0;
 //  String c2 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000BE34111B482F835CF05AACA84AE6BEDD7EE0F17132CEC104495BD7E9C7F258775072AB713296B1E4CC9BE98468E24D194237365949209A5D6CA42584EB9BB7F5F7E50E5304886F3DA7A9342D157553B2E48A175D907E";  
 //  String c2 = "7EA070CF0002002313E0C7E6E700DB08534D53677002FD6256200000C06514BA5DA79232B4036C892317BA7AAF692564DC5DDE0AC93A0997E52F44A5A1FC0505E81AE07CEBFB2845FB73D2D2B8608CE8DC9E6761AC970D3658CE754AA82421E1F05A7BE06D5CDE45995D3E7A596D896D317E";    
 //  String ckSimulation = "5A9AFEB2A17E6CF0CBAF98C8300ED9D7"; // Wels
-  
-  int number = 1;
-#endif
+
+  // Sagemcom
+//  String c1 = "DB08534147350000D28F8201F230000050A5F569179254242B91A93C6A120EFD5FC8344D78351D1F0EF1A43F3C7545496374A7EC7DC175B5E836C79AA5AB7A40B359CF8EA911BA8C1C6B22CBB0F9AF44689F96221C183FCE646E770B54F32A7F48DC0AA2C10AAFD9BDA84EFA07731496EE94A0A288545BE53D7686270AE14CE38AF997B8497CAC4D3FF824BFFE51229BD7AC4C1A24E5BD7FD994E8BA4730662E4AD3C6646D9D21B66C8221D0A9D677552161F0EBC1D1399CE8366F060CC61225820BC5D2C1F3DEC94EDD36A021120D5AA372E308A2AFB119E55C1846597BC031F55005F08360DF578E1BE40F1237A81CCA187BF536278BAA422021716C39BEF9C2F364FDE526F4E6EAE354879A5CFFD433B1887C5DEB5FEAA3281CCD526E96FCF587D57CE11480B399981E8D1560532D31F944F8896D7CE7938E7DCC76F93074DE90CCF3A65198894029B959FC685983BA5739FBC5D8378ACA3C1C8F48487A4F295B9F29198F50E6342AF502ED5E268CECF7D0141A8348C9F1BC0EB8E8A9E47CBF96BFF2C74DEEF5DD977F5A30E4086DB60C3D6963443254306E96292568089225D4AB1E2DA6425EAF30CA07B915E5FBC90732B18E635EED493ABC6A2C7B6D9EADCEF97EF261B336630DABE74BE89A814ED9662CFDCAF95B610637CFE4DF927150DC7E6DDE3198FF9B56399188B51C44A302DB7D39C74764474FABB075724D";  
+//  String c2 = "DB08534147350000D28F8201F230000050A5F569179254242B91A93C6A120EFD5FC8344D78351D1F0EF1A43F3C7545496374A7EC7DC175B5E836C79AA5AB7A40B359CF8EA911BA8C1C6B22CBB0F9AF44689F96221C183FCE646E770B54F32A7F48DC0AA2C10AAFD9BDA84EFA07731496EE94A0A288545BE53D7686270AE14CE38AF997B8497CAC4D3FF824BFFE51229BD7AC4C1A24E5BD7FD994E8BA4730662E4AD3C6646D9D21B66C8221D0A9D677552161F0EBC1D1399CE8366F060CC61225820BC5D2C1F3DEC94EDD36A021120D5AA372E308A2AFB119E55C1846597BC031F55005F08360DF578E1BE40F1237A81CCA187BF536278BAA422021716C39BEF9C2F364FDE526F4E6EAE354879A5CFFD433B1887C5DEB5FEAA3281CCD526E96FCF587D57CE11480B399981E8D1560532D31F944F8896D7CE7938E7DCC76F93074DE90CCF3A65198894029B959FC685983BA5739FBC5D8378ACA3C1C8F48487A4F295B9F29198F50E6342AF502ED5E268CECF7D0141A8348C9F1BC0EB8E8A9E47CBF96BFF2C74DEEF5DD977F5A30E4086DB60C3D6963443254306E96292568089225D4AB1E2DA6425EAF30CA07B915E5FBC90732B18E635EED493ABC6A2C7B6D9EADCEF97EF261B336630DABE74BE89A814ED9662CFDCAF95B610637CFE4DF927150DC7E6DDE3198FF9B56399188B51C44A302DB7D39C74764474FABB075724D";  
+//  String c2 = "DB08534147350000D28F8201F230000050A5F569179254242B91A93C6A120EFD5FC8344D78351D1F0EF1A43F3C7545496374A7EC7DC175B5E836C79AA5AB7A40B359CF8EA911BA8C1C6B22CBB0F9AF44689F96221C183FCE646E770B54F32A7F48DC0AA2C10AAFD9BDA84EFA07731496EE94A0A288545BE53D7686270AE14CE38AF997B8497CAC4D3FF824BFFE51229BD7AC4C1A24E5BD7FD994E8BA4730662E4AD3C6646D9D21B66C8221D0A9D677552161F0EBC1D1399CE8366F060CC61225820BC5D2C1F3DEC94EDD36A021120D5AA372E308A2AFB119E55C1846597BC031F55005F08360DF578E1BE40F1237A81CCA187BF536278BAA422021716C39BEF9C2F364FDE526F4E6EAE354879A5CFFD433B1887C5DEB5FEAA3281CCD526E96FCF587D57CE11480B399981E8D1560532D31F944F8896D7CE7938E7DCC76F93074DE90CCF3A65198894029B959FC685983BA5739FBC5D8378ACA3C1C8F48487A4F295B9F29198F50E6342AF502ED5E268CECF7D0141A8348C9F1BC0EB8E8A9E47CBF96BFF2C74DEEF5DD977F5A30E4086DB60C3D6963443254306E96292568089225D4AB1E2DA6425EAF30CA07B915E5FBC90732B18E635EED493ABC6A2C7B6D9EADCEF97EF261B336630DABE74BE89A814ED9662CFDCAF95B610637CFE4DF927150DC7E6DDE3198FF9B56399188B51C44A302DB7D39C74764474FABB075724D";    
+//  String ckSimulation = "953E7F1725EA910F26E053813A639094"; // Steiermark
 
 Device_IM350::Device_IM350()
 {    
@@ -38,6 +42,8 @@ Device_IM350::Device_IM350()
   inverted = false;
   dt = unknown;
   m_pConfigurationObject = NULL;
+
+  memset(meterTime, 0, 20);
   
   done = false;
 }
@@ -165,26 +171,10 @@ SensorData* Device_IM350::readInitialSetupParameter()
 SensorData* Device_IM350::readParameter()
 {  
   SensorData *al;  
-  String data;
   char str[15] = "";
-
-  memset(message, 0, 123);
-
-#ifdef SIMULATION
-  String ck = ckSimulation;
-  memcpy(m_cipherkey, ck.c_str(), 32);
+  char hexCode[3];
+  hexCode[2] = 0;
   
-  if(number == 1)
-  {
-    data = c1;
-    number = 2;
-  }
-  else
-  {
-    data = c2;
-    number = 1;
-  }  
-#else
   String ck = deviceParameter[F("cipherkey")];
 
   if(!deviceParameter[F("autoRebootMinutes")].isNull())
@@ -255,53 +245,102 @@ SensorData* Device_IM350::readParameter()
   uint32_t timeout=2000;
 
   bool finished = false;
-  memset(message, 0, 123);
   int cnt = 0;
   uint32_t start_time = millis();
-  
+  byte tempChar = 0;
+  byte *readMessage;
+  uint32_t messageLen = 0;
+
   if(softwareSerialUsed)
   {
-    while (message[0] != firstByte && (millis() - start_time < timeout)) 
+    while ((tempChar != firstByte && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
     {
       if (mySoftwareSerial.available()) 
       {
-        message[0] = mySoftwareSerial.read(); 
+          tempChar = mySoftwareSerial.read(); 
       }
     }
-    if (message[0] == firstByte) 
+    
+    if (tempChar == firstByte) // IM350/AM550
     {
+      readMessage = new byte[123];
+      memset(readMessage, 0, 123);
+      readMessage[0] = tempChar;
+      messageLen = 123;
+      
       cnt++;
       while ( cnt < 123 && (millis() - start_time < timeout) ) 
       {
         if (mySoftwareSerial.available()) 
         {
-          message[cnt] = mySoftwareSerial.read(); 
+          readMessage[cnt] = mySoftwareSerial.read(); 
           cnt++; 
         }
       }
     }       
+    else if(tempChar == firstByteSagemcom) // TEST!!!!
+    {
+      cnt++;
+      
+      readMessage = new byte[lenSagemcom];
+      memset(readMessage, 0, lenSagemcom);
+      readMessage[0] = tempChar;
+      messageLen = lenSagemcom;
+
+      while ( cnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
+      {
+        if (mySoftwareSerial.available()) 
+        {
+          readMessage[cnt] = mySoftwareSerial.read(); 
+          cnt++; 
+        }
+      }
+    }
   }
   else
   {
-    while (message[0] != 0x7E && (millis() - start_time < timeout)) 
+    while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
     {
       if (Serial.available()) 
       {
-        message[0] = Serial.read(); 
+        tempChar = Serial.read(); 
       }
     }
-    if (message[0] == firstByte) 
+    if (tempChar == firstByte) 
     {
-      cnt++;
+      readMessage = new byte[123];
+      memset(readMessage, 0, 123);
+      readMessage[0] = tempChar;
+      messageLen = 123;  
+
+      cnt++;      
       while ( cnt < 123 && (millis() - start_time < timeout) ) 
       {
         if (Serial.available()) 
         {
-          message[cnt] = Serial.read(); 
+          readMessage[cnt] = Serial.read(); 
           cnt++; 
         }
       }
     }  
+    else if(tempChar == firstByteSagemcom) // TEST!!!!
+    {
+      cnt++;
+
+      readMessage = new byte[lenSagemcom];
+      memset(readMessage, 0, lenSagemcom);
+      readMessage[0] = tempChar;
+      messageLen = lenSagemcom;
+      
+      while ( cnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
+      {
+        if (Serial.available()) 
+        {
+          readMessage[cnt] = Serial.read(); 
+          cnt++; 
+        }
+      }
+    }    
   }
 
   // disable request
@@ -317,39 +356,35 @@ SensorData* Device_IM350::readParameter()
   }
 
   int count = 0;
-  
-  if(message[sizeof(message)-1] == lastByte)
-    count = 123;
-  else if (message[sizeof(message)-3] == lastByte)
-    count = 121;
-  else if (message[sizeof(message)-10] == lastByte)
-    count = 114;
 
-  char hexCode[3];
-  hexCode[2] = 0;
-  
-  for(int i = 0; i<count; i++)
-  {
-    sprintf(hexCode, "%02X", message[i]);
-    data += String(hexCode);    
+  if(messageLen > 10)
+  {  
+    if(readMessage[0] == firstByteSagemcom)  
+    {
+      dt = sagemcom;
+      count = lenSagemcom;
+      Serial.println("sagemcom found");      
+    }
+    else if(readMessage[messageLen-1] == lastByte)
+    {
+      dt = im350;
+      count = 123;
+    }
+    else if (readMessage[messageLen-3] == lastByte)
+    {
+      dt = am550;
+      count = 121;
+    }
+    else if (readMessage[messageLen-10] == lastByte)
+    {
+      dt = im350Wels;
+      count = 114;
+    }
   }
 
-#endif
-
-
-//  Serial.println(data);
-
-  // analyse smartmeter type
-  if(data.length() == 246)
-    dt = im350;
-  else if(data.length() == 242)
-    dt = am550;
-  else if(data.length() == 228)
-    dt = im350Wels;
-
-  if(data == "")
+  if(tempChar == 0)
   {
-    al = new SensorData(2);
+    al = new SensorData(2);    
     
     al->di[0].nameI = F("lasterror");    
     al->di[0].valueI = F("No data read");  
@@ -357,7 +392,7 @@ SensorData* Device_IM350::readParameter()
     timeToString(str, sizeof(str));
     al->di[1].nameI = F("uptime");
     al->di[1].valueI = String(str);       
-
+    
     return al;    
   }
   else if (dt == unknown)
@@ -366,7 +401,7 @@ SensorData* Device_IM350::readParameter()
     {    
       al = new SensorData(3);
       al->di[2].nameI = F("data");
-      al->di[2].valueI = data;      
+      al->di[2].valueI = String((char*)readMessage);            
     }
     else
     {
@@ -382,12 +417,72 @@ SensorData* Device_IM350::readParameter()
             
     return al;
   }  
+  else if(dt == sagemcom) // TEST!!!
+  {
+    Vector_GCM_Sagemcom Vector_SM_Sagemcom;
+    hexToBytes(m_cipherkey, m_blockCipherKey);
+    init_vectorSagemcom(&Vector_SM_Sagemcom, m_blockCipherKey, readMessage); 
+    byte bufferSagemcom[Vector_SM_Sagemcom.datasize+1];
+    bufferSagemcom[Vector_SM_Sagemcom.datasize] = 0;
+    decrypt_text_Sagemcom(&Vector_SM_Sagemcom, bufferSagemcom);
 
-  hexToBytes(data.c_str(), message);
+    char * posBuffer;
+    int posBufferPosition = 0;
+    posBuffer = strstr( (char *)bufferSagemcom, "0-0:1.0.0" );  
+      
+    if(posBuffer)
+    {
+      String data((char *)bufferSagemcom);
+      uint8_t counter = 0;
+      
+      posBufferPosition = posBuffer - (char *)bufferSagemcom;
+
+      data = "{"+data.substring(posBufferPosition);
+
+      data.replace("0-0:", "\"");
+      data.replace("1-0:", "\"");
+      data.replace("(", "\" : \"");
+      data.replace(")", "\",");
+      data.replace("*Wh", "");
+      data.replace("*W", "");
+      data.replace("*varh", "");
+      data.replace("*var", "");
+      data.replace(",\r\n!EEE5", "}");
+
+      DynamicJsonDocument doc(800);
+      deserializeJson(doc, data);
+      JsonObject obj = doc.as<JsonObject>();
+
+      al = new SensorData(obj.size()+1);
+
+      for (JsonPair kv : obj) 
+      {      
+        al->di[counter].nameI = String(kv.key().c_str());
+        al->di[counter].valueI = String(kv.value().as<char*>());
+        counter++;
+      }
+        
+      timeToString(str, sizeof(str));
+      al->di[counter].nameI = F("uptime");
+      al->di[counter].valueI = String(str);       
+    }
+    else
+    {
+      al->di[0].nameI = F("lasterror");    
+      al->di[0].valueI = F("cipherkey does not fit");        
+    }
+
+    delete readMessage;
+            
+    return al;        
+  }
+
   hexToBytes(m_cipherkey, m_blockCipherKey);
-  init_vector(&Vector_SM,"Vector_SM",m_blockCipherKey, dt); 
+  init_vector(&Vector_SM,"Vector_SM", m_blockCipherKey, readMessage, dt); 
   decrypt_text(&Vector_SM);
   parse_message(buffer);
+
+  delete readMessage;
 
   // check time 
   time_t now;                         
@@ -401,7 +496,6 @@ SensorData* Device_IM350::readParameter()
     localtime_r(&now, &tm);
   
     uint16_t timespanAfterHour = tm.tm_min * 60 + tm.tm_sec;
-    Serial.printf("timespanAfterHour is %d\n", timespanAfterHour);
   
     if(tm.tm_min * 60 + tm.tm_sec <= interval)
     {
@@ -420,7 +514,7 @@ SensorData* Device_IM350::readParameter()
     {    
       al = new SensorData(3);
       al->di[2].nameI = F("data");
-      al->di[2].valueI = data;      
+      al->di[2].valueI = String((char*)readMessage);      
     }
     else
     {
@@ -444,6 +538,32 @@ SensorData* Device_IM350::readParameter()
     {
       if(lastDayWatt != 0)
       {
+        al = new SensorData(11);
+        al->di[10].nameI = F("counter_reading_p_inDayLast");
+        al->di[10].valueI = String((float)lastDayWatt/1000);          
+      }
+      else
+      {
+        al = new SensorData(10);
+      }
+      al->di[9].nameI = F("counter_reading_p_inHourLast");
+      al->di[9].valueI = String(lastHourWatt);          
+      al->di[8].nameI = F("encoded");
+      al->di[8].valueI = String((char*)readMessage);          
+    }
+    else
+    {
+      al = new SensorData(9);
+      al->di[8].nameI = F("encoded");
+      al->di[8].valueI = String((char*)readMessage);          
+    }
+  }
+  else
+  {
+    if(lastHourWatt != 0)
+    {
+      if(lastDayWatt != 0)
+      {
         al = new SensorData(10);
         al->di[9].nameI = F("counter_reading_p_inDayLast");
         al->di[9].valueI = String((float)lastDayWatt/1000);          
@@ -453,37 +573,11 @@ SensorData* Device_IM350::readParameter()
         al = new SensorData(9);
       }
       al->di[8].nameI = F("counter_reading_p_inHourLast");
-      al->di[8].valueI = String(lastHourWatt);          
-      al->di[7].nameI = F("encoded");
-      al->di[7].valueI = String(data.c_str());          
-    }
-    else
-    {
-      al = new SensorData(8);
-      al->di[7].nameI = F("encoded");
-      al->di[7].valueI = String(data.c_str());          
-    }
-  }
-  else
-  {
-    if(lastHourWatt != 0)
-    {
-      if(lastDayWatt != 0)
-      {
-        al = new SensorData(9);
-        al->di[8].nameI = F("counter_reading_p_inDayLast");
-        al->di[8].valueI = String((float)lastDayWatt/1000);          
-      }
-      else
-      {
-        al = new SensorData(8);
-      }
-      al->di[7].nameI = F("counter_reading_p_inHourLast");
-      al->di[7].valueI = String(lastHourWatt);       
+      al->di[8].valueI = String(lastHourWatt);       
     }
     else  
     {
-      al = new SensorData(7);
+      al = new SensorData(8);
     }
   }
 
@@ -506,9 +600,12 @@ SensorData* Device_IM350::readParameter()
   al->di[5].nameI = F("counter_power_usage_out");
   al->di[5].valueI = String(current_power_usage_out); 
 
+  al->di[6].nameI = F("timestamp");
+  al->di[6].valueI = String(meterTime); 
+
   timeToString(str, sizeof(str));
-  al->di[6].nameI = F("uptime");
-  al->di[6].valueI = String(str); 
+  al->di[7].nameI = F("uptime");
+  al->di[7].valueI = String(str); 
 
 
   return al;  
@@ -604,6 +701,20 @@ uint32_t Device_IM350::writeDayValue(const char *value)
   return atol(content);
 }
 
+time_t Device_IM350::tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss)
+{
+/*  tmElements_t tmSet;
+  tmSet.Year = YYYY - 1970;
+  tmSet.Month = MM;
+  tmSet.Day = DD;
+  tmSet.Hour = hh;
+  tmSet.Minute = mm;
+  tmSet.Second = ss;
+  return makeTime(tmSet); */
+
+  return NULL;
+}
+
 void Device_IM350::timeToString(char* string, size_t size)
 {
   unsigned long nowMillis = millis();
@@ -653,20 +764,28 @@ void Device_IM350::parse_message(byte array[])
   else if(dt == im350Wels)
     startPos = 52;
   
-      counter_reading_p_in = byteToUInt32(array, startPos);
-      counter_reading_p_out = byteToUInt32(array, startPos+5);
-      counter_reading_q_in = byteToUInt32(array, startPos+10);
-      counter_reading_q_out = byteToUInt32(array, startPos+15);
-      current_power_usage_in = byteToUInt32(array, startPos+20);
-      current_power_usage_out = byteToUInt32(array, startPos+25);
+  sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (array[6] << 8) + (array[7]),array[8], array[9], array[11], array[12], array[13]);
+  
+  counter_reading_p_in = byteToUInt32(array, startPos);
+  counter_reading_p_out = byteToUInt32(array, startPos+5);
+  counter_reading_q_in = byteToUInt32(array, startPos+10);
+  counter_reading_q_out = byteToUInt32(array, startPos+15);
+  current_power_usage_in = byteToUInt32(array, startPos+20);
+  current_power_usage_out = byteToUInt32(array, startPos+25);
+}
 
-      // Serial.println(result, DEC);
-/*      Serial.printf("counter_reading_p_in: %d\n", counter_reading_p_in);
-      Serial.printf("counter_reading_p_out: %d\n", counter_reading_p_out);
-      Serial.printf("counter_reading_q_in: %d\n", counter_reading_q_in);
-      Serial.printf("counter_reading_q_out: %d\n", counter_reading_q_out);
-      Serial.printf("current_power_usage_in: %d\n", current_power_usage_in);
-      Serial.printf("current_power_usage_out: %d\n", current_power_usage_out); */
+void Device_IM350::decrypt_text_Sagemcom(Vector_GCM_Sagemcom *vect, byte *bufferSagemcom)
+{
+  gcmaes128 = new GCM<AES128>();
+  gcmaes128->setKey(vect->key, gcmaes128->keySize());
+  gcmaes128->setIV(vect->iv, vect->ivsize);
+  gcmaes128->decrypt((byte*)bufferSagemcom, vect->ciphertext, vect->datasize);
+  delete gcmaes128;
+    
+/*  GCM<AES128> gcmaes128;
+  gcmaes128.setKey(vect->key, gcmaes128.keySize());
+  gcmaes128.setIV(vect->iv, vect->ivsize);
+  gcmaes128.decrypt((byte*)bufferSagemcom, vect->ciphertext, vect->datasize);*/
 }
 
 void Device_IM350::decrypt_text(Vector_GCM *vect) 
@@ -683,8 +802,42 @@ void Device_IM350::decrypt_text(Vector_GCM *vect)
   delete gcmaes128; */
 }
 
+void Device_IM350::init_vectorSagemcom(Vector_GCM_Sagemcom *vect, byte *key_SM, byte *readMessage) 
+{
+  int inaddi = 18;
+  int iv1start = 2;
+  int iv2start = 14;  
+
+  vect->name = "Sagemcom";  // vector name
+  for (unsigned int i = 0; i < 16; i++) 
+  {
+    vect->key[i] = key_SM[i];
+  }
+
+  for (unsigned int i = 0; i < 481; i++) 
+  {
+    vect->ciphertext[i] = readMessage[i+inaddi];
+  }
+
+
+  for (int i = 0; i < 8; i++) 
+  {
+     vect->iv[i] = readMessage[iv1start+i]; // manufacturer + serialnumber 8 bytes
+  }
+  for (int i = 0; i < 4; i++) 
+  {
+     vect->iv[i+8] = readMessage[iv2start+i]; // frame counter
+  }
+
+  
+  vect->authsize = 16;
+  vect->datasize = 481;
+  vect->tagsize = 12;
+  vect->ivsize  = 12;  
+}
+
 // *****************************************************************************************
-void Device_IM350::init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM, devicetype dt) 
+void Device_IM350::init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM, byte *readMessage, devicetype dt) 
 {
   int inaddi = 0;
   int len = 0;
@@ -721,22 +874,16 @@ void Device_IM350::init_vector(Vector_GCM *vect, const char *Vect_name, byte *ke
 
   for (unsigned int i = 0; i < len; i++) 
   {
-    vect->ciphertext[i] = message[i+inaddi];
+    vect->ciphertext[i] = readMessage[i+inaddi];
   }
 
-  byte AuthData[] = {0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf}; // fixed value, i got it from the gurus director software
-
-  for (int i = 0; i < 16; i++) 
-  {
-     vect->authdata[i] = AuthData[i];
-  }
   for (int i = 0; i < 8; i++) 
   {
-     vect->iv[i] = message[iv1start+i]; // manufacturer + serialnumber 8 bytes
+     vect->iv[i] = readMessage[iv1start+i]; // manufacturer + serialnumber 8 bytes
   }
   for (int i = 8; i < 12; i++) 
   {
-    vect->iv[i] = message[iv2start+i]; // frame counter
+    vect->iv[i] = readMessage[iv2start+i]; // frame counter
   }
   
   byte tag[12]; // 12x zero

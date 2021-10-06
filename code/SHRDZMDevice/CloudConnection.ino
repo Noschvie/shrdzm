@@ -198,8 +198,11 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     String finalAddress = String(CloudApiAddress) + String("/") + String(address);
 //    DV(finalAddress);
 //    DV(content);
+
+    WiFiClient client;
         
-    if(http.begin(finalAddress))
+//    if(http.begin(finalAddress))
+    if(http.begin(client, finalAddress))
     {
       http.addHeader("Content-Type", "application/json");
 

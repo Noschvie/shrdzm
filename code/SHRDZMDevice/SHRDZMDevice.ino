@@ -69,6 +69,7 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4300];
+char contentBuffer[750];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "";
 bool cloudConnected = false;
@@ -188,7 +189,7 @@ void handleJson() {
   else
     message += F("\"Disabled\"");    
   message += (F(",\"lastmessage\":"));
-  message += lastMessage+"";  
+  message += lastMessage;  
   message += (F(",\"timestamp\":\""));
   message += String(t);  
   message += (F("\"}")); // End of JSON
@@ -221,17 +222,17 @@ void handleJs()
 
 void handleRoot() 
 {
-  char content[2500];
+  memset(contentBuffer, 0, sizeof(contentBuffer));
 
   if(server.hasArg(F("factoryreset")))
   {
     if(String(server.arg(F("factoryreset"))) == F("true")) // factory reset was pressed
     {
-      snprintf(content, 300,
+      snprintf(contentBuffer, 300,
        factoryreset_template      
       );
         
-      server.send(200, F("text/html"), content);
+      server.send(200, F("text/html"), contentBuffer);
 
       configuration.resetConfiguration();
 
@@ -250,47 +251,38 @@ void handleRoot()
       {        
         firmwareUpdate = true;
 
-        snprintf(content, 300, upgrade_template);
+        snprintf(contentBuffer, 300, upgrade_template);
           
-        server.send(200, F("text/html"), content);  
+        server.send(200, F("text/html"), contentBuffer);  
         return;      
       }
     }    
   }
   
-  String informationTable = F("<br>");  
+  sprintf(contentBuffer,  
+      informationtable_template,
+      ver.c_str(), ESP.getSketchMD5().c_str(),
+      configuration.get("devicetype"),
+      ESP.getChipId(),
+      configuration.getWlanParameter("enabled"),
+      configuration.get("gateway"),
+      configuration.get("gateway"),deviceName.c_str(),
+      configuration.get("gateway"),deviceName.c_str(),
+      WiFi.localIP().toString().c_str(),
+      WiFi.dnsIP().toString().c_str(),
+      WiFi.gatewayIP().toString().c_str(),
+      WiFi.subnetMask().toString().c_str()
+  );  
 
-  informationTable += "Firmware Version : "+ver+"-"+ESP.getSketchMD5()+"<br><br>";
-  informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
-  informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
-  informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
-  informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
-  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
-  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
-  informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
-  informationTable += F("Unknown");
-  informationTable += F("</span><br>");    
-  if(WiFi.localIP().toString() != F("(IP unset)"))
-    informationTable += F("Date/Time : <span id='timestamp'>Unknown</span>");
-  informationTable += F("</p><br><br>Last Measurement : <br>");
-  informationTable += F("<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>");
-
-  if(WiFi.localIP().toString() != F("(IP unset)"))
-  {
-    informationTable += "IP : "+WiFi.localIP().toString()+"<br>";
-    informationTable += "DNS : "+WiFi.dnsIP().toString()+"<br>";
-    informationTable += "Gateway : "+WiFi.gatewayIP().toString()+"<br>";
-    informationTable += "Subnet : "+WiFi.subnetMask().toString()+"<br>";
-  }
-
-  sprintf(content,  
+  Serial.println(strlen(contentBuffer));
+  
+  sprintf(menuContextBuffer,  
       handleRoot_template,
-      informationTable.c_str(),
+      contentBuffer,
       gatewayMode ? upgradetext_template : ""
   );  
 
-
-  char * temp = getWebsite(content, true);
+  char * temp = getWebsite(menuContextBuffer, true);
   server.send(200, F("text/html"), temp);
 }
 
@@ -327,13 +319,18 @@ void handleReboot()
 
 void handleSettings()
 {
-  String deviceBuffer = F("<option></option>");
-  String parameterBuffer = "";
+//  String parameterBuffer = "";
   String deviceType;
-  String b;
   int loop = 0;
   JsonObject deviceParameter;
   SensorData* initialSettings = NULL;
+  char parameterBuffer[2024];
+  
+  DV(sizeof(parameterBuffer));
+
+  memset(contentBuffer, 0, sizeof(contentBuffer));
+  memset(parameterBuffer, 0, sizeof(parameterBuffer));
+
 
   if(settingDev != NULL)
   {
@@ -392,9 +389,6 @@ void handleSettings()
         {
           if(server.hasArg(kv.key().c_str()))
           {
-//            deviceParameter[kv.key().c_str()] = server.arg(kv.key().c_str());
-//            DV(server.arg(kv.key().c_str()));
-//            DV(deviceParameter[kv.key().c_str()].as<char*>());
             configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
           }
           else
@@ -402,12 +396,9 @@ void handleSettings()
             configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
           }
         }    
-//        configuration.removeAllDeviceParameter();
-//        configuration.setDeviceParameter(deviceParameter);
       }  
 
       configuration.store();
- //     writeConfiguration = true;          
     }
   }
   
@@ -429,57 +420,105 @@ void handleSettings()
     {
       if(String(kv.key().c_str()) != F("device") && String(kv.key().c_str()) != F("wlan") && String(kv.key().c_str()) != F("devicetype") && String(kv.key().c_str()) != F("cloud"))
       {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        strcat_P(parameterBuffer, PSTR("<br/><br/><div><label for='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("'>"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("</label>"));
+        
+//        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+
+        strcat_P(parameterBuffer, PSTR("<input type='text' id='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' name='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' size='10' value='"));
+        
         if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
         {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
+          strcat(parameterBuffer, initialSettings->getDataItemPtr(kv.key().c_str()));
+          
+//          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+          strcat(parameterBuffer, kv.value().as<char*>());
+          
+//          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
         }
+        
+        strcat_P(parameterBuffer, PSTR("'></div>"));        
       }
     }    
 
     // Show device parameter
     if(!deviceParameter.isNull())
     {
-      parameterBuffer += F("<br/>");
-      for (JsonPair kv : deviceParameter)
+      strcat_P(parameterBuffer, PSTR("<br/>"));        
+      
+//      parameterBuffer += F("<br/>");
+      for (JsonPair kv1 : deviceParameter)
       {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        strcat_P(parameterBuffer, PSTR("<br/><br/><div><label for='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("'>"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("</label>"));        
+        
+        strcat_P(parameterBuffer, PSTR("<input type='text' id='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' name='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' size='10' value='"));        
+        strcat(parameterBuffer, kv1.value().as<char*>());
+        strcat_P(parameterBuffer, PSTR("'></div>"));        
+        
+/*        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
         {
           parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
-        }
+        } */
       }    
     }    
   } 
     
   // Fill select box
-  while(true)
+  strcpy_P(contentBuffer, PSTR("<option></option>"));
+
+  char rest[strlen(SUPPORTED_DEVICES+1)];
+  strcpy(rest, SUPPORTED_DEVICES);
+
+  char *ptr = strtok(rest, ",");  // takes a list of delimiters
+  
+  while(ptr != NULL)
   {
-    b = getValue(SUPPORTED_DEVICES, ',', loop++);
-    if(b != "")
+    if(strcmp(ptr, deviceType.c_str()) == 0)
     {
-      if(b == deviceType)
-        deviceBuffer += "<option selected>"+b+"</option>";
-      else      
-        deviceBuffer += "<option>"+b+"</option>";
+        strcat_P(contentBuffer, PSTR("<option selected>"));
+        strcat(contentBuffer, ptr);
+        strcat_P(contentBuffer, PSTR("</option>"));
     }
     else
-      break;
+    {
+        strcat_P(contentBuffer, PSTR("<option>"));
+        strcat(contentBuffer, ptr);
+        strcat_P(contentBuffer, PSTR("</option>"));
+    }
+
+    ptr = strtok(NULL, ",");  // takes a list of delimiters
   }
 
   sprintf(menuContextBuffer,  
       settings_template,
-      deviceBuffer.c_str(),
-      parameterBuffer.c_str()
+      contentBuffer,
+      parameterBuffer
+//      parameterBuffer.c_str()
   );  
 
   char * temp = getWebsite(menuContextBuffer);
-  DV(writeConfiguration);
+  DV(temp);
   DLN("after getWebsite size = "+String(strlen(temp)));
-  
+
+//  server.sendHeader("Content-Length", String(strlen(temp)));
   server.send(200, F("text/html"), temp);  
 }
 
@@ -531,8 +570,6 @@ void handleCloud()
             }
             configuration.setCloudParameter("enabled", "false");
             configuration.setCloudParameter("userid", "");
-/*            configuration.setCloudParameter("user", "");
-            configuration.setCloudParameter("password", ""); */
           }
         }
         else
@@ -541,8 +578,6 @@ void handleCloud()
           cloudUnregisterUser(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));
           configuration.setCloudParameter("enabled", "false");
           configuration.setCloudParameter("userid", "");
-/*          configuration.setCloudParameter("user", "");
-          configuration.setCloudParameter("password", "");*/
         }
       }      
     }
@@ -1375,7 +1410,8 @@ void upgradeFirmware()
   
     WiFiClient client; 
     // Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
-    t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+//    t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, host, 80, url, versionStr);    
     
     switch (ret) 
     {
@@ -1517,6 +1553,9 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
     }
 
     dev->setDeviceParameter(configuration.getDeviceParameter());    
+
+    Serial.println("nach setDeviceParameter");
+    
   }
 }
 
@@ -1769,7 +1808,7 @@ void getMeasurementData()
 
           if(gatewayMode)
           {
-            DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
+       //     DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
 
             // send to cloud

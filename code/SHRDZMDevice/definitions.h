@@ -1,3 +1,22 @@
+const static char informationtable_template[] PROGMEM = 
+{
+"<br>\
+Firmware Version : %s-%s<br><br>\
+Device Type : %s<br>\
+Chip ID : %d<br>\
+Gateway Mode : %s<br>\
+MQTTTopic Gateway : SHRDZM/%s<br>\
+MQTTTopic Device : SHRDZM/%s/%s<br>\
+MQTTTopic Sensor : SHRDZM/%s/%s/sensor/<br><br>\
+<p>MQTT Connection State : <span id='mqttconnectionstate'>UNKNOWN</span><br>\
+Date/Time : <span id='timestamp'>Unknown</span>\
+</p><br><br>Last Measurement : <br>\
+<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>\
+IP : %s<br>\
+DNS : %s<br>\
+Gateway : %s<br>\
+Subnet : %s<br>"
+};
 
 const static char settings_template[] PROGMEM = 
 {      

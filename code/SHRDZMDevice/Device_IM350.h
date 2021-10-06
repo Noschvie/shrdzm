@@ -22,6 +22,19 @@ struct Vector_GCM {
     size_t ivsize;
 };
 
+struct Vector_GCM_Sagemcom {
+    const char *name;
+    uint8_t key[16];
+    uint8_t ciphertext[481];
+    uint8_t authdata[16];
+    uint8_t iv[12];
+    uint8_t tag[12];
+    size_t authsize;
+    size_t datasize;
+    size_t tagsize;
+    size_t ivsize;
+};
+
 class Device_IM350 : public DeviceBase
 {   
   public:
@@ -32,7 +45,8 @@ class Device_IM350 : public DeviceBase
       unknown,
       im350,
       am550,
-      im350Wels
+      im350Wels,
+      sagemcom
     };
         
     bool setDeviceParameter(JsonObject obj);
@@ -45,14 +59,17 @@ class Device_IM350 : public DeviceBase
     
   protected:   
     
-    void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM, devicetype dt);
+    void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM, byte *readMessage, devicetype dt);
+    void init_vectorSagemcom(Vector_GCM_Sagemcom *vect, byte *key_SM, byte *readMessage);
     void decrypt_text(Vector_GCM *vect);
+    void decrypt_text_Sagemcom(Vector_GCM_Sagemcom *vect, byte *bufferSagemcom);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);
     void parse_message(byte array[]);
     void hexToBytes(const char* code, byte* result);  
     void timeToString(char* string, size_t size);
     uint32_t writeHourValue(const char *value);
     uint32_t writeDayValue(const char *value);
+    time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss);
     devicetype dt;
 
     bool softwareSerialUsed;
@@ -60,7 +77,6 @@ class Device_IM350 : public DeviceBase
     bool inverted;
     bool done;
     byte buffer[90];
-    byte message[123];  
     int interval;
     
     char m_cipherkey[33];
@@ -72,6 +88,8 @@ class Device_IM350 : public DeviceBase
     uint32_t counter_reading_q_out;
     uint32_t current_power_usage_in;
     uint32_t current_power_usage_out;    
+
+    char meterTime[20];
 };
 
 #endif
