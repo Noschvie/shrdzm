@@ -197,6 +197,11 @@ bool Configuration::migrateToNewConfigurationStyle()
     setWlanParameter("MQTTpassword", "");
     update = true;
   }
+  if(!containsWlanKey("MQTTsendjson"))
+  {
+    setWlanParameter("MQTTsendjson", "false");
+    update = true;
+  }
   if(!containsWlanKey("NTPServer"))
   {
     setWlanParameter("NTPServer", String(NTP_SERVER).c_str());
@@ -431,7 +436,10 @@ JsonObject Configuration::getCloudParameter()
 
 const char* Configuration::getWlanParameter(const char *parameterName)
 {
-  return g_configdoc["wlan"][parameterName];
+  if(g_configdoc["wlan"][parameterName].isNull())
+    return "";
+  else
+    return g_configdoc["wlan"][parameterName];
 }
 
 const char* Configuration::getCloudParameter(const char *parameterName)

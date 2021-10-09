@@ -128,7 +128,7 @@ WLAN Settings if Device acts as it's own gateway.\
 <div><input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
 <label for='MQTTpassword'>MQTT Password</label></div><br/>\
 <br/><br />\
-<input type='checkbox' id='jsonenabled' name='jsonenabled' value='0' %s/>\
+<input type='checkbox' id='jsonenabled' name='jsonenabled' value='1' %s/>\
 <input type='hidden' name='jsonenabled' value='0' />\
 <div><label for='jsonenabled'>Send values in JSon format</label></div><br/>\
 <br/><br/>\

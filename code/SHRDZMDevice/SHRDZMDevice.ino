@@ -656,6 +656,13 @@ void handleGateway()
     else
       configuration.setWlanParameter("MQTTenabled", "false");
 
+    if( server.arg(F("jsonenabled")) == "1")
+    {
+      configuration.setWlanParameter("MQTTsendjson", "true");
+    }
+    else
+      configuration.setWlanParameter("MQTTsendjson", "false");
+
     if(server.hasArg(F("ssid")))
       configuration.setWlanParameter("ssid", server.arg(F("ssid")).c_str());
     else
@@ -710,7 +717,8 @@ void handleGateway()
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
-      configuration.getWlanParameter("MQTTpassword")
+      configuration.getWlanParameter("MQTTpassword"),
+      String(configuration.getWlanParameter("MQTTsendjson")) == "false" ? "" : "checked"
   );  
 
   char * temp = getWebsite(menuContextBuffer);
@@ -1787,6 +1795,9 @@ Serial.begin(SERIAL_BAUD); Serial.println();
 
 void getMeasurementData()
 {
+  bool sendJson = !strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? true : false;
+  String jsonSendBuffer;
+
   if(configuration.containsKey("gateway") || gatewayMode)
   {      
     if(dev != NULL)
@@ -1797,19 +1808,28 @@ void getMeasurementData()
       if(sd != NULL)
       {
         String reply;
-        
+        if(sendJson)
+          jsonSendBuffer = "{";
+          
         for(int i = 0; i<sd->size; i++)
         {
           reply = sd->di[i].nameI+":"+sd->di[i].valueI;
 
           lastMessage += "(" + String(i)+ ")" +sd->di[i].nameI+"="+sd->di[i].valueI+"&#13;&#10;";
 
-          DV(reply);
+//          DV(reply);
+          
 
           if(gatewayMode)
           {
-       //     DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
-            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+            if(sendJson)
+            {
+              jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",";
+            }
+            else
+            {
+              mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+            }
 
             // send to cloud
             if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0)
@@ -1820,9 +1840,17 @@ void getMeasurementData()
           }
           else   
           {             
-           sendMessageWithChecksum((char *)("$D$"+reply).c_str());                       
+            sendMessageWithChecksum((char *)("$D$"+reply).c_str());                       
           }
         }
+
+        if(sendJson)
+        {
+          jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-1);
+          jsonSendBuffer += "}";
+          mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
+        }
+        
         delete sd;
         sd = NULL;  
       }

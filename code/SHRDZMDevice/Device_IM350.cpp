@@ -458,7 +458,12 @@ SensorData* Device_IM350::readParameter()
       for (JsonPair kv : obj) 
       {      
         al->di[counter].nameI = String(kv.key().c_str());
-        al->di[counter].valueI = String(kv.value().as<char*>());
+
+        if(strcmp(kv.key().c_str(), "1.0.0") == 0)
+          al->di[counter].valueI = String(kv.value().as<char*>());
+        else
+          al->di[counter].valueI = String(atol(kv.value().as<char*>()), DEC);
+        
         counter++;
       }
         
