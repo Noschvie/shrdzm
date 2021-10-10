@@ -319,7 +319,6 @@ void handleReboot()
 
 void handleSettings()
 {
-//  String parameterBuffer = "";
   String deviceType;
   int loop = 0;
   JsonObject deviceParameter;
@@ -330,7 +329,6 @@ void handleSettings()
 
   memset(contentBuffer, 0, sizeof(contentBuffer));
   memset(parameterBuffer, 0, sizeof(parameterBuffer));
-
 
   if(settingDev != NULL)
   {
@@ -425,9 +423,6 @@ void handleSettings()
         strcat_P(parameterBuffer, PSTR("'>"));
         strcat(parameterBuffer, kv.key().c_str());
         strcat_P(parameterBuffer, PSTR("</label>"));
-        
-//        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-
         strcat_P(parameterBuffer, PSTR("<input type='text' id='"));
         strcat(parameterBuffer, kv.key().c_str());
         strcat_P(parameterBuffer, PSTR("' name='"));
@@ -437,14 +432,10 @@ void handleSettings()
         if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
         {
           strcat(parameterBuffer, initialSettings->getDataItemPtr(kv.key().c_str()));
-          
-//          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
         }
         else        
         {
           strcat(parameterBuffer, kv.value().as<char*>());
-          
-//          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
         }
         
         strcat_P(parameterBuffer, PSTR("'></div>"));        
@@ -456,7 +447,6 @@ void handleSettings()
     {
       strcat_P(parameterBuffer, PSTR("<br/>"));        
       
-//      parameterBuffer += F("<br/>");
       for (JsonPair kv1 : deviceParameter)
       {
         strcat_P(parameterBuffer, PSTR("<br/><br/><div><label for='"));        
@@ -472,11 +462,6 @@ void handleSettings()
         strcat_P(parameterBuffer, PSTR("' size='10' value='"));        
         strcat(parameterBuffer, kv1.value().as<char*>());
         strcat_P(parameterBuffer, PSTR("'></div>"));        
-        
-/*        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
-        } */
       }    
     }    
   } 
@@ -507,18 +492,19 @@ void handleSettings()
     ptr = strtok(NULL, ",");  // takes a list of delimiters
   }
 
+  DV(strlen(parameterBuffer));
+
+
   sprintf(menuContextBuffer,  
       settings_template,
       contentBuffer,
       parameterBuffer
-//      parameterBuffer.c_str()
   );  
 
   char * temp = getWebsite(menuContextBuffer);
   DV(temp);
   DLN("after getWebsite size = "+String(strlen(temp)));
 
-//  server.sendHeader("Content-Length", String(strlen(temp)));
   server.send(200, F("text/html"), temp);  
 }
 
