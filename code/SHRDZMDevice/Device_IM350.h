@@ -12,20 +12,7 @@
 struct Vector_GCM {
     const char *name;
     uint8_t key[16];
-    uint8_t ciphertext[90];
-    uint8_t authdata[16];
-    uint8_t iv[12];
-    uint8_t tag[12];
-    size_t authsize;
-    size_t datasize;
-    size_t tagsize;
-    size_t ivsize;
-};
-
-struct Vector_GCM_Sagemcom {
-    const char *name;
-    uint8_t key[16];
-    uint8_t ciphertext[481];
+    uint8_t *ciphertextPos;
     uint8_t authdata[16];
     uint8_t iv[12];
     uint8_t tag[12];
@@ -58,11 +45,11 @@ class Device_IM350 : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:   
+    Vector_GCM Vector_SM;
+    GCM<AES128> *gcmaes128 = 0;
     
-    void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM, byte *readMessage, devicetype dt);
-    void init_vectorSagemcom(Vector_GCM_Sagemcom *vect, byte *key_SM, byte *readMessage);
-    void decrypt_text(Vector_GCM *vect);
-    void decrypt_text_Sagemcom(Vector_GCM_Sagemcom *vect, byte *bufferSagemcom);
+    void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
+    void decrypt_text(Vector_GCM *vect, byte *bufferResult);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);
     void parse_message(byte array[]);
     void hexToBytes(const char* code, byte* result);  
@@ -76,7 +63,6 @@ class Device_IM350 : public DeviceBase
     SoftwareSerial mySoftwareSerial;
     bool inverted;
     bool done;
-    byte buffer[90];
     int interval;
     
     char m_cipherkey[33];

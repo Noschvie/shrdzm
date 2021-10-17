@@ -71,7 +71,7 @@ bool Configuration::initialize()
 
 bool Configuration::store()
 {
-  Serial.println("Store configuration...");
+  Serial.println(F("Store configuration..."));
   serializeJson(g_configdoc, Serial);
 
   Serial.println();
@@ -80,17 +80,17 @@ bool Configuration::store()
 #else
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
 #endif
-  Serial.println("file opened...");
+  Serial.println(F("file opened..."));
   
   if (!configFile) 
   {
-    Serial.println("failed to open config file for writing");
+    Serial.println(F("failed to open config file for writing"));
     return false;
   }
 
-  Serial.println("serializing...");
+  Serial.println(F("serializing..."));
   serializeJson(g_configdoc, configFile);
-  Serial.println("serialized...");
+  Serial.println(F("serialized..."));
   configFile.close();
     
   return true;

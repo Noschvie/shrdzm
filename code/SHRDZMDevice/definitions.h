@@ -72,10 +72,10 @@ const static char handleReboot_template[] PROGMEM =
 "<!DOCTYPE html>\
 <html>\
 <head>\
-<meta http-equiv='refresh' content='20; url=/'>\
+<meta http-equiv='refresh' content='13; url=/'>\
 </head>\
 <body>\
-<h1>Please wait. Will reboot in 20 seconds...</h1>\
+<h1>Please wait. Will reboot in 15 seconds...</h1>\
 </body>\
 </html>"
 };

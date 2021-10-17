@@ -360,7 +360,10 @@ void handleSettings()
   {
     configuration.removeAllDeviceParameter();
     configuration.set("devicetype", (char *)deviceType.c_str()); 
-    configuration.store();    
+
+    writeConfiguration = true;          
+    
+    //configuration.store();    
   }
     
   // check if save was pressed
@@ -396,7 +399,9 @@ void handleSettings()
         }    
       }  
 
-      configuration.store();
+      writeConfiguration = true;          
+
+//      configuration.store();
     }
   }
   
