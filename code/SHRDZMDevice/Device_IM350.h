@@ -51,13 +51,14 @@ class Device_IM350 : public DeviceBase
     void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
     void decrypt_text(Vector_GCM *vect, byte *bufferResult);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);
-    void parse_message(byte array[]);
+    void parse_message(byte array[], devicetype dt);
     void hexToBytes(const char* code, byte* result);  
+    String hexToString(byte array[], int readCnt);
     void timeToString(char* string, size_t size);
     uint32_t writeHourValue(const char *value);
     uint32_t writeDayValue(const char *value);
     time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss);
-    devicetype dt;
+//    devicetype dt;
 
     bool softwareSerialUsed;
     SoftwareSerial mySoftwareSerial;

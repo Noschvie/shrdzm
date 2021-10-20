@@ -41,7 +41,7 @@ Device_IM350::Device_IM350()
 {    
   softwareSerialUsed = false;
   inverted = false;
-  dt = unknown;
+//  dt = unknown;
   m_pConfigurationObject = NULL;
 
   memset(meterTime, 0, 20);
@@ -174,8 +174,7 @@ SensorData* Device_IM350::readParameter()
 {  
   SensorData *al = NULL;  
   char str[15] = "";
-  char hexCode[3];
-  hexCode[2] = 0;
+  devicetype dt = unknown;
   
   String ck = deviceParameter[F("cipherkey")];
 
@@ -247,108 +246,58 @@ SensorData* Device_IM350::readParameter()
   uint32_t timeout=2000;
 
   bool finished = false;
-  int cnt = 0;
+  int readCnt = 0;
   uint32_t start_time = millis();
   byte tempChar = 0;
   byte *readMessage;
   uint32_t messageLen = 0;
 
-  if(softwareSerialUsed)
+  while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
   {
-    while ((tempChar != firstByte && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
+    if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
     {
-      if (mySoftwareSerial.available()) 
+      tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+    }
+  }
+  if (tempChar == firstByte) 
+  {
+    readMessage = new byte[123];
+    memset(readMessage, 0, 123);
+    readMessage[0] = tempChar;
+    messageLen = 123;  
+
+    readCnt++;      
+    while ( readCnt < 123 && (millis() - start_time < timeout) ) 
+    {
+      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
       {
-          tempChar = mySoftwareSerial.read(); 
+        readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+        readCnt++; 
       }
     }
+  }  
+  else if(tempChar == firstByteSagemcom)
+  {
+    readCnt++;
+
+    readMessage = new byte[lenSagemcom];
+    memset(readMessage, 0, lenSagemcom);
+    readMessage[0] = tempChar;
+    messageLen = lenSagemcom;
     
-    if (tempChar == firstByte) // IM350/AM550
+    while ( readCnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
     {
-      readMessage = new byte[123];
-      memset(readMessage, 0, 123);
-      readMessage[0] = tempChar;
-      messageLen = 123;
-      
-      cnt++;
-      while ( cnt < 123 && (millis() - start_time < timeout) ) 
+      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
       {
-        if (mySoftwareSerial.available()) 
-        {
-          readMessage[cnt] = mySoftwareSerial.read(); 
-          cnt++; 
-        }
-      }
-    }       
-    else if(tempChar == firstByteSagemcom) // TEST!!!!
-    {
-      cnt++;
-      
-      readMessage = new byte[lenSagemcom];
-      memset(readMessage, 0, lenSagemcom);
-      readMessage[0] = tempChar;
-      messageLen = lenSagemcom;
-
-      while ( cnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
-      {
-        if (mySoftwareSerial.available()) 
-        {
-          readMessage[cnt] = mySoftwareSerial.read(); 
-          cnt++; 
-        }
+        readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+        readCnt++; 
       }
     }
-  }
-  else
-  {
-    while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
-    {
-      if (Serial.available()) 
-      {
-        tempChar = Serial.read(); 
-      }
-    }
-    if (tempChar == firstByte) 
-    {
-      readMessage = new byte[123];
-      memset(readMessage, 0, 123);
-      readMessage[0] = tempChar;
-      messageLen = 123;  
-
-      cnt++;      
-      while ( cnt < 123 && (millis() - start_time < timeout) ) 
-      {
-        if (Serial.available()) 
-        {
-          readMessage[cnt] = Serial.read(); 
-          cnt++; 
-        }
-      }
-    }  
-    else if(tempChar == firstByteSagemcom) // TEST!!!!
-    {
-      cnt++;
-
-      readMessage = new byte[lenSagemcom];
-      memset(readMessage, 0, lenSagemcom);
-      readMessage[0] = tempChar;
-      messageLen = lenSagemcom;
-      
-      while ( cnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
-      {
-        if (Serial.available()) 
-        {
-          readMessage[cnt] = Serial.read(); 
-          cnt++; 
-        }
-      }
-    }    
-  }
+  }    
 
   // disable request
   digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW); 
   digitalWrite(LED_BUILTIN, HIGH);
-
 
   if(!softwareSerialUsed)
   {
@@ -362,26 +311,22 @@ SensorData* Device_IM350::readParameter()
     if(readMessage[0] == firstByteSagemcom)  
     {
       dt = sagemcom;
-      Serial.println("sagemcom detected");
     }
     else if(readMessage[messageLen-1] == lastByte)
     {
       dt = im350;
-      Serial.println("im350 detected");
     }
     else if (readMessage[messageLen-3] == lastByte)
     {
       dt = am550;
-      Serial.println("am550 detected");
     }
     else if (readMessage[messageLen-10] == lastByte)
     {
       dt = im350Wels;
-      Serial.println("im350Wels detected");
     }
   }
 
-  if(tempChar == 0)
+  if(readCnt == 0)
   {
     al = new SensorData(2);    
     
@@ -400,7 +345,7 @@ SensorData* Device_IM350::readParameter()
     {    
       al = new SensorData(3);
       al->di[2].nameI = F("data");
-      al->di[2].valueI = String((char*)readMessage);            
+      al->di[2].valueI = hexToString(readMessage, readCnt);
     }
     else
     {
@@ -413,6 +358,9 @@ SensorData* Device_IM350::readParameter()
     timeToString(str, sizeof(str));
     al->di[1].nameI = F("uptime");
     al->di[1].valueI = String(str);       
+    
+    if(readCnt)
+      delete readMessage;
             
     return al;
   }  
@@ -463,8 +411,11 @@ SensorData* Device_IM350::readParameter()
         DynamicJsonDocument doc(800);
         deserializeJson(doc, data);
         JsonObject obj = doc.as<JsonObject>();
-  
-        al = new SensorData(obj.size()+1);
+
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+          al = new SensorData(obj.size()+2);
+        else
+          al = new SensorData(obj.size()+1);        
   
         for (JsonPair kv : obj) 
         {      
@@ -477,6 +428,13 @@ SensorData* Device_IM350::readParameter()
           
           counter++;
         }
+
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        {
+          al->di[counter].nameI = F("data");
+          al->di[counter].valueI = hexToString(readMessage, readCnt);
+          counter++;
+        }
           
         timeToString(str, sizeof(str));
         al->di[counter].nameI = F("uptime");
@@ -484,7 +442,11 @@ SensorData* Device_IM350::readParameter()
       }
       else
       {
-        al = new SensorData(2);
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+          al = new SensorData(3);
+        else
+          al = new SensorData(2);
+        
         
         al->di[0].nameI = F("lasterror");    
         al->di[0].valueI = F("cipherkey does not fit");        
@@ -492,39 +454,74 @@ SensorData* Device_IM350::readParameter()
         timeToString(str, sizeof(str));
         al->di[1].nameI = F("uptime");
         al->di[1].valueI = String(str);       
+
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        {
+          al->di[2].nameI = F("data");
+          al->di[2].valueI = hexToString(readMessage, readCnt);
+        }
       }
     }
     else
     {
-      Serial.println("vor parse_message");    
-      parse_message(bufferResult);
+      parse_message(bufferResult, dt);
 
-      al = new SensorData(8);
-
-      al->di[0].nameI = F("counter_reading_p_in");
-      al->di[0].valueI = String(counter_reading_p_in);  
+      if(current_power_usage_in > 50000)
+      {
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        {
+          al = new SensorData(3);
+          al->di[2].nameI = F("data");
+          al->di[2].valueI = hexToString(readMessage, readCnt); 
+        }
+        else
+          al = new SensorData(2);
+        
+        al->di[0].nameI = F("lasterror");    
+        al->di[0].valueI = F("Invalid data");  
     
-      al->di[1].nameI = F("counter_reading_p_out");
-      al->di[1].valueI = String(counter_reading_p_out);  
-    
-      al->di[2].nameI = F("counter_reading_q_in");
-      al->di[2].valueI = String(counter_reading_q_in);  
-    
-      al->di[3].nameI = F("counter_reading_q_out");
-      al->di[3].valueI = String(counter_reading_q_out);  
-    
-      al->di[4].nameI = F("counter_power_usage_in");
-      al->di[4].valueI = String(current_power_usage_in);  
-    
-      al->di[5].nameI = F("counter_power_usage_out");
-      al->di[5].valueI = String(current_power_usage_out); 
-    
-      al->di[6].nameI = F("timestamp");
-      al->di[6].valueI = String(meterTime); 
-    
-      timeToString(str, sizeof(str));
-      al->di[7].nameI = F("uptime");
-      al->di[7].valueI = String(str);       
+        timeToString(str, sizeof(str));
+        al->di[1].nameI = F("uptime");
+        al->di[1].valueI = String(str);
+      }
+      else
+      {
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+          al = new SensorData(9);
+        else
+          al = new SensorData(8);
+  
+        al->di[0].nameI = F("counter_reading_p_in");
+        al->di[0].valueI = String(counter_reading_p_in);  
+      
+        al->di[1].nameI = F("counter_reading_p_out");
+        al->di[1].valueI = String(counter_reading_p_out);  
+      
+        al->di[2].nameI = F("counter_reading_q_in");
+        al->di[2].valueI = String(counter_reading_q_in);  
+      
+        al->di[3].nameI = F("counter_reading_q_out");
+        al->di[3].valueI = String(counter_reading_q_out);  
+      
+        al->di[4].nameI = F("counter_power_usage_in");
+        al->di[4].valueI = String(current_power_usage_in);  
+      
+        al->di[5].nameI = F("counter_power_usage_out");
+        al->di[5].valueI = String(current_power_usage_out); 
+      
+        al->di[6].nameI = F("timestamp");
+        al->di[6].valueI = String(meterTime); 
+      
+        timeToString(str, sizeof(str));
+        al->di[7].nameI = F("uptime");
+        al->di[7].valueI = String(str);    
+           
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        {
+          al->di[8].nameI = F("data");
+          al->di[8].valueI = hexToString(readMessage, readCnt);
+        }
+      }
     }
         
     delete readMessage;
@@ -650,6 +647,21 @@ void Device_IM350::timeToString(char* string, size_t size)
   snprintf(string, size, "%04d:%02d:%02d:%02d", days, hours, minutes, seconds);
 }
 
+String Device_IM350::hexToString(byte array[], int readCnt)
+{
+  String data;
+  char hexCode[3];
+  hexCode[2] = 0;
+    
+  for(int i = 0; i<readCnt; i++)
+  {
+    sprintf(hexCode, "%02X", array[i]);
+    data += String(hexCode);    
+  }  
+
+  return data;
+}
+
 void Device_IM350::hexToBytes(const char* code, byte* result)
 {
   if(code != NULL)
@@ -677,7 +689,7 @@ uint32_t Device_IM350::byteToUInt32(byte array[], unsigned int startByte)
     return result;
 }
 
-void Device_IM350::parse_message(byte array[]) 
+void Device_IM350::parse_message(byte array[], devicetype dt) 
 {  
   int startPos = 0;
 
