@@ -233,6 +233,33 @@ bool Configuration::migrateToNewConfigurationStyle()
     update = true;
   }
 
+  if(!containsCloudKey("privateenabled"))
+  {
+    setCloudParameter("privateenabled", "false");
+    update = true;
+  }
+  if(!containsCloudKey("privateendpoint"))
+  {
+    setCloudParameter("privateendpoint", "");
+    update = true;
+  }
+  if(!containsCloudKey("privateuser"))
+  {
+    setCloudParameter("privateuser", "");
+    update = true;
+  }
+  if(!containsCloudKey("privatepassword"))
+  {
+    setCloudParameter("privatepassword", "");
+    update = true;
+  }
+  if(!containsCloudKey("privateid"))
+  {
+    setCloudParameter("privateid", m_deviceName.c_str());
+    update = true;
+  }
+
+
   if(!g_configdoc.containsKey("sensorpowerpin"))
   {
     g_configdoc["sensorpowerpin"] = String(SENSORPOWERPIN);

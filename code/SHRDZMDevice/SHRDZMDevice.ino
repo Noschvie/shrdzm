@@ -586,7 +586,19 @@ void handleCloud()
         configuration.setCloudParameter("password", String(ESP.getChipId()).c_str());
       }
     }
-    
+    if(server.hasArg(F("privatecloudenabled")))
+    {
+      if( server.arg(F("privatecloudenabled")) == "1")
+        configuration.setCloudParameter("privateenabled", "true");
+      else
+        configuration.setCloudParameter("privateenabled", "false");
+
+      configuration.setCloudParameter("privateendpoint", server.arg(F("privateendpoint")).c_str());
+      configuration.setCloudParameter("privateuser", server.arg(F("privateuser")).c_str());
+      configuration.setCloudParameter("privatepassword", server.arg(F("privatepassword")).c_str());
+      configuration.setCloudParameter("privateid", server.arg(F("privateid")).c_str());
+    }
+        
     writeConfiguration = true;          
   }  
   
@@ -596,7 +608,13 @@ void handleCloud()
         configuration.getCloudParameter("user"),
       strcmp(configuration.getCloudParameter("password"), "") == 0 ? String(ESP.getChipId()).c_str() :
         configuration.getCloudParameter("password"),
-      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid")
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid"),
+      String(configuration.getCloudParameter("privateenabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("privateendpoint"),
+      configuration.getCloudParameter("privateuser"),
+      configuration.getCloudParameter("privatepassword"),
+      strcmp(configuration.getCloudParameter("privateid"), "") == 0 ? deviceName.c_str() :
+        configuration.getCloudParameter("privateid")
   );  
 
   char * temp = getWebsite(menuContextBuffer);
@@ -1787,6 +1805,7 @@ Serial.begin(SERIAL_BAUD); Serial.println();
 void getMeasurementData()
 {
   bool sendJson = !strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? true : false;
+  bool sendPrivateCloudJson = !strcmp(configuration.getCloudParameter("privateenabled"), "true") ? true : false;
   String jsonSendBuffer;
 
   if(configuration.containsKey("gateway") || gatewayMode)
@@ -1799,7 +1818,7 @@ void getMeasurementData()
       if(sd != NULL)
       {
         String reply;
-        if(sendJson)
+        if(sendJson || sendPrivateCloudJson)
           jsonSendBuffer = "{";
           
         for(int i = 0; i<sd->size; i++)
@@ -1808,12 +1827,9 @@ void getMeasurementData()
 
           lastMessage += "(" + String(i)+ ")" +sd->di[i].nameI+"="+sd->di[i].valueI+"&#13;&#10;";
 
-//          DV(reply);
-          
-
           if(gatewayMode)
           {
-            if(sendJson)
+            if(sendJson || sendPrivateCloudJson)
             {
               jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",";
             }
@@ -1835,11 +1851,25 @@ void getMeasurementData()
           }
         }
 
-        if(sendJson)
+        if(sendJson || sendPrivateCloudJson)
         {
           jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-1);
           jsonSendBuffer += "}";
-          mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
+
+          if(sendJson)
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
+
+          if(sendPrivateCloudJson)
+          {
+            jsonSendBuffer = "{\"id\":\"" + String(configuration.getCloudParameter("privateid")) + "\",\"data\":" +
+                            jsonSendBuffer + "}";
+
+//            DV(jsonSendBuffer);
+            sendPrivateCloudData(configuration.getCloudParameter("privateendpoint"), 
+                        configuration.getCloudParameter("privateuser"), 
+                        configuration.getCloudParameter("privatepassword"), 
+                        jsonSendBuffer.c_str() );
+          }
         }
         
         delete sd;

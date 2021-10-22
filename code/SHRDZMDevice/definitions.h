@@ -183,10 +183,28 @@ Cloud Settings are optional. More information can be found on <a href=\"http://s
 <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
 <label for='user'>User Name</label></div><br/><br/>\
 <div><input type='text' id='password' name='password' placeholder='Password' size='30' value='%s'>\
-<label for='user'>Password</label></div><br/><br/>\
+<label for='password'>Password</label></div><br/><br/>\
 Unique User ID = %s<br/><br/>\
-<br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Cloud Settings' /><br />\      
-<br /> <input class='submitbutton' type='submit' value='Save Cloud Settings!' />\      
+<br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Settings' /><br />\      
+</p>\
+<br/>\
+<hr/>\
+<br/>\
+<p>\
+<input type='checkbox' id='privatecloudenabled' name='privatecloudenabled' value='1' %s/>\
+<input type='hidden' name='privatecloudenabled' value='0' />\
+<div><label for='privatecloudenabled'>Private Cloud Enabled</label></div><br/>\
+<br/>\
+<div><input type='text' id='privateendpoint' name='privateendpoint' placeholder='https://' size='55' value='%s'>\
+<label for='privateendpoint'>Endpoint</label></div><br/><br/>\
+<div><input type='text' id='privateuser' name='privateuser' placeholder='Name' size='55' value='%s'>\
+<label for='privateuser'>User Name</label></div><br/><br/>\
+<div><input type='password' id='privatepassword' name='privatepassword' placeholder='Password' size='55' value='%s'>\
+<label for='privatepassword'>Password</label></div><br/><br/>\
+<div><input type='text' id='privateid' name='privateid' placeholder='Identifier' size='55' value='%s'>\
+<label for='privateid'>Unique Identifier</label></div><br/><br/>\
+<br />\
+<br /><input class='submitbutton' type='submit' value='Save Cloud Settings!' />\      
 </p>\
 <script>\
 function submitResetCloudSettings()\
@@ -201,7 +219,7 @@ f.form.submit();\
 </script>\
 </form>\
 <br/>\
-<hr/>"  
+<hr/>"
 };
 
 const static char handleRoot_template[] PROGMEM = 
