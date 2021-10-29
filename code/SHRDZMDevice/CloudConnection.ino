@@ -28,12 +28,17 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
       host = host.substring(0,host.indexOf(':'));
     }
   }  
+
+  DLN(host);
+  DLN(port);
+  DLN(path);
+  
     
   if(WiFi.status()== WL_CONNECTED)
   {  
     WiFiClientSecure client;
     client.setInsecure(); 
-    client.setBufferSizes(1024,1024);
+    client.setBufferSizes(512,512);
   
     HTTPClient http;
     if (!http.begin(client, host, port, path, true))
@@ -42,12 +47,16 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
     }      
   
     http.setAuthorization(user, password);
-    http.addHeader(F("Content-Type"), F("application/json"));
+    http.addHeader("Content-Type", "application/json");
   
     int  httpCode = http.POST(message);
 
+    Serial.println(httpCode);
     if(httpCode != 200)
-      DV(httpCode);
+    {
+      
+    }
+
   
     http.end();
   } 

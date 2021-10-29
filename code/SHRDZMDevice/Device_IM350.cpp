@@ -267,12 +267,27 @@ SensorData* Device_IM350::readParameter()
     messageLen = 123;  
 
     readCnt++;      
-    while ( readCnt < 123 && (millis() - start_time < timeout) ) 
+
+    if(softwareSerialUsed)
     {
-      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+      while ( readCnt < 123 && (millis() - start_time < timeout) ) 
       {
-        readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
-        readCnt++; 
+        if (mySoftwareSerial.available()) 
+        {
+          readMessage[readCnt] = mySoftwareSerial.read(); 
+          readCnt++; 
+        }
+      }
+    }
+    else
+    {
+      while ( readCnt < 123 && (millis() - start_time < timeout) ) 
+      {
+        if (Serial.available()) 
+        {
+          readMessage[readCnt] = Serial.read(); 
+          readCnt++; 
+        }
       }
     }
   }  

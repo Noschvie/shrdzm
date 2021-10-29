@@ -1864,7 +1864,7 @@ void getMeasurementData()
             jsonSendBuffer = "{\"id\":\"" + String(configuration.getCloudParameter("privateid")) + "\",\"data\":" +
                             jsonSendBuffer + "}";
 
-//            DV(jsonSendBuffer);
+            DV(jsonSendBuffer);
             sendPrivateCloudData(configuration.getCloudParameter("privateendpoint"), 
                         configuration.getCloudParameter("privateuser"), 
                         configuration.getCloudParameter("privatepassword"), 
