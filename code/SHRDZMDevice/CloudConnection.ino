@@ -66,7 +66,7 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {
-  DLN(F("Will now try to register new User on ")+String(CloudApiAddress));
+//  DLN(F("Will now try to register new User on ")+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
