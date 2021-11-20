@@ -47,6 +47,7 @@ class Device_IM350 : public DeviceBase
   protected:   
     Vector_GCM Vector_SM;
     GCM<AES128> *gcmaes128 = 0;
+    long baud = 115200;
     
     void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
     void decrypt_text(Vector_GCM *vect, byte *bufferResult);

@@ -400,8 +400,6 @@ void handleSettings()
       }  
 
       writeConfiguration = true;          
-
-//      configuration.store();
     }
   }
   
@@ -442,7 +440,7 @@ void handleSettings()
         {
           strcat(parameterBuffer, kv.value().as<char*>());
         }
-        
+                
         strcat_P(parameterBuffer, PSTR("'></div>"));        
       }
     }    
