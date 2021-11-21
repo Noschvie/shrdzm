@@ -262,33 +262,39 @@ SensorData* Device_IM350::readParameter()
       tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
     }
   }
+
+  start_time = millis();
+  timeout = 1000;
+  
   if (tempChar == firstByte) 
   {
     readMessage = new byte[330];
     memset(readMessage, 0, 330);
     readMessage[0] = tempChar;
+    tempChar = 0x00;
     messageLen = 330;  
 
     readCnt++;      
 
     if(softwareSerialUsed)
     {
-      while ( readCnt < messageLen && (millis() - start_time < timeout) ) 
+      while ( readCnt < messageLen && (millis() - start_time < timeout) && tempChar != lastByte ) 
       {
         if (mySoftwareSerial.available()) 
         {
-          readMessage[readCnt] = mySoftwareSerial.read(); 
+          tempChar = mySoftwareSerial.read();
+          readMessage[readCnt] = tempChar;           
           readCnt++; 
         }
       }
     }
     else
     {
-      while ( readCnt < messageLen && (millis() - start_time < timeout) ) 
+      while ( readCnt < messageLen && (millis() - start_time < timeout) && tempChar != lastByte ) 
       {
         if (Serial.available()) 
         {
-          readMessage[readCnt] = Serial.read(); 
+          tempChar = readMessage[readCnt] = Serial.read(); 
           readCnt++; 
         }
       }
