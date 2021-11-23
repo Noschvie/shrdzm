@@ -111,8 +111,10 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
   {
     if(obj[F("rxpin")].as<uint8_t>() != 3) // if not pin 3, software serial is needed
     {
+      mySoftwareSerial.enableIntTx(false);
       mySoftwareSerial.begin(baud, SWSERIAL_8N1, obj[F("rxpin")].as<uint8_t>(), -1, inverted, 256);
-      softwareSerialUsed = true;
+      mySoftwareSerial.enableIntTx(false);
+      softwareSerialUsed = true;    
     }
     else
     {
@@ -225,6 +227,10 @@ SensorData* Device_IM350::readParameter()
   else
   {
     Serial.flush();
+    while(Serial.available() > 0)
+    {
+      byte trash = Serial.read();
+    }
     
     if(inverted)
       U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
@@ -255,6 +261,10 @@ SensorData* Device_IM350::readParameter()
   byte *readMessage;
   uint32_t messageLen = 0;
 
+  if(softwareSerialUsed)
+    Serial.printf("SS baud = %d\n", mySoftwareSerial.baudRate());
+
+
   while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
   {
     if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
@@ -265,40 +275,53 @@ SensorData* Device_IM350::readParameter()
 
   start_time = millis();
   timeout = 1000;
+  bool done = false;
   
-  if (tempChar == firstByte) 
+  if (tempChar == firstByte) // if first byte == 0x7E
   {
-    readMessage = new byte[330];
-    memset(readMessage, 0, 330);
-    readMessage[0] = tempChar;
-    tempChar = 0x00;
-    messageLen = 330;  
-
-    readCnt++;      
-
-    if(softwareSerialUsed)
+    while ((millis() - start_time) < timeout && !done)
     {
-      while ( readCnt < messageLen && (millis() - start_time < timeout) && tempChar != lastByte ) 
+      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
       {
-        if (mySoftwareSerial.available()) 
+        tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); // second byte must be 0xA0
+        
+        if(tempChar == 0xA0)
         {
-          tempChar = mySoftwareSerial.read();
-          readMessage[readCnt] = tempChar;           
-          readCnt++; 
+          while ((millis() - start_time) < timeout && !done)
+          {
+            if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+            {
+              tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); // 3rd byte tells the legth of the message
+    
+              readMessage = new byte[tempChar+2];
+              memset(readMessage, 0, tempChar+2);
+              readMessage[0] = firstByte;
+              readMessage[1] = 0xA0;
+              readMessage[2] = tempChar;
+              messageLen = ((uint32_t)(tempChar))+2;  
+              readCnt = 3;
+      
+              while ( readCnt < messageLen && ((millis() - start_time) < timeout))  // minimum len 120 chars for 0x7E format
+              {
+                if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+                {
+                  readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+                  readCnt++; 
+        
+                  if(readCnt == tempChar+2 && readMessage[readCnt-1] != lastByte)
+                  {
+                    done = true;
+                    Serial.printf("Wrong end byte found - %d\n", readMessage[readCnt-1]);  
+                  }
+                  else if(readCnt == tempChar+2)
+                    done = true;
+                }
+              }
+            }      
+          }
         }
       }
-    }
-    else
-    {
-      while ( readCnt < messageLen && (millis() - start_time < timeout) && tempChar != lastByte ) 
-      {
-        if (Serial.available()) 
-        {
-          tempChar = readMessage[readCnt] = Serial.read(); 
-          readCnt++; 
-        }
-      }
-    }
+    }    
   }  
   else if(tempChar == firstByteSagemcom)
   {
@@ -319,9 +342,10 @@ SensorData* Device_IM350::readParameter()
     }
   }    
 
-  // disable request
+  // disable read request as soon as we have finished the data collection
+
   digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW); 
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED_BUILTIN, HIGH); 
 
   if(!softwareSerialUsed)
   {
@@ -486,103 +510,106 @@ SensorData* Device_IM350::readParameter()
         }
       }
     }
-    else
+    else if((dt == am550 && 
+              bufferResult[56] == 0x06 &&
+              bufferResult[61] == 0x06 &&
+              bufferResult[66] == 0x06 &&
+              bufferResult[71] == 0x06) || dt == im350) // AM550/IM350 Carinthia
     {
       parse_message(bufferResult, dt);
+   
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        al = new SensorData(9);
+      else
+        al = new SensorData(8);
 
-      if(current_power_usage_in > 50000)
+      al->di[0].nameI = F("counter_reading_p_in");
+      al->di[0].valueI = String(counter_reading_p_in);  
+    
+      al->di[1].nameI = F("counter_reading_p_out");
+      al->di[1].valueI = String(counter_reading_p_out);  
+    
+      al->di[2].nameI = F("counter_reading_q_in");
+      al->di[2].valueI = String(counter_reading_q_in);  
+    
+      al->di[3].nameI = F("counter_reading_q_out");
+      al->di[3].valueI = String(counter_reading_q_out);  
+    
+      al->di[4].nameI = F("counter_power_usage_in");
+      al->di[4].valueI = String(current_power_usage_in);  
+    
+      al->di[5].nameI = F("counter_power_usage_out");
+      al->di[5].valueI = String(current_power_usage_out); 
+    
+      al->di[6].nameI = F("timestamp");
+      al->di[6].valueI = String(meterTime); 
+    
+      timeToString(str, sizeof(str));
+      al->di[7].nameI = F("uptime");
+      al->di[7].valueI = String(str);    
+         
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
       {
-        if(dt == am550 && bufferResult[38] == 0x06) // parse Slovenia am550
-        {  
-          if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
-          {
-            al = new SensorData(10);
-            al->di[9].nameI = F("data");
-            al->di[9].valueI = hexToString(readMessage, readCnt); 
-          }
-          else
-            al = new SensorData(9);
-
-          al->di[0].nameI = F("value1");
-          al->di[0].valueI = String(byteToUInt32(bufferResult, 39));         
-          al->di[1].nameI = F("value2");
-          al->di[1].valueI = String(byteToUInt32(bufferResult, 44));         
-          al->di[2].nameI = F("value3");
-          al->di[2].valueI = String(byteToUInt32(bufferResult, 49));         
-          al->di[3].nameI = F("value4");
-          al->di[3].valueI = String(byteToUInt32(bufferResult, 54));         
-          al->di[4].nameI = F("value5");
-          al->di[4].valueI = String(byteToUInt32(bufferResult, 59));         
-          al->di[5].nameI = F("value6");
-          al->di[5].valueI = String(byteToUInt32(bufferResult, 64));         
-          al->di[6].nameI = F("value7");
-          al->di[6].valueI = String(byteToUInt32(bufferResult, 69));         
-          al->di[7].nameI = F("value8");
-          al->di[7].valueI = String(byteToUInt32(bufferResult, 74));         
-
-            
-          timeToString(str, sizeof(str));
-          al->di[8].nameI = F("uptime");
-          al->di[8].valueI = String(str);          
-        }
-        else
-        {
-          if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
-          {
-            al = new SensorData(3);
-            al->di[2].nameI = F("data");
-            al->di[2].valueI = hexToString(readMessage, readCnt); 
-          }
-          else
-            al = new SensorData(2);
-          
-          al->di[0].nameI = F("lasterror");    
-          al->di[0].valueI = F("Invalid data");  
-
-          timeToString(str, sizeof(str));
-          al->di[1].nameI = F("uptime");
-          al->di[1].valueI = String(str);          
-        }            
+        al->di[8].nameI = F("data");
+        al->di[8].valueI = hexToString(readMessage, readCnt);
+      }      
+    }
+    else if(dt == am550 && bufferResult[38] == 0x06) // parse Slovenia am550
+    {  
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(11);
+        al->di[10].nameI = F("data");
+        al->di[10].valueI = hexToString(readMessage, readCnt); 
       }
       else
-      {
-        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
-          al = new SensorData(9);
-        else
-          al = new SensorData(8);
-  
-        al->di[0].nameI = F("counter_reading_p_in");
-        al->di[0].valueI = String(counter_reading_p_in);  
-      
-        al->di[1].nameI = F("counter_reading_p_out");
-        al->di[1].valueI = String(counter_reading_p_out);  
-      
-        al->di[2].nameI = F("counter_reading_q_in");
-        al->di[2].valueI = String(counter_reading_q_in);  
-      
-        al->di[3].nameI = F("counter_reading_q_out");
-        al->di[3].valueI = String(counter_reading_q_out);  
-      
-        al->di[4].nameI = F("counter_power_usage_in");
-        al->di[4].valueI = String(current_power_usage_in);  
-      
-        al->di[5].nameI = F("counter_power_usage_out");
-        al->di[5].valueI = String(current_power_usage_out); 
-      
-        al->di[6].nameI = F("timestamp");
-        al->di[6].valueI = String(meterTime); 
-      
-        timeToString(str, sizeof(str));
-        al->di[7].nameI = F("uptime");
-        al->di[7].valueI = String(str);    
-           
-        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
-        {
-          al->di[8].nameI = F("data");
-          al->di[8].valueI = hexToString(readMessage, readCnt);
-        }
-      }
+        al = new SensorData(10);
+
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime); 
+
+      al->di[1].nameI = F("value1");
+      al->di[1].valueI = String(byteToUInt32(bufferResult, 39));         
+      al->di[2].nameI = F("value2");
+      al->di[2].valueI = String(byteToUInt32(bufferResult, 44));         
+      al->di[3].nameI = F("value3");
+      al->di[3].valueI = String(byteToUInt32(bufferResult, 49));         
+      al->di[4].nameI = F("value4");
+      al->di[4].valueI = String(byteToUInt32(bufferResult, 54));         
+      al->di[5].nameI = F("value5");
+      al->di[5].valueI = String(byteToUInt32(bufferResult, 59));         
+      al->di[6].nameI = F("value6");
+      al->di[6].valueI = String(byteToUInt32(bufferResult, 64));         
+      al->di[7].nameI = F("value7");
+      al->di[7].valueI = String(byteToUInt32(bufferResult, 69));         
+      al->di[8].nameI = F("value8");
+      al->di[8].valueI = String(byteToUInt32(bufferResult, 74));         
+
+        
+      timeToString(str, sizeof(str));
+      al->di[9].nameI = F("uptime");
+      al->di[9].valueI = String(str);          
     }
+    else
+    {
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(3);
+        al->di[2].nameI = F("data");
+        al->di[2].valueI = hexToString(readMessage, readCnt); 
+      }
+      else
+        al = new SensorData(2);
+      
+      al->di[0].nameI = F("lasterror");    
+      al->di[0].valueI = F("Invalid data");  
+
+      timeToString(str, sizeof(str));
+      al->di[1].nameI = F("uptime");
+      al->di[1].valueI = String(str);          
+    }            
         
     delete readMessage;
 
