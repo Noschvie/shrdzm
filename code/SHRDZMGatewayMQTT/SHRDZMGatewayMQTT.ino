@@ -16,9 +16,13 @@
 
 Configuration configuration;
 
+bool shouldReboot = false;
+bool locked = false;
+
 //SoftwareSerial swSer(14,12);
 SoftwareSerial swSer(14,12);
-ESP8266WebServer webserver;
+//ESP8266WebServer webserver;
+AsyncWebServer webserver(80);
 WiFiClient espClient;
 PubSubClient mqttclient(espClient);
 
@@ -54,6 +58,7 @@ String registerDeviceTypeBuffer = "";
 time_t now;                         
 tm tm; 
 char cmd[MAXLINELENGTH];
+bool freeForRegistering = false;
 
 void setup() 
 {  
@@ -142,6 +147,7 @@ Serial.begin(SERIALBAUD); Serial.println();
 
 //  swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false);  
   swSer.begin(SERIALBAUD, SWSERIAL_8N1, 14, 12, false, 256);
+  swSer.setTimeout(3000);
 
   String lastRebootInfo = configuration.readLastRebootInfo();
 
@@ -192,10 +198,16 @@ void loop()
     DLN("Store configuration...");
     configuration.store();
   }
+
+  if(shouldReboot)
+  {
+    DLN("Rebooting...");
+    delay(100);
+    ESP.restart();
+  }  
   
   if(configurationMode)
   {
-    webserver.handleClient();
     return;  
   }
 
@@ -230,39 +242,34 @@ void loop()
   }
   else
   {
-    if (WiFi.status() == WL_CONNECTED) 
+    if(strcmp(configuration.getWlanParameter("MQTTenabled"),"true") == 0)
     {
-      webserver.handleClient();    
-    }
-    else
-    {
-      // WLAN AP disconnected
-      // start reconnection process
-    }
-  }
-
-  if(WiFi.status() == WL_CONNECTED)
-  {
-    if(!mqttclient.connected())
-    {
-      if(millis() > mqttNextTry)
+      if (WiFi.status() == WL_CONNECTED) 
       {
-        if(!mqttreconnect())
+        if(!mqttclient.connected())
         {
-          mqttNextTry = millis() + 5000;
-          return;
+          if(millis() > mqttNextTry)
+          {
+            if(!mqttreconnect())
+            {
+              mqttNextTry = millis() + 5000;
+              return;
+            }
+          }
         }
+        else
+          mqttclient.loop();
+      }
+      else
+      {
+        // WLAN AP disconnected
+        // start reconnection process
       }
     }
-    else
-      mqttclient.loop();
   }
-  else
-    return;
 
   SwSerLoop();
   OTALoop();
   RCSwitchLoop();
   CloudLoop();
-  
 }

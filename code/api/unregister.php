@@ -15,6 +15,7 @@ function msg($success,$status,$message,$extra = []){
 
 // INCLUDING DATABASE AND MAKING OBJECT
 require __DIR__.'/classes/Database.php';
+require __DIR__.'/classes/logging.php';
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 
@@ -42,8 +43,8 @@ else:
     $name = trim($data->name);
     $password = trim($data->password);
 
-    if(strlen($password) < 8):
-        $returnData = msg(0,422,'Your password must be at least 8 characters long!');
+    if(strlen($password) < 6):
+        $returnData = msg(0,422,'Your password must be at least 6 characters long!');
 
     elseif(strlen($name) < 3):
         $returnData = msg(0,422,'Your name must be at least 3 characters long!');
@@ -69,15 +70,19 @@ else:
 					$delete_stmt->execute();
 
 					$returnData = msg(1,201,'You have successfully unregistered.');
+					logging2file( "user unregistered = ".$name );
                 else:
                     $returnData = msg(0,422,'Invalid Password!');					
+					logging2file( "user unregister not possible due to wrong password" );
 				endif;
             else:
                 $returnData = msg(0,422,'Invalid Name!');				
+				logging2file( "user unregister not possible due to wrong user (".$name.")" );
 			endif;
         }
         catch(PDOException $e){
             $returnData = msg(0,500,$e->getMessage());
+			logging2file( "exception at unregister = ".$e->getMessage() );
         }
     endif;
     

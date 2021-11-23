@@ -1,0 +1,746 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>C:\Users\erich\Nextcloud\Diverses\Arduino\Development\shrdzm\KiCAD\IM350_AM550_T210_5V_V5.0\IM350_AM550_T210_5V_V5.0.sch</source>
+    <date>15.10.2021 10:13:22</date>
+    <tool>Eeschema (5.1.9)-1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>IM350_AM550_T210_5V_V5.0.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="U2">
+      <value>ESP-12F</value>
+      <footprint>RF_Module:ESP-12E</footprint>
+      <datasheet>http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf</datasheet>
+      <libsource lib="RF_Module" part="ESP-12F" description="802.11 b/g/n Wi-Fi Module"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61460645</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>22uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61461A3E</tstamp>
+    </comp>
+    <comp ref="U1">
+      <value>AMS1117-3.3</value>
+      <footprint>Package_TO_SOT_SMD:SOT-223-3_TabPin2</footprint>
+      <datasheet>http://www.advanced-monolithic.com/pdf/ds1117.pdf</datasheet>
+      <libsource lib="Regulator_Linear" part="AMS1117-3.3" description="1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61462090</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>USB_B_Micro_Power</value>
+      <footprint>SHRDZM:USB_Micro-B_Power</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Erich" part="USB_B_Micro_Power" description="USB Micro Type B Power connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>614630D6</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>P3</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61465FC7</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>P4</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61466A9B</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>2.2k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61466CF6</tstamp>
+    </comp>
+    <comp ref="SW1">
+      <value>SW_Push</value>
+      <footprint>Button_Switch_SMD:SW_SPST_CK_RS282G05A3</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Switch" part="SW_Push" description="Push button switch, generic, two pins"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6146B626</tstamp>
+    </comp>
+    <comp ref="U3">
+      <value>TSS721ADR</value>
+      <footprint>TSS721ADR:SOIC127P600X175-16N</footprint>
+      <libsource lib="TSS721ADR" part="TSS721ADR" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61633360</tstamp>
+    </comp>
+    <comp ref="J2">
+      <value>RJ12</value>
+      <footprint>ErichCollection:RJ12_Amphenol_54601</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector" part="RJ12" description="RJ connector, 6P6C (6 positions 6 connected)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616367B9</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>22uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61679AD8</tstamp>
+    </comp>
+    <comp ref="R13">
+      <value>0</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616AFA1A</tstamp>
+    </comp>
+    <comp ref="R6">
+      <value>M_TX</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616B520B</tstamp>
+    </comp>
+    <comp ref="Q1">
+      <value>BC847</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
+      <datasheet>http://www.infineon.com/dgdl/Infineon-BC847SERIES_BC848SERIES_BC849SERIES_BC850SERIES-DS-v01_01-en.pdf?fileId=db3a304314dca389011541d4630a1657</datasheet>
+      <libsource lib="Transistor_BJT" part="BC847" description="0.1A Ic, 45V Vce, NPN Transistor, SOT-23"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616B7812</tstamp>
+    </comp>
+    <comp ref="R7">
+      <value>P1_TX</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616D18A5</tstamp>
+    </comp>
+    <comp ref="R8">
+      <value>10k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616D60F9</tstamp>
+    </comp>
+    <comp ref="R9">
+      <value>10k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616D8299</tstamp>
+    </comp>
+    <comp ref="U4">
+      <value>EL357NC</value>
+      <footprint>Package_SO:SOIC-4_4.55x2.6mm_P1.27mm</footprint>
+      <datasheet>https://toshiba.semicon-storage.com/info/docget.jsp?did=12884&amp;prodName=TLP291</datasheet>
+      <libsource lib="Isolator" part="TLP291" description="DC Optocoupler, Vce 80V, CTR 50-100%, SOP4"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616F2A2C</tstamp>
+    </comp>
+    <comp ref="R11">
+      <value>220</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616F3319</tstamp>
+    </comp>
+    <comp ref="R12">
+      <value>220</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616F3954</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>0.1uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616F6BA5</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>100k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616FAFE9</tstamp>
+    </comp>
+    <comp ref="R14">
+      <value>100k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>616FEF63</tstamp>
+    </comp>
+    <comp ref="R10">
+      <value>1.5k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6170BFA8</tstamp>
+    </comp>
+    <comp ref="C4">
+      <value>22uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617321CF</tstamp>
+    </comp>
+    <comp ref="R15">
+      <value>30k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6173F40B</tstamp>
+    </comp>
+    <comp ref="R5">
+      <value>1.5k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61747722</tstamp>
+    </comp>
+    <comp ref="C5">
+      <value>0.22uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61763C16</tstamp>
+    </comp>
+    <comp ref="U5">
+      <value>EL357NC</value>
+      <footprint>Package_SO:SOIC-4_4.55x2.6mm_P1.27mm</footprint>
+      <datasheet>https://toshiba.semicon-storage.com/info/docget.jsp?did=12884&amp;prodName=TLP291</datasheet>
+      <libsource lib="Isolator" part="TLP291" description="DC Optocoupler, Vce 80V, CTR 50-100%, SOP4"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6176F157</tstamp>
+    </comp>
+    <comp ref="R17">
+      <value>10k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61789B8F</tstamp>
+    </comp>
+    <comp ref="R16">
+      <value>10k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61790C22</tstamp>
+    </comp>
+    <comp ref="R18">
+      <value>M_RX</value>
+      <footprint>Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61798BED</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector" part="6P6C">
+      <aliases>
+        <alias>RJ12</alias>
+        <alias>RJ18</alias>
+        <alias>RJ25</alias>
+      </aliases>
+      <description>RJ connector, 6P6C (6 positions 6 connected), RJ12/RJ18/RJ25</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>6P6C*</fp>
+        <fp>RJ12*</fp>
+        <fp>RJ18*</fp>
+        <fp>RJ25*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">6P6C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+        <pin num="3" name="~" type="passive"/>
+        <pin num="4" name="~" type="passive"/>
+        <pin num="5" name="~" type="passive"/>
+        <pin num="6" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Erich" part="USB_B_Micro_Power">
+      <aliases>
+        <alias>USB_B_Mini</alias>
+      </aliases>
+      <description>USB Micro Type B Power connector</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>USB*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">USB_B_Micro_Power</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VBUS" type="power_out"/>
+        <pin num="5" name="GND" type="power_out"/>
+      </pins>
+    </libpart>
+    <libpart lib="Isolator" part="TLP291">
+      <description>DC Optocoupler, Vce 80V, CTR 50-100%, SOP4</description>
+      <docs>https://toshiba.semicon-storage.com/info/docget.jsp?did=12884&amp;prodName=TLP291</docs>
+      <footprints>
+        <fp>SOIC*4.55x2.6mm*P1.27mm*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TLP291</field>
+        <field name="Footprint">Package_SO:SOIC-4_4.55x2.6mm_P1.27mm</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+        <pin num="3" name="~" type="passive"/>
+        <pin num="4" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RF_Module" part="ESP-12E">
+      <aliases>
+        <alias>ESP-12F</alias>
+      </aliases>
+      <description>802.11 b/g/n Wi-Fi Module</description>
+      <docs>http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf</docs>
+      <footprints>
+        <fp>ESP?12*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">ESP-12E</field>
+        <field name="Footprint">RF_Module:ESP-12E</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~RST" type="input"/>
+        <pin num="2" name="ADC" type="input"/>
+        <pin num="3" name="EN" type="input"/>
+        <pin num="4" name="GPIO16" type="BiDi"/>
+        <pin num="5" name="GPIO14" type="BiDi"/>
+        <pin num="6" name="GPIO12" type="BiDi"/>
+        <pin num="7" name="GPIO13" type="BiDi"/>
+        <pin num="8" name="VCC" type="power_in"/>
+        <pin num="9" name="CS0" type="input"/>
+        <pin num="10" name="MISO" type="BiDi"/>
+        <pin num="11" name="GPIO9" type="BiDi"/>
+        <pin num="12" name="GPIO10" type="BiDi"/>
+        <pin num="13" name="MOSI" type="BiDi"/>
+        <pin num="14" name="SCLK" type="BiDi"/>
+        <pin num="15" name="GND" type="power_in"/>
+        <pin num="16" name="GPIO15" type="BiDi"/>
+        <pin num="17" name="GPIO2" type="BiDi"/>
+        <pin num="18" name="GPIO0" type="BiDi"/>
+        <pin num="19" name="GPIO4" type="BiDi"/>
+        <pin num="20" name="GPIO5" type="BiDi"/>
+        <pin num="21" name="GPIO3/RXD" type="BiDi"/>
+        <pin num="22" name="GPIO1/TXD" type="BiDi"/>
+      </pins>
+    </libpart>
+    <libpart lib="Regulator_Linear" part="AP1117-15">
+      <aliases>
+        <alias>AP1117-18</alias>
+        <alias>AP1117-25</alias>
+        <alias>AP1117-33</alias>
+        <alias>AP1117-50</alias>
+        <alias>LD1117S33TR_SOT223</alias>
+        <alias>LD1117S12TR_SOT223</alias>
+        <alias>LD1117S18TR_SOT223</alias>
+        <alias>LD1117S25TR_SOT223</alias>
+        <alias>LD1117S50TR_SOT223</alias>
+        <alias>NCP1117-12_SOT223</alias>
+        <alias>NCP1117-1.5_SOT223</alias>
+        <alias>NCP1117-1.8_SOT223</alias>
+        <alias>NCP1117-2.0_SOT223</alias>
+        <alias>NCP1117-2.5_SOT223</alias>
+        <alias>NCP1117-2.85_SOT223</alias>
+        <alias>NCP1117-3.3_SOT223</alias>
+        <alias>NCP1117-5.0_SOT223</alias>
+        <alias>AMS1117-1.5</alias>
+        <alias>AMS1117-1.8</alias>
+        <alias>AMS1117-2.5</alias>
+        <alias>AMS1117-2.85</alias>
+        <alias>AMS1117-3.3</alias>
+        <alias>AMS1117-5.0</alias>
+      </aliases>
+      <description>1A Low Dropout regulator, positive, 1.5V fixed output, SOT-223</description>
+      <docs>http://www.diodes.com/datasheets/AP1117.pdf</docs>
+      <footprints>
+        <fp>SOT?223*TabPin2*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">AP1117-15</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-223-3_TabPin2</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="VO" type="power_out"/>
+        <pin num="3" name="VI" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Switch" part="SW_Push">
+      <description>Push button switch, generic, two pins</description>
+      <docs>~</docs>
+      <fields>
+        <field name="Reference">SW</field>
+        <field name="Value">SW_Push</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TSS721ADR" part="TSS721ADR">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TSS721ADR</field>
+        <field name="Footprint">SOIC127P600X175-16N</field>
+      </fields>
+      <pins>
+        <pin num="1" name="BUSL2" type="BiDi"/>
+        <pin num="2" name="VB" type="BiDi"/>
+        <pin num="3" name="STC" type="BiDi"/>
+        <pin num="4" name="RIDD" type="BiDi"/>
+        <pin num="5" name="PF" type="BiDi"/>
+        <pin num="6" name="SC" type="BiDi"/>
+        <pin num="7" name="TXI" type="output"/>
+        <pin num="8" name="TX" type="output"/>
+        <pin num="9" name="BAT" type="BiDi"/>
+        <pin num="10" name="VS" type="BiDi"/>
+        <pin num="11" name="VDD" type="power_in"/>
+        <pin num="12" name="RX" type="input"/>
+        <pin num="13" name="RXI" type="input"/>
+        <pin num="14" name="RIS" type="BiDi"/>
+        <pin num="15" name="GND" type="power_in"/>
+        <pin num="16" name="BUSL1" type="BiDi"/>
+      </pins>
+    </libpart>
+    <libpart lib="Transistor_BJT" part="BC817">
+      <aliases>
+        <alias>BC818</alias>
+        <alias>BC846</alias>
+        <alias>BC847</alias>
+        <alias>BC848</alias>
+        <alias>BC849</alias>
+        <alias>BC850</alias>
+        <alias>MMBT3904</alias>
+        <alias>MMBT5550L</alias>
+        <alias>MMBT5551L</alias>
+      </aliases>
+      <description>0.8A Ic, 45V Vce, NPN Transistor, SOT-23</description>
+      <docs>https://www.onsemi.com/pub/Collateral/BC818-D.pdf</docs>
+      <footprints>
+        <fp>SOT?23*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">BC817</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
+      </fields>
+      <pins>
+        <pin num="1" name="B" type="input"/>
+        <pin num="2" name="E" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Connector.lib</uri>
+    </library>
+    <library logical="Device">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Device.lib</uri>
+    </library>
+    <library logical="Erich">
+      <uri>C:/Users/erich/Nextcloud/Diverses/KiCAD/lib/Erich.lib</uri>
+    </library>
+    <library logical="Isolator">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Isolator.lib</uri>
+    </library>
+    <library logical="RF_Module">
+      <uri>C:\Program Files\KiCad\share\kicad\library/RF_Module.lib</uri>
+    </library>
+    <library logical="Regulator_Linear">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Regulator_Linear.lib</uri>
+    </library>
+    <library logical="Switch">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Switch.lib</uri>
+    </library>
+    <library logical="TSS721ADR">
+      <uri>C:/Users/erich/Downloads/TSS721ADR/TSS721ADR.lib</uri>
+    </library>
+    <library logical="Transistor_BJT">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Transistor_BJT.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="GND">
+      <node ref="J1" pin="5"/>
+      <node ref="U2" pin="15"/>
+      <node ref="SW1" pin="2"/>
+      <node ref="R15" pin="2"/>
+      <node ref="R3" pin="2"/>
+      <node ref="C4" pin="2"/>
+      <node ref="R17" pin="1"/>
+      <node ref="C5" pin="2"/>
+      <node ref="C2" pin="2"/>
+      <node ref="U3" pin="15"/>
+      <node ref="J2" pin="6"/>
+      <node ref="R13" pin="1"/>
+      <node ref="Q1" pin="2"/>
+      <node ref="C1" pin="2"/>
+      <node ref="U1" pin="1"/>
+      <node ref="C3" pin="2"/>
+      <node ref="R14" pin="1"/>
+      <node ref="U4" pin="3"/>
+      <node ref="R4" pin="1"/>
+    </net>
+    <net code="2" name="Net-(R12-Pad1)">
+      <node ref="U3" pin="1"/>
+      <node ref="R12" pin="1"/>
+    </net>
+    <net code="3" name="Net-(J2-Pad4)">
+      <node ref="R12" pin="2"/>
+      <node ref="J2" pin="4"/>
+    </net>
+    <net code="4" name="/MBUS_TX">
+      <node ref="R5" pin="1"/>
+      <node ref="U4" pin="4"/>
+      <node ref="R6" pin="2"/>
+    </net>
+    <net code="5" name="Net-(R10-Pad1)">
+      <node ref="U4" pin="1"/>
+      <node ref="R10" pin="1"/>
+    </net>
+    <net code="6" name="Net-(J2-Pad3)">
+      <node ref="R13" pin="2"/>
+      <node ref="J2" pin="3"/>
+      <node ref="R11" pin="2"/>
+    </net>
+    <net code="7" name="/UART_TX">
+      <node ref="U4" pin="2"/>
+      <node ref="U3" pin="8"/>
+    </net>
+    <net code="8" name="Net-(R14-Pad2)">
+      <node ref="U3" pin="14"/>
+      <node ref="R14" pin="2"/>
+    </net>
+    <net code="9" name="/DATA">
+      <node ref="Q1" pin="1"/>
+      <node ref="J2" pin="5"/>
+      <node ref="R9" pin="2"/>
+    </net>
+    <net code="10" name="Net-(R8-Pad1)">
+      <node ref="U2" pin="5"/>
+      <node ref="R9" pin="1"/>
+      <node ref="R8" pin="1"/>
+    </net>
+    <net code="11" name="Net-(Q1-Pad3)">
+      <node ref="R7" pin="2"/>
+      <node ref="Q1" pin="3"/>
+      <node ref="R8" pin="2"/>
+    </net>
+    <net code="12" name="/TRIGGER">
+      <node ref="J2" pin="2"/>
+      <node ref="U2" pin="20"/>
+    </net>
+    <net code="13" name="+5V">
+      <node ref="U1" pin="3"/>
+      <node ref="C2" pin="1"/>
+      <node ref="J1" pin="1"/>
+      <node ref="J2" pin="1"/>
+    </net>
+    <net code="14" name="/MBUS_RX">
+      <node ref="U5" pin="2"/>
+      <node ref="R18" pin="2"/>
+    </net>
+    <net code="15" name="/UART_RXI">
+      <node ref="U3" pin="13"/>
+      <node ref="U5" pin="3"/>
+      <node ref="R17" pin="2"/>
+    </net>
+    <net code="16" name="Net-(C5-Pad1)">
+      <node ref="U3" pin="6"/>
+      <node ref="C5" pin="1"/>
+    </net>
+    <net code="17" name="Net-(R16-Pad1)">
+      <node ref="R16" pin="1"/>
+      <node ref="U5" pin="1"/>
+    </net>
+    <net code="18" name="Net-(R18-Pad1)">
+      <node ref="U2" pin="22"/>
+      <node ref="R18" pin="1"/>
+    </net>
+    <net code="19" name="Net-(U3-Pad12)">
+      <node ref="U3" pin="12"/>
+    </net>
+    <net code="20" name="+3V3">
+      <node ref="C1" pin="1"/>
+      <node ref="R5" pin="2"/>
+      <node ref="U1" pin="2"/>
+      <node ref="U2" pin="3"/>
+      <node ref="R16" pin="2"/>
+      <node ref="U2" pin="8"/>
+    </net>
+    <net code="21" name="Net-(C4-Pad1)">
+      <node ref="C4" pin="1"/>
+      <node ref="U3" pin="3"/>
+      <node ref="R10" pin="2"/>
+    </net>
+    <net code="22" name="Net-(R15-Pad1)">
+      <node ref="R15" pin="1"/>
+      <node ref="U3" pin="4"/>
+    </net>
+    <net code="23" name="Net-(U2-Pad2)">
+      <node ref="U2" pin="2"/>
+    </net>
+    <net code="24" name="Net-(U2-Pad17)">
+      <node ref="U2" pin="17"/>
+    </net>
+    <net code="25" name="Net-(U2-Pad18)">
+      <node ref="U2" pin="18"/>
+    </net>
+    <net code="26" name="Net-(U2-Pad6)">
+      <node ref="U2" pin="6"/>
+    </net>
+    <net code="27" name="Net-(R1-Pad1)">
+      <node ref="R1" pin="1"/>
+      <node ref="R2" pin="1"/>
+      <node ref="R7" pin="1"/>
+      <node ref="R6" pin="1"/>
+    </net>
+    <net code="28" name="Net-(SW1-Pad1)">
+      <node ref="SW1" pin="1"/>
+      <node ref="U2" pin="7"/>
+    </net>
+    <net code="29" name="Net-(U2-Pad9)">
+      <node ref="U2" pin="9"/>
+    </net>
+    <net code="30" name="Net-(R3-Pad1)">
+      <node ref="R3" pin="1"/>
+      <node ref="U2" pin="16"/>
+    </net>
+    <net code="31" name="Net-(R11-Pad1)">
+      <node ref="R11" pin="1"/>
+      <node ref="U3" pin="16"/>
+    </net>
+    <net code="32" name="Net-(U3-Pad10)">
+      <node ref="U3" pin="10"/>
+    </net>
+    <net code="33" name="Net-(U3-Pad2)">
+      <node ref="U3" pin="2"/>
+    </net>
+    <net code="34" name="Net-(U3-Pad5)">
+      <node ref="U3" pin="5"/>
+    </net>
+    <net code="35" name="Net-(C3-Pad1)">
+      <node ref="C3" pin="1"/>
+      <node ref="U5" pin="4"/>
+      <node ref="U3" pin="11"/>
+      <node ref="R4" pin="2"/>
+      <node ref="U3" pin="9"/>
+    </net>
+    <net code="36" name="Net-(U2-Pad14)">
+      <node ref="U2" pin="14"/>
+    </net>
+    <net code="37" name="Net-(U2-Pad13)">
+      <node ref="U2" pin="13"/>
+    </net>
+    <net code="38" name="Net-(U2-Pad12)">
+      <node ref="U2" pin="12"/>
+    </net>
+    <net code="39" name="Net-(U2-Pad11)">
+      <node ref="U2" pin="11"/>
+    </net>
+    <net code="40" name="Net-(U2-Pad10)">
+      <node ref="U2" pin="10"/>
+    </net>
+    <net code="41" name="Net-(R1-Pad2)">
+      <node ref="R1" pin="2"/>
+      <node ref="U2" pin="21"/>
+    </net>
+    <net code="42" name="Net-(R2-Pad2)">
+      <node ref="R2" pin="2"/>
+      <node ref="U2" pin="19"/>
+    </net>
+    <net code="43" name="Net-(U2-Pad1)">
+      <node ref="U2" pin="4"/>
+      <node ref="U2" pin="1"/>
+    </net>
+    <net code="44" name="Net-(U3-Pad7)">
+      <node ref="U3" pin="7"/>
+    </net>
+  </nets>
+</export>

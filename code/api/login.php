@@ -41,8 +41,8 @@ else:
     $password = trim($data->password);
     
     // IF PASSWORD IS LESS THAN 8 THE SHOW THE ERROR
-    if(strlen($password) < 8):
-        $returnData = msg(0,422,'Your password must be at least 8 characters long!');
+    if(strlen($password) < 6):
+        $returnData = msg(0,422,'Your password must be at least 6 characters long!');
 
     // THE USER IS ABLE TO PERFORM THE LOGIN ACTION
     else:

@@ -69,6 +69,7 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4300];
+char contentBuffer[750];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "";
 bool cloudConnected = false;
@@ -77,6 +78,7 @@ String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
+asyncHTTPrequest request;
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -112,6 +114,22 @@ void sendMessageWithChecksum(const char *message)
   }  
 }
 
+void controlConnectionBlinker(bool enabled)
+{
+#ifdef LEDPIN
+    pinMode(LEDPIN, OUTPUT);  
+    if(enabled)
+    {
+      configurationBlinker.attach(2.0, changeConfigurationBlinker);
+    }
+    else
+    {
+      configurationBlinker.detach(); 
+      digitalWrite(LEDPIN, HIGH);
+    }
+#endif    
+}
+
 /// Configuration Webserver
 void startConfigurationAP()
 {
@@ -121,17 +139,22 @@ void startConfigurationAP()
   WiFi.hostname(APName.c_str());        
   WiFi.softAP(APName);     
 
-  DLN("Start configuration AP...");
+  DLN(F("Start configuration AP..."));
   
-  server.on("/", handleRoot);
-  server.on("/reboot", handleReboot);
-  server.on("/general", handleRoot);
-  server.on("/settings", handleSettings);
-  server.on("/gateway", handleGateway);
-  server.on("/NTP", handleNTP);
-  server.on("/experimental", handleExperimental);
+  server.on(F("/"), handleRoot);
+  server.on(F("/reboot"), handleReboot);
+  server.on(F("/general"), handleRoot);
+  server.on(F("/settings"), handleSettings);
+  server.on(F("/gateway"), handleGateway);
+  server.on(F("/NTP"), handleNTP);
+  server.on(F("/cloud"), handleCloud);
   server.onNotFound(handleNotFound);
   server.begin();
+
+
+#ifdef LEDPIN
+    pinMode(LEDPIN, OUTPUT);
+#endif
   
   configurationBlinker.attach(0.2, changeConfigurationBlinker);
 }
@@ -143,146 +166,9 @@ char* getWebsite(char* content, bool update = false)
   DLN("Content len = "+String(len));
 
   sprintf(websideBuffer,  
-"<!DOCTYPE html>\
-<html>\
-<head>\
-<link rel=\"icon\" type=\"image/svg+xml\" href=\"https://shrdzm.pintarweb.net/Logo_min_green.svg\" sizes=\"any\">\
-%s\
-<style>\
-body {\
-  font-family: Arial, Helvetica, sans-serif;\
-}\
-\
-hr\
-{ \
-  display: block;\
-  margin-top: 0.5em;\
-  margin-bottom: 0.5em;\
-  margin-left: auto;\
-  margin-right: auto;\
-  border-style: inset;\
-  border-width: 1px;\
-}\
-ul \
-{\
-list-style-type: none;\
-  margin: 0;\
-  padding: 0;\
-  width: 150px;\
-  background-color: #f1f1f1;\
-  position: fixed;\
-  height: 100%;\
-  overflow: auto;\
-}\
-\
-li a {\
-  display: block;\
-  color: #000;\
-  padding: 8px 16px;\
-  text-decoration: none;\
-}\
-\
-li a.active {\
-  background-color: #4CAF50;\
-  color: white;\
-}\
-\
-li a:hover:not(.active) {\
-  background-color: #555;\
-  color: white;\
-}\
-label.h2 {\
-  font-weight: bold;\
-  font-size: 150%;\
-  width: 100%;\
-  margin-bottom: 1em;\
-}\
-input,\
-label {\
-  float: left;\
-  width: 80%;\
-  margin-left: 1.5;\
-  padding-left: 5px;\
-}\
-label {\
-  display: inline-block;\
-  width: 14em;\
-}\
-input {\
-  margin: 0 0 1em .2em;\
-  padding: .2em .5em;\
-  background-color: #fffbf0;\
-  border: 1px solid #e7c157;\
-}\
-label.input {\
-  text-align: right;\
-  margin-left: 10.5;\
-  padding-left: 80px;\
-  line-height: 1.5;\
-}\
-input.factoryresetbutton, textarea {\
-background: cyan;\
-border: 2px solid red;\
-color: black;\
-}\
-input.submitbutton, textarea {\
-background: lightgray;\
-border: 2px solid black;\
-color: black;\
-}\
-button {\
-  margin-top: 1.5em;\
-  width: 30%;\
-  border-radius: 10px;\
-}\
-.factoryresetbutton\
-  background-color: Red;\
-  border: 2px solid black;\
-  border-radius: 5px;\
-}\
-.submitbutton {\
-  background-color: Gray;\
-  border: 2px solid black;\
-  border-radius: 5px;\
-}\
-.main {\
-  margin-left: 200px;\
-  margin-bottom: 30px;\
-}\
-</style>\
-<title>SHRDZMDevice - %s</title>\
-</head>\
-<body>\
-\
-<ul>\
-  <li>\
-    <a class='active' href='#home'>SHRDZMDevice<br/>\
-      <font size='2'>%s</font>\
-    </a></li>\
-  <li><a href='./general'>General</a></li>\
-  <li><a href='./settings'>Settings</a></li>\
-  <li><a href='./gateway'>Gateway</a></li>\
-  <li><a href='./NTP'>NTP</a></li>\
-  <li><a href='./experimental'>Experimental</a></li>\
-  <li><a href='./about'>About</a></li>\
-  <li><a href='./reboot'>Reboot</a></li>\
-  <br/>\
-  <li><font size='2' color='blue'><a href='http://shrdzm.com/' target='_blank'>\
-  <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/Logo.svg' width='60'>\
-  Home</a></font></li>\
-  <br/><br/><br/>\
-  <li><center>&copy;&nbsp;<font size='2' color='darkgray'>Erich O. Pintar</font></center></li>\
-  <br/><br/>\
-</ul>\
-\
-<div class='main'>\
-  %s\
-</div>\
-</body>\
-</html>\
-  ",
-  update ? "<script src=\"j.js\"></script>" : "", 
-  deviceName.c_str(), deviceName.c_str(), content);
+    website_template,
+    update ? F("<script src=\"j.js\"></script>") : F(""), 
+    deviceName.c_str(), deviceName.c_str(), content);
 
   return websideBuffer;
 }
@@ -298,13 +184,16 @@ void handleJson() {
   sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );
 
   message += (F("{\"mqttconnectionstate\":"));
-  message += (mqttclient.connected() ? String("\"Connected\"") : String("\"Not Connected\""));  
+  if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
+    message += (mqttclient.connected() ? F("\"Connected\"") : F("\"Not Connected\""));  
+  else
+    message += F("\"Disabled\"");    
   message += (F(",\"lastmessage\":"));
-  message += lastMessage+"";  
+  message += lastMessage;  
   message += (F(",\"timestamp\":\""));
   message += String(t);  
   message += (F("\"}")); // End of JSON
-  server.send(200, "application/json", message);
+  server.send(200, F("application/json"), message);
 }
 
 void handleJs()
@@ -328,29 +217,22 @@ void handleJs()
   message += ajaxIntervall * 1000;
   message += F("));");
 
-  server.send(200, "text/javascript", message);
+  server.send(200, F("text/javascript"), message);
 }
 
 void handleRoot() 
 {
-  char content[2500];
+  memset(contentBuffer, 0, sizeof(contentBuffer));
 
-  if(server.hasArg("factoryreset"))
+  if(server.hasArg(F("factoryreset")))
   {
-    if(String(server.arg("factoryreset")) == "true") // factory reset was pressed
+    if(String(server.arg(F("factoryreset"))) == F("true")) // factory reset was pressed
     {
-      snprintf(content, 300,
-      "<!DOCTYPE html>\
-      <html>\
-      <head>\
-      </head>\
-      <body>\
-      <h1>Factory Reset was pressed. SHRDZMDevice will be restarted with default configuration.</h1>\
-      </body>\
-      </html>\
-      ");
+      snprintf(contentBuffer, 300,
+       factoryreset_template      
+      );
         
-      server.send(200, "text/html", content);
+      server.send(200, F("text/html"), contentBuffer);
 
       configuration.resetConfiguration();
 
@@ -360,130 +242,75 @@ void handleRoot()
     }
   }
 
-  if(server.hasArg("upgrade") && server.hasArg("upgradepath"))
+  if(server.hasArg(F("upgrade")) && server.hasArg(F("upgradepath")))
   {
-    if(String(server.arg("upgrade")) == "true") // Upgrade was pressed
+    if(String(server.arg(F("upgrade"))) == F("true")) // Upgrade was pressed
     {
-      DLN("Upgrade from "+String(server.arg("upgradepath"))+" will be started...");
-      if(updateFirmwareByMQTT(server.arg("upgradepath")))
+      DLN("Upgrade from "+String(server.arg(F("upgradepath")))+" will be started...");
+      if(updateFirmwareByMQTT(server.arg(F("upgradepath"))))
       {        
         firmwareUpdate = true;
 
-        snprintf(content, 300,
-        "<!DOCTYPE html>\
-        <html>\
-        <head>\
-        </head>\
-        <body>\
-        <h1>Upgrade started. SHRDZMDevice will reboot after upgrade.</h1>\
-        </body>\
-        </html>\
-        ");
+        snprintf(contentBuffer, 300, upgrade_template);
           
-        server.send(200, "text/html", content);  
+        server.send(200, F("text/html"), contentBuffer);  
         return;      
       }
     }    
   }
   
-  String informationTable = "<br>";  
-  String upgradeText = "";
-
-  if(gatewayMode)
-  {
-    upgradeText = "<br/><br/><input type='hidden' id='upgrade' name='upgrade' value='false'/><br/>\
-        <input class='factoryresetbutton' type='submit' onclick='submitFormUpgrade()' value='OTA Upgrade' />\
-        <input type='text' id='upgradepath' name='upgradepath' size='35' value='http://shrdzm.pintarweb.net/upgrade.php'>\
-        <br/>";
-  }
-
-  informationTable += "Firmware Version : "+ver+"-"+ESP.getSketchMD5()+"<br><br>";
-  informationTable += "Device Type : "+String(configuration.get("devicetype"))+"<br>";
-  informationTable += "Chip ID : "+String(ESP.getChipId())+"<br>";
-  informationTable += "Gateway Mode : "+String(configuration.getWlanParameter("enabled"))+"<br>";
-  informationTable += "MQTTTopic Gateway : SHRDZM/"+String(configuration.get("gateway"))+"<br>";
-  informationTable += "MQTTTopic Device : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"<br>";
-  informationTable += "MQTTTopic Sensor : SHRDZM/"+String(configuration.get("gateway"))+"/"+deviceName+"/sensor/<br><br>";
-  informationTable += F("<p>MQTT Connection State :  <span id='mqttconnectionstate'>");
-  informationTable += "Unknown";
-  informationTable += F("</span></p><br>");    
-  informationTable += "Last Measurement : <br>";
-  informationTable += "<textarea readonly style=\"background-color:white;\" id=\"lastmessage\" name=\"lastmessage\" cols=\"65\" rows=\"10\"></textarea><br><br>";
-
-  if(WiFi.localIP().toString() != "(IP unset)")
-  {
-    informationTable += "IP : "+WiFi.localIP().toString()+"<br>";
-    informationTable += "DNS : "+WiFi.dnsIP().toString()+"<br>";
-    informationTable += "Gateway : "+WiFi.gatewayIP().toString()+"<br>";
-    informationTable += "Subnet : "+WiFi.subnetMask().toString()+"<br>";
-  }
-
-  sprintf(content,  
-      "<h1>General</h1>\
-      <img alt='SHRDZM' src='https://shrdzm.pintarweb.net/logo_200.png' width='200'>\
-      <br /><br /><br /><br />\
-      %s\
-      <br/><br/>\
-      <form method='post' id='factoryReset'>\
-      <input type='hidden' id='factoryreset' name='factoryreset' value='false'/>\
-      <input class='factoryresetbutton' type='submit' onclick='submitFormFactoryReset()' value='Factory Reset!' />\
-      %s\
-      <script>\
-       function submitFormFactoryReset()\
-       {\
-          document.getElementById('factoryreset').value = 'true';\
-       }\
-       function submitFormUpgrade()\
-       {\
-          document.getElementById('upgrade').value = 'true';\
-       }\
-      </script>\
-      </form>\
-      ",
-      informationTable.c_str(),
-      upgradeText.c_str()
+  sprintf(contentBuffer,  
+      informationtable_template,
+      ver.c_str(), ESP.getSketchMD5().c_str(),
+      configuration.get("devicetype"),
+      ESP.getChipId(),
+      configuration.getWlanParameter("enabled"),
+      configuration.get("gateway"),
+      configuration.get("gateway"),deviceName.c_str(),
+      configuration.get("gateway"),deviceName.c_str(),
+      WiFi.localIP().toString().c_str(),
+      WiFi.dnsIP().toString().c_str(),
+      WiFi.gatewayIP().toString().c_str(),
+      WiFi.subnetMask().toString().c_str()
   );  
 
-  char * temp = getWebsite(content, true);
-  server.send(200, "text/html", temp);
+  Serial.println(strlen(contentBuffer));
+  
+  sprintf(menuContextBuffer,  
+      handleRoot_template,
+      contentBuffer,
+      gatewayMode ? upgradetext_template : ""
+  );  
+
+  char * temp = getWebsite(menuContextBuffer, true);
+  server.send(200, F("text/html"), temp);
 }
 
 void handleNotFound() 
 {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
+  String message = F("File Not Found\n\n");
+  message += F("URI: ");
   message += server.uri();
-  message += "\nMethod: ";
+  message += F("\nMethod: ");
   message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
+  message += F("\nArguments: ");
   message += server.args();
-  message += "\n";
+  message += F("\n");
 
   for (uint8_t i = 0; i < server.args(); i++) {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
 
-  server.send(404, "text/plain", message);
+  server.send(404, F("text/plain"), message);
 }
 
 void handleReboot() 
 {
   char temp[300];
   
-  snprintf(temp, 300,
-  "<!DOCTYPE html>\
-  <html>\
-  <head>\
-  <meta http-equiv='refresh' content='20; url=/'>\
-  </head>\
-  <body>\
-  <h1>Please wait. Will reboot in 20 seconds...</h1>\
-  </body>\
-  </html>\
-  ");
+  snprintf(temp, 300, handleReboot_template);
 
-
-  server.send(200, "text/html", temp);
+  server.send(200, F("text/html"), temp);
 
   delay(2000);
   
@@ -492,36 +319,57 @@ void handleReboot()
 
 void handleSettings()
 {
-  String deviceBuffer = "<option></option>";
-  String parameterBuffer = "";
   String deviceType;
-  String b;
   int loop = 0;
   JsonObject deviceParameter;
   SensorData* initialSettings = NULL;
+  char parameterBuffer[2024];
+  
+  DV(sizeof(parameterBuffer));
+
+  memset(contentBuffer, 0, sizeof(contentBuffer));
+  memset(parameterBuffer, 0, sizeof(parameterBuffer));
 
   if(settingDev != NULL)
   {
     free(settingDev);
     settingDev = NULL;
   }
+
+  if(server.hasArg(F("devicechanged")))
+  {
+    if(String(server.arg(F("devicechanged"))) == F("true")) // now to save the parameter to the configuration
+    {
+      configuration.removeAllDeviceParameter();
+    }
+  }  
   
   // check selected device
-  if(server.hasArg("devices"))
-    deviceType = server.arg("devices");
+  if(server.hasArg(F("devices")))
+    deviceType = server.arg(F("devices"));
   else
     deviceType = configuration.get("devicetype");       
 
-  if(deviceType != "" && deviceType != "UNKNOWN" && settingDev == NULL)
+  if(deviceType != "" && deviceType != F("UNKNOWN") && settingDev == NULL)
   {
-    settingDev = createDeviceObject(deviceType.c_str());        
+    settingDev = createDeviceObject(deviceType.c_str());  
+    settingDev->setConfigurationObject(configuration.getConfigDocument());
     settingDev->initialize();
+  }
+  else
+  {
+    configuration.removeAllDeviceParameter();
+    configuration.set("devicetype", (char *)deviceType.c_str()); 
+
+    writeConfiguration = true;          
+    
+    //configuration.store();    
   }
     
   // check if save was pressed
-  if(server.hasArg("save"))
+  if(server.hasArg(F("save")))
   {
-    if(String(server.arg("save")) == "true") // now to save the parameter to the configuration
+    if(String(server.arg(F("save"))) == F("true")) // now to save the parameter to the configuration
     {
       configuration.set("devicetype", (char *)deviceType.c_str()); 
       
@@ -537,22 +385,24 @@ void handleSettings()
       // get names for device parameter
       deviceParameter = settingDev->getDeviceParameter(); 
       if(!deviceParameter.isNull())
-      {
-        configuration.removeAllDeviceParameter();
-        
+      {        
         for (JsonPair kv : deviceParameter)
         {
           if(server.hasArg(kv.key().c_str()))
           {
             configuration.setDeviceParameter(kv.key().c_str(), server.arg(kv.key().c_str()).c_str());
           }
+          else
+          {
+            configuration.setDeviceParameter(kv.key().c_str(), kv.value().as<char*>());
+          }
         }    
       }  
 
       writeConfiguration = true;          
     }
-  }  
-
+  }
+  
   if(settingDev != NULL)
   {
     if(strcmp(configuration.get("devicetype"), deviceType.c_str()) == 0)    
@@ -569,331 +419,236 @@ void handleSettings()
     JsonObject documentRoot = configuration.getConfigDocument()->as<JsonObject>();   
     for (JsonPair kv : documentRoot) 
     {
-      if(String(kv.key().c_str()) != "device" && String(kv.key().c_str()) != "wlan" && String(kv.key().c_str()) != "devicetype" && String(kv.key().c_str()) != "cloud")
+      if(String(kv.key().c_str()) != F("device") && String(kv.key().c_str()) != F("wlan") && String(kv.key().c_str()) != F("devicetype") && String(kv.key().c_str()) != F("cloud"))
       {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
+        strcat_P(parameterBuffer, PSTR("<br/><br/><div><label for='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("'>"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("</label>"));
+        strcat_P(parameterBuffer, PSTR("<input type='text' id='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' name='"));
+        strcat(parameterBuffer, kv.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' size='10' value='"));
+        
         if(initialSettings != NULL && initialSettings->getDataItem(kv.key().c_str()) != "")
         {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(initialSettings->getDataItem(kv.key().c_str()))+"'></div>";
+          strcat(parameterBuffer, initialSettings->getDataItemPtr(kv.key().c_str()));
         }
         else        
         {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
+          strcat(parameterBuffer, kv.value().as<char*>());
         }
+                
+        strcat_P(parameterBuffer, PSTR("'></div>"));        
       }
     }    
 
     // Show device parameter
     if(!deviceParameter.isNull())
     {
-      parameterBuffer += "<br/>";
-      for (JsonPair kv : deviceParameter)
+      strcat_P(parameterBuffer, PSTR("<br/>"));        
+      
+      for (JsonPair kv1 : deviceParameter)
       {
-        parameterBuffer += "<br/><br/><div><label for='"+String(kv.key().c_str())+"'>"+String(kv.key().c_str())+"</label>";        
-        {
-          parameterBuffer += "<input type='text' id='"+String(kv.key().c_str())+"' name='"+String(kv.key().c_str())+"' size='10' value='"+String(kv.value().as<char*>())+"'></div>";
-        }
+        strcat_P(parameterBuffer, PSTR("<br/><br/><div><label for='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("'>"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("</label>"));        
+        
+        strcat_P(parameterBuffer, PSTR("<input type='text' id='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' name='"));        
+        strcat(parameterBuffer, kv1.key().c_str());
+        strcat_P(parameterBuffer, PSTR("' size='10' value='"));        
+        strcat(parameterBuffer, kv1.value().as<char*>());
+        strcat_P(parameterBuffer, PSTR("'></div>"));        
       }    
     }    
   } 
     
   // Fill select box
-  while(true)
+  strcpy_P(contentBuffer, PSTR("<option></option>"));
+
+  char rest[strlen(SUPPORTED_DEVICES+1)];
+  strcpy(rest, SUPPORTED_DEVICES);
+
+  char *ptr = strtok(rest, ",");  // takes a list of delimiters
+  
+  while(ptr != NULL)
   {
-    b = getValue(SUPPORTED_DEVICES, ',', loop++);
-    if(b != "")
+    if(strcmp(ptr, deviceType.c_str()) == 0)
     {
-      if(b == deviceType)
-        deviceBuffer += "<option selected>"+b+"</option>";
-      else      
-        deviceBuffer += "<option>"+b+"</option>";
+        strcat_P(contentBuffer, PSTR("<option selected>"));
+        strcat(contentBuffer, ptr);
+        strcat_P(contentBuffer, PSTR("</option>"));
     }
     else
-      break;
+    {
+        strcat_P(contentBuffer, PSTR("<option>"));
+        strcat(contentBuffer, ptr);
+        strcat_P(contentBuffer, PSTR("</option>"));
+    }
+
+    ptr = strtok(NULL, ",");  // takes a list of delimiters
   }
 
+  DV(strlen(parameterBuffer));
+
+
   sprintf(menuContextBuffer,  
-      "<h1>Settings</h1><p><strong>Configuration</strong><br /><br />\
-      <form method='post' id='settingsForm'>\
-      <label>Device Type :\
-        <select name='devices' onchange='this.form.submit()'>\
-        %s\
-        </select>\
-      </label>\
-      <br/><br/>\
-      %s\
-      <br/><br/>\
-      <input type='hidden' id='save' name='save' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\
-      <script>\
-       function submitForm()\
-       {\
-          document.getElementById('save').value = 'true';\
-       }\
-      </script>\
-      </form>\
-      ",
-      deviceBuffer.c_str(),
-      parameterBuffer.c_str()
+      settings_template,
+      contentBuffer,
+      parameterBuffer
   );  
 
   char * temp = getWebsite(menuContextBuffer);
-  DV(writeConfiguration);
+  DV(temp);
   DLN("after getWebsite size = "+String(strlen(temp)));
-  
-  server.send(200, "text/html", temp);  
+
+  server.send(200, F("text/html"), temp);  
 }
 
-void handleExperimental()
+void handleCloud()
 {
-  if((String(configuration.getCloudParameter("enabled")) == "true") &&
-      cloudID != String(configuration.getCloudParameter("userid")))
-  {
-    configuration.setCloudParameter("userid", cloudID.c_str());
-    
-    writeConfiguration = true;          
-  }
-  
-  // check if registerNewUser was pressed
-  if(server.hasArg("registerNewUser"))
-  {
-    if(String(server.arg("registerNewUser")) == "true") 
-    {
-      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
-         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
-      {
-        if(cloudRegisterNewUser(server.arg("user").c_str(), server.arg("email").c_str(), server.arg("password").c_str()))
-        {
-          if((String(configuration.getCloudParameter("enabled")) == "true"))
-          {
-            cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
-            if(cloudConnected)
-            {
-              configuration.setCloudParameter("userid", cloudID.c_str());
-              
-              writeConfiguration = true;          
-            }
-          }        
-        }
-        writeConfiguration = true;          
-      }
-    }
-  }  
-
-  if(server.hasArg("unregisterUser"))
-  {
-    if(String(server.arg("unregisterUser")) == "true") 
-    {
-      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
-         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
-      {
-        if(cloudUnregisterUser(server.arg("user").c_str(), server.arg("password").c_str()))
-        {
-          cloudConnected = false;
-          configuration.setCloudParameter("userid", "");
-          
-          writeConfiguration = true;          
-        }
-      }
-    }
-  }  
-
-  // check if registerNewUser was pressed
-  if(server.hasArg("loginUser"))
-  {
-    if(String(server.arg("loginUser")) == "true") 
-    {
-      if((server.hasArg("user") && strlen(server.arg("user").c_str()) > 3) &&
-         (server.hasArg("password") && strlen(server.arg("password").c_str()) > 3))
-      {
-        cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
-        if(cloudConnected)
-        {
-          configuration.setCloudParameter("userid", cloudID.c_str());
-          
-          writeConfiguration = true;          
-        }
-      }
-    }
-  }  
-
-  // check if registerDevice was pressed
-  if(server.hasArg("registerDevice"))
-  {
-    if(String(server.arg("registerDevice")) == "true") 
-    {
-      cloudIsDeviceRegistered = cloudRegisterDevice(deviceName.c_str(), String(configuration.get("devicetype")).c_str());
-      
-      writeConfiguration = true;          
-    }
-  }  
-
-  // check if unregisterDevice was pressed
-  if(server.hasArg("unregisterDevice"))
-  {
-    if(String(server.arg("unregisterDevice")) == "true") 
-    {
-      cloudIsDeviceRegistered = !cloudUnregisterDevice(deviceName.c_str());
-      
-      writeConfiguration = true;          
-    }
-  }  
-  
+  bool gatewayipset = WiFi.localIP().toString() != F("(IP unset)");
   
   if(server.args() != 0)
   {
-    if( server.arg("cloudenabled") == "1")
+    if( server.hasArg(F("cloudEnabledChanged")))
     {
-      configuration.setCloudParameter("enabled", "true");
+      DV(String(server.arg(F("cloudEnabledChanged"))));
+      if(String(server.arg(F("cloudEnabledChanged"))) == F("1")) 
+      {
+        if( server.hasArg(F("cloudenabled")))
+        {
+          if(String(server.arg(F("cloudenabled"))) == F("on"))
+          {
+            if(server.arg(F("user")) != "" && server.arg(F("password")) != "")
+            {
+              configuration.setCloudParameter("enabled", "true");
+
+              if(gatewayipset)
+              {
+                if(cloudRegisterNewUser(server.arg("user").c_str(), "", server.arg("password").c_str()))
+                {
+                  cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
+                  if(cloudConnected)
+                  {
+                    configuration.setCloudParameter("userid", cloudID.c_str());
+                    configuration.setCloudParameter("user", server.arg(F("user")).c_str());
+                    configuration.setCloudParameter("password", server.arg(F("password")).c_str());
+                    cloudRegisterDevice(deviceName.c_str(), configuration.get("devicetype"));
+                  }
+                }
+              }
+            }
+            else
+            {
+              // show error
+            }
+          }
+          else
+          {
+            if(gatewayipset)
+            {
+              cloudUnregisterDevice(deviceName.c_str());
+              cloudUnregisterUser(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));
+            }
+            configuration.setCloudParameter("enabled", "false");
+            configuration.setCloudParameter("userid", "");
+          }
+        }
+        else
+        {
+          cloudUnregisterDevice(deviceName.c_str());
+          cloudUnregisterUser(configuration.getCloudParameter("user"), configuration.getCloudParameter("password"));
+          configuration.setCloudParameter("enabled", "false");
+          configuration.setCloudParameter("userid", "");
+        }
+      }      
     }
-    else
-      configuration.setCloudParameter("enabled", "false");
+    if( server.hasArg(F("resetCloudSettings")))
+    {
+      if(String(server.arg(F("resetCloudSettings"))) == F("true"))
+      {
+        if(gatewayipset)
+        {
+          cloudUnregisterDevice(deviceName.c_str());
+          cloudUnregisterUser(configuration.getCloudParameter("userid"), configuration.getCloudParameter("password"));
+        }        
+        configuration.setCloudParameter("enabled", "false");
+        configuration.setCloudParameter("user", deviceName.c_str());
+        configuration.setCloudParameter("password", String(ESP.getChipId()).c_str());
+      }
+    }
+    if(server.hasArg(F("privatecloudenabled")))
+    {
+      if( server.arg(F("privatecloudenabled")) == "1")
+        configuration.setCloudParameter("privateenabled", "true");
+      else
+        configuration.setCloudParameter("privateenabled", "false");
 
-    if(server.hasArg("user"))
-      configuration.setCloudParameter("user", server.arg("user").c_str());
-    else
-      configuration.setCloudParameter("user", "");
+      configuration.setCloudParameter("privateendpoint", server.arg(F("privateendpoint")).c_str());
+      configuration.setCloudParameter("privateuser", server.arg(F("privateuser")).c_str());
+      configuration.setCloudParameter("privatepassword", server.arg(F("privatepassword")).c_str());
+      configuration.setCloudParameter("privateid", server.arg(F("privateid")).c_str());
+    }
         
-    if(server.hasArg("password"))
-      configuration.setCloudParameter("password", server.arg("password").c_str());
-    else
-      configuration.setCloudParameter("password", "");    
-
-    if(server.hasArg("email"))
-      configuration.setCloudParameter("email", server.arg("email").c_str());
-    else
-      configuration.setCloudParameter("email", "");    
-
-    writeConfiguration = true;      
-  }
-
-  String loginUserButtonText = "<div><p><input type='hidden' id='loginUser' name='loginUser' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitLoginUser()' value='LogIn User' /></p></div><br/><br/>";
-
-  String registerNewUserButtonText = "<div><p><input type='hidden' id='registerNewUser' name='registerNewUser' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitRegisterNewUser()' value='Register New User' /></p></div><br/><br/>";
-
-  String unregisterUserButtonText = "<div><p><input type='hidden' id='unregisterUser' name='unregisterUser' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitUnregisterUser()' value='UnRegister User' /></p></div><br/><br/>";
-
-  String registerDeviceButtonText = "<div><p><input type='hidden' id='registerDevice' name='registerDevice' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitRegisterDevice()' value='Register This Device' /></p></div><br/><br/>";
-
-  String unregisterDeviceButtonText = "<div><p><input type='hidden' id='unregisterDevice' name='unregisterDevice' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitUnregisterDevice()' value='UnRegister This Device' /></p></div><br/><br/>";
-
-    
-  sprintf(menuContextBuffer,  
-      "<h1>Experimental</h1><p><strong>Configuration</strong><br /><br /><br />\
-      <hr/>\
-      Cloud Settings. More information can be found on <a href=\"http://shrdzm.com/\" target=\"_blank\">SHRDZM Homepage</a>\
-      <br/><br/>\
-      <form method='post'>\
-      <input type='checkbox' id='cloudenabled' name='cloudenabled' value='1' %s/>\
-      <input type='hidden' name='cloudenabled' value='0' />\
-      <div><label for='cloudenabled'>Cloud Enabled</label></div><br/>\
-      <br/><br/>\
-      <div><input type='text' id='user' name='user' placeholder='Name' size='30' value='%s'>\
-      <label for='user'>User Name</label></div><br/><br/>\
-      Unique User ID = %s<br/><br/>\
-      <div><input type='text' id='email' name='email' placeholder='name@example.com' size='30' value='%s'>\
-      <label for='email'>EMail Address (optional)</label></div><br/>\
-      <br/>\   
-      <div><input type='password' id='password' name='password' placeholder='Password' size='30' value='%s'>\
-      <label for='password'>Password</label></div><br/><br/>\
-      <div><input type='checkbox' onclick='showCloudPassword()'>Show Password\
-      </div><br/>\
-      %s\
-      %s\
-      %s\
-      %s\
-      %s\
-      <hr/>\
-      <input class='submitbutton' type='submit' value='Save Configuration!' />\
-      <script>\
-      function showCloudPassword() {\
-        var x = document.getElementById('password');\
-        if (x.type === 'password') {\
-          x.type = 'text';\
-        } else {\
-          x.type = 'password';\
-        }\
-      }\
-      function submitLoginUser()\
-      {\
-         document.getElementById('loginUser').value = 'true';\
-      }\      
-      function submitRegisterNewUser()\
-      {\
-         document.getElementById('registerNewUser').value = 'true';\
-      }\      
-      function submitUnregisterUser()\
-      {\
-         document.getElementById('unregisterUser').value = 'true';\
-      }\      
-      function submitRegisterDevice()\
-      {\
-         document.getElementById('registerDevice').value = 'true';\
-      }\      
-      function submitUnregisterDevice()\
-      {\
-         document.getElementById('unregisterDevice').value = 'true';\
-      }\      
-      </script>\
-      </form>\
-      ",
+    writeConfiguration = true;          
+  }  
+  
+  sprintf(menuContextBuffer, handleCloud_template,
       String(configuration.getCloudParameter("enabled")) == "true" ? "checked" : "",
-      configuration.getCloudParameter("user"),
-      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i>NOT REGISTERED</i>" : configuration.getCloudParameter("userid"),
-      configuration.getCloudParameter("email"),
-      configuration.getCloudParameter("password"),
-      (strlen(configuration.getCloudParameter("userid")) == 0) ? loginUserButtonText.c_str() : "",
-      (strlen(configuration.getCloudParameter("userid")) == 0) ? registerNewUserButtonText.c_str() : "",
-      (strlen(configuration.getCloudParameter("userid")) > 0) ? unregisterUserButtonText.c_str() : "",
-      (cloudConnected && !cloudIsDeviceRegistered) ? registerDeviceButtonText.c_str() : "",
-      (cloudConnected && cloudIsDeviceRegistered) ? unregisterDeviceButtonText.c_str() : ""
+      strcmp(configuration.getCloudParameter("user"), "") == 0 ? deviceName.c_str() :
+        configuration.getCloudParameter("user"),
+      strcmp(configuration.getCloudParameter("password"), "") == 0 ? String(ESP.getChipId()).c_str() :
+        configuration.getCloudParameter("password"),
+      (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid"),
+      String(configuration.getCloudParameter("privateenabled")) == "true" ? "checked" : "",
+      configuration.getCloudParameter("privateendpoint"),
+      configuration.getCloudParameter("privateuser"),
+      configuration.getCloudParameter("privatepassword"),
+      strcmp(configuration.getCloudParameter("privateid"), "") == 0 ? deviceName.c_str() :
+        configuration.getCloudParameter("privateid")
   );  
-
-  DV(cloudConnected);
-  DV(cloudIsDeviceRegistered);
 
   char * temp = getWebsite(menuContextBuffer);
 
-  DLN("after getWebsite size = "+String(strlen(temp)));
-  server.send(200, "text/html", temp);  
+  server.send(200, F("text/html"), temp);    
 }
 
 void handleNTP()
 {
-  sprintf(menuContextBuffer,  
-      "<h1>NTP</h1><p><strong>Configuration</strong><br /><br />\
-      <form method='post' id='settingsForm'>\
-      <br/><br/><div><label for='ntpserver'>NTP Server</label>\
-      <input type='text' id='ntpserver' name='ntpserver' size='20' value='at.pool.ntp.org'></div>\
-      <br/><br/>\
-      <input type='hidden' id='save' name='save' value='false'/>\
-      <input class='submitbutton' type='submit' onclick='submitForm()' value='Save Configuration!' />\
-      <script>\
-       function submitForm()\
-       {\
-          document.getElementById('save').value = 'true';\
-       }\
-      </script>\
-      </form>\
-      "
-  );  
+  if(server.args() != 0)
+  {
+    if(server.hasArg(F("ntpserver")))
+      configuration.setWlanParameter("NTPServer", server.arg(F("ntpserver")).c_str());
+
+    if(server.hasArg(F("tz")))
+      configuration.setWlanParameter("TZ", server.arg(F("tz")).c_str());
+        
+    writeConfiguration = true;          
+  }
+    
+  sprintf(menuContextBuffer, handleNTP_template,
+        configuration.getWlanParameter("NTPServer"),
+        configuration.getWlanParameter("TZ")      
+      );  
 
   char * temp = getWebsite(menuContextBuffer);
 
   DLN("after getWebsite size = "+String(strlen(temp)));
-  server.send(200, "text/html", temp);  
+  server.send(200, F("text/html"), temp);  
 }
 
 void handleGateway()
 {
   if(server.args() != 0)
   {
-    if( server.arg("wlanenabled") == "1")
+    if( server.arg(F("wlanenabled")) == "1")
     {
       configuration.setWlanParameter("enabled", "true");
       configuration.set("gateway", (char *)deviceName.c_str());
@@ -901,103 +656,63 @@ void handleGateway()
     else
       configuration.setWlanParameter("enabled", "false");
 
-    if(server.hasArg("ssid"))
-      configuration.setWlanParameter("ssid", server.arg("ssid").c_str());
+    if( server.arg(F("mqttenabled")) == "1")
+    {
+      configuration.setWlanParameter("MQTTenabled", "true");
+    }
+    else
+      configuration.setWlanParameter("MQTTenabled", "false");
+
+    if( server.arg(F("jsonenabled")) == "1")
+    {
+      configuration.setWlanParameter("MQTTsendjson", "true");
+    }
+    else
+      configuration.setWlanParameter("MQTTsendjson", "false");
+
+    if(server.hasArg(F("ssid")))
+      configuration.setWlanParameter("ssid", server.arg(F("ssid")).c_str());
     else
       configuration.setWlanParameter("ssid", "");
         
-    if(server.hasArg("password"))
-      configuration.setWlanParameter("password", server.arg("password").c_str());
+    if(server.hasArg(F("password")))
+      configuration.setWlanParameter("password", server.arg(F("password")).c_str());
     else
       configuration.setWlanParameter("password", "");    
 
-    if(server.hasArg("ip"))
-      configuration.setWlanParameter("ip", server.arg("ip").c_str());
+    if(server.hasArg(F("ip")))
+      configuration.setWlanParameter("ip", server.arg(F("ip")).c_str());
     else
       configuration.setWlanParameter("ip", "");    
     
-    if(server.hasArg("dns"))
-      configuration.setWlanParameter("dns", server.arg("dns").c_str());
+    if(server.hasArg(F("dns")))
+      configuration.setWlanParameter("dns", server.arg(F("dns")).c_str());
     else
       configuration.setWlanParameter("dns", "");    
     
-    if(server.hasArg("gateway"))
-      configuration.setWlanParameter("gateway", server.arg("gateway").c_str());
+    if(server.hasArg(F("gateway")))
+      configuration.setWlanParameter("gateway", server.arg(F("gateway")).c_str());
     else
       configuration.setWlanParameter("gateway", "");    
     
-    if(server.hasArg("subnet"))
-      configuration.setWlanParameter("subnet", server.arg("subnet").c_str());
+    if(server.hasArg(F("subnet")))
+      configuration.setWlanParameter("subnet", server.arg(F("subnet")).c_str());
     else
       configuration.setWlanParameter("subnet", "");    
     
     if(server.hasArg("MQTTbroker"))
-      configuration.setWlanParameter("MQTTbroker", server.arg("MQTTbroker").c_str());
-    if(server.hasArg("MQTTport"))
-      configuration.setWlanParameter("MQTTport", server.arg("MQTTport").c_str());
-    if(server.hasArg("MQTTuser"))
-      configuration.setWlanParameter("MQTTuser", server.arg("MQTTuser").c_str());
-    if(server.hasArg("MQTTpassword"))
-      configuration.setWlanParameter("MQTTpassword", server.arg("MQTTpassword").c_str());
+      configuration.setWlanParameter("MQTTbroker", server.arg(F("MQTTbroker")).c_str());
+    if(server.hasArg(F("MQTTport")))
+      configuration.setWlanParameter("MQTTport", server.arg(F("MQTTport")).c_str());
+    if(server.hasArg(F("MQTTuser")))
+      configuration.setWlanParameter("MQTTuser", server.arg(F("MQTTuser")).c_str());
+    if(server.hasArg(F("MQTTpassword")))
+      configuration.setWlanParameter("MQTTpassword", server.arg(F("MQTTpassword")).c_str());
 
     writeConfiguration = true;    
   }
    
-  sprintf(menuContextBuffer,  
-      "<h1>Gateway</h1><p><strong>Configuration</strong><br /><br />\
-      WLAN Settings if Device acts as it's own gateway.\
-      <br/><br/>\
-      <form method='post'>\
-      <input type='checkbox' id='wlanenabled' name='wlanenabled' value='1' %s/>\
-      <input type='hidden' name='wlanenabled' value='0' />\
-      <div><label for='wlanenabled'>Device should act as it's own gateway</label></div><br/>\
-      <br/><br/>\
-      <hr/>\
-      <div><input type='text' id='ssid' name='ssid' placeholder='SSID' size='50' value='%s'>\
-      <p><label for='ssid'>SSID</label></p></div><br/>\
-      <br/>\
-      <div><input type='password' id='password' name='password' placeholder='Password' size='50' value='%s'>\
-      <label for='password'>Password</label></div><br/><br/>\
-      <div><input type='checkbox' onclick='showWLANPassword()'>Show Password\
-      </div><br/>\
-      <div><input type='text' id='ip' name='ip' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
-      <label for='ip'>Static IP</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='dns' name='dns' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
-      <label for='ip'>DNS</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='gateway' name='gateway' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
-      <label for='gateway'>Gateway</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='subnet' name='subnet' placeholder='XXX.XXX.XXX.XXX' size='50' value='%s'>\
-      <label for='gateway'>Subnet</label></div><br/>\
-      <br/><br/>\
-      <div><input type='text' id='MQTTbroker' name='MQTTbroker' placeholder='MQTT Broker' size='50' value='%s'>\
-      <label for='MQTTbroker'>MQTT Broker</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='MQTTport' name='MQTTport' placeholder='MQTT Port' size='50' value='%s'>\
-      <label for='MQTTport'>MQTT Port</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='MQTTuser' name='MQTTuser' placeholder='MQTT User' size='50' value='%s'>\
-      <label for='MQTTuser'>MQTT User</label></div><br/>\
-      <br/>\
-      <div><input type='text' id='MQTTpassword' name='MQTTpassword' placeholder='MQTT Password' size='50' value='%s'>\
-      <label for='MQTTpassword'>MQTT Password</label></div><br/>\
-      <br/><br />\
-      <input class='submitbutton' type='submit' value='Save Configuration!' />\
-      <script>\
-      function showWLANPassword() {\
-        var x = document.getElementById('password');\
-        if (x.type === 'password') {\
-          x.type = 'text';\
-        } else {\
-          x.type = 'password';\
-        }\
-      }\
-      </script>\
-      </form>\
-      "
-      ,
+  sprintf(menuContextBuffer, handleGateway_template,
       String(configuration.getWlanParameter("enabled")) == "true" ? "checked" : "",
       configuration.getWlanParameter("ssid"),
       configuration.getWlanParameter("password"),
@@ -1005,16 +720,18 @@ void handleGateway()
       configuration.getWlanParameter("dns"),
       configuration.getWlanParameter("gateway"),
       configuration.getWlanParameter("subnet"),
+      String(configuration.getWlanParameter("MQTTenabled")) == "false" ? "" : "checked",
       configuration.getWlanParameter("MQTTbroker"),
       configuration.getWlanParameter("MQTTport"),
       configuration.getWlanParameter("MQTTuser"),
-      configuration.getWlanParameter("MQTTpassword") 
+      configuration.getWlanParameter("MQTTpassword"),
+      String(configuration.getWlanParameter("MQTTsendjson")) == "false" ? "" : "checked"
   );  
 
   char * temp = getWebsite(menuContextBuffer);
 
   DLN("after getWebsite size = "+String(strlen(temp)));
-  server.send(200, "text/html", temp);
+  server.send(200, F("text/html"), temp);
 }
 
 ///////////////////////////
@@ -1095,7 +812,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     {
       if(splitter->getItemAtIndex(0) == deviceName)
       {
-        if(splitter->getItemAtIndex(1) == "configuration")
+        if(splitter->getItemAtIndex(1) == F("configuration"))
         {
           sendSetup();
         }
@@ -1103,7 +820,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
     }
     else if(itemCount == 3)
     {
-      if(splitter->getItemAtIndex(1) == "upgrade")
+      if(splitter->getItemAtIndex(1) == F("upgrade"))
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), "upgrade");   
 
@@ -1145,7 +862,7 @@ void mqttcallback(char* topic, byte* payload, unsigned int len)
       }
     }    
   }
-  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == "pair ")
+  else if(String(topic) == (String(MQTT_TOPIC)+"/set") && cmd.substring(0,5) == F("pair "))
   {
     mqttclient.publish((String(MQTT_TOPIC)+"/paired").c_str(), String(deviceName+"/"+deviceName).c_str());
     sendSetup();
@@ -1183,11 +900,26 @@ void startGatewayWebserver()
 
   apConnectingOngoing = true;
   apConnectionStartTime = millis();
+
+  controlConnectionBlinker(true);
                        
   mqttclient.setServer(configuration.getWlanParameter("MQTTbroker"), 
                        atoi(configuration.getWlanParameter("MQTTport")));
 
   mqttclient.setCallback(mqttcallback);
+
+  if(configuration.containsWlanKey("NTPServer") && String(configuration.getWlanParameter("NTPServer")) != "" )
+  {
+    if(configuration.containsWlanKey("TZ") && String(configuration.getWlanParameter("TZ")) != "" )
+    {
+      configTime(configuration.getWlanParameter("TZ"), configuration.getWlanParameter("NTPServer"));
+    }
+  }
+
+#ifdef DEBUG_SHRDZM
+  request.setDebug(true);
+#endif  
+  request.onReadyStateChange(requestCB);  
 }
 
 ///////////////////////////
@@ -1329,7 +1061,6 @@ void sendSetup()
   if(!gatewayMode)
   {
     DLN("Send INIT");
-//    simpleEspConnection.sendMessage((char *)"$I$");
     sendMessageWithChecksum((char *)"$I$");
     configuration.sendSetup(&simpleEspConnection);
   }
@@ -1407,7 +1138,6 @@ void sendSetup()
   s = String("$X$")+String(SUPPORTED_DEVICES);
   if(!gatewayMode)
   {
-//    simpleEspConnection.sendMessage((char *)s.c_str());  
     sendMessageWithChecksum((char *)s.c_str());   
   }
   else
@@ -1421,7 +1151,7 @@ bool updateFirmwareByMQTT(String message)
 {
   host = message;
   
-  if(host.substring(0,7) != "http://")
+  if(host.substring(0,7) != F("http://"))
   {
     DLN("Upgrade : only http address supported! ");
     return false;    
@@ -1429,7 +1159,7 @@ bool updateFirmwareByMQTT(String message)
 
   host = host.substring(7);
 
-  if(host.substring(host.length()-4) != ".php")
+  if(host.substring(host.length()-4) != F(".php"))
   {
     DLN("Upgrade : only php update script supported");
     return false;    
@@ -1461,7 +1191,7 @@ bool updateFirmware(String message)
 
   DLN("SSID:"+SSID+" password:"+password+" host:"+host);
 
-  if(host.substring(0,7) != "http://")
+  if(host.substring(0,7) != F("http://"))
   {
     DLN("Upgrade : only http address supported!");
     return false;    
@@ -1469,7 +1199,7 @@ bool updateFirmware(String message)
 
   host = host.substring(7);
 
-  if(host.substring(host.length()-4) != ".php")
+  if(host.substring(host.length()-4) != F(".php"))
   {
     DLN("Upgrade : only php update script supported");
     return false;    
@@ -1497,7 +1227,7 @@ bool updateFirmware(String message)
 
 void setConfig(String cmd)
 {
-  if(cmd == "configuration")
+  if(cmd == F("configuration"))
   {
     DLN("need to send the setup...");
     sendSetup();     
@@ -1513,15 +1243,15 @@ void setConfig(String cmd)
 
   DLN("setConfig Name="+pname+", Value="+pvalue);
 
-  if( pname == "interval" || 
-      pname == "sensorpowerpin" || 
-      pname == "devicetype" || 
-      pname == "preparetime" || 
-      pname == "processtime" || 
-      pname == "batterycheck" || 
-      pname == "gateway")
+  if( pname == F("interval") || 
+      pname == F("sensorpowerpin") || 
+      pname == F("devicetype") || 
+      pname == F("preparetime") || 
+      pname == F("processtime") || 
+      pname == F("batterycheck") || 
+      pname == F("gateway"))
   {
-    if(pname == "devicetype")
+    if(pname == F("devicetype"))
     {
       newDeviceType = pvalue;
       setNewDeviceType = true;
@@ -1547,7 +1277,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
 {
   DLN("MESSAGE:"+String((char *)message));
 
-  if(String((char *)message) == "$SLEEP$") // force to go sleep
+  if(String((char *)message) == F("$SLEEP$")) // force to go sleep
   {
     canGoDown = true;
     DLN("FORCE SLEEP MODE");
@@ -1555,11 +1285,11 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     return;
   }
   
-  if(String((char *)message) == "$S$") // ask for settings
+  if(String((char *)message) == F("$S$")) // ask for settings
   {
     sendSetup();
   }
-  else if(String((char *)message) == "$PING$") // ping
+  else if(String((char *)message) == F("$PING$")) // ping
   {
     if(configuration.containsKey("gateway"))
     {
@@ -1569,7 +1299,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       
     return;
   }
-  else if(String((char *)message).substring(0,5) == "$SDT$") // set device type
+  else if(String((char *)message).substring(0,5) == F("$SDT$")) // set device type
   {
     newDeviceType = String((char *)message).substring(5);
     setNewDeviceType = true;
@@ -1577,7 +1307,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
     configuration.store();        
     sendSetup();
   }
-  else if(String((char *)message).substring(0,4) == "$SC$") // set configuration
+  else if(String((char *)message).substring(0,4) == F("$SC$")) // set configuration
   {
     if(dev != NULL)
     {
@@ -1604,7 +1334,7 @@ void OnMessage(uint8_t* ad, const uint8_t* message, size_t len)
       setConfig(String((char *)message).substring(4));
     }
   }  
-  else if(String((char *)message).substring(0,3) == "$U$") // update firmware
+  else if(String((char *)message).substring(0,3) == F("$U$")) // update firmware
   {
     firmwareUpdate = true;   
 
@@ -1695,7 +1425,8 @@ void upgradeFirmware()
   
     WiFiClient client; 
     // Serial.printf("host:%s, url:%s, versionString:%s \n", host.c_str(), url.c_str(), versionStr.c_str());
-    t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+//    t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, url, versionStr);    
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, host, 80, url, versionStr);    
     
     switch (ret) 
     {
@@ -1837,14 +1568,19 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
     }
 
     dev->setDeviceParameter(configuration.getDeviceParameter());    
+
+    Serial.println("nach setDeviceParameter");
+    
   }
 }
 
 void setup() 
 {
 #ifdef DEBUG_SHRDZM
-Serial.begin(9600); Serial.println();
+Serial.begin(SERIAL_BAUD); Serial.println();
 #endif
+  DV("setup start ");  
+  
   bool writeConfigAndReboot = false;
   
 #ifdef VERSION
@@ -1859,6 +1595,7 @@ Serial.begin(9600); Serial.println();
   nam = "SHRDZMDevice";  
 #endif
 
+  WiFi.persistent(false);
 
   // set device name
   WiFi.mode(WIFI_STA);  
@@ -1868,6 +1605,8 @@ Serial.begin(9600); Serial.println();
   
   deviceName.replace(":", "");
   deviceName.toUpperCase();
+
+  configuration.setDeviceName(deviceName.c_str());
 
   DV(deviceName);
 
@@ -1986,21 +1725,16 @@ Serial.begin(9600); Serial.println();
   // check if pairing button pressed
   pairingOngoing = !digitalRead(atoi(configuration.get("pairingpin")));
 
-DLN("before readLastRebootInfo...");
-
   // check last boot info
   lastRebootInfo = configuration.readLastRebootInfo();
-//  DLN("Last Reboot Info = "+lastRebootInfo);    
-
 
   configuration.storeLastRebootInfo("normal");
   
-  if(lastRebootInfo == "connectiontimeout" && !pairingOngoing)
+  if(lastRebootInfo == F("connectiontimeout") && !pairingOngoing)
   {
     startConfigurationAP();
     return;
   }
-
 
   /// check whether to start in gateway mode
   if( String(configuration.getWlanParameter("enabled")) == "true" && !pairingOngoing)
@@ -2008,7 +1742,7 @@ DLN("before readLastRebootInfo...");
 
   if(gatewayMode)
   {
-    startGatewayWebserver();
+    startGatewayWebserver();    
     mqttNextTry = 0;
     clockmillis = millis();      
     return;
@@ -2018,6 +1752,7 @@ DLN("before readLastRebootInfo...");
   {
     DLN("Up for "+String(millis())+" ms, going to sleep forever because not paired so far... \n");       
     gotoInfiniteSleep();
+    return;
   }
 
   // start ESPNow
@@ -2059,8 +1794,6 @@ DLN("before readLastRebootInfo...");
 
   if(strcmp(configuration.get("devicetype"), "UNKNOWN") == 0)  
   {
-    DLN("Send $F$");
-//    simpleEspConnection.sendMessage("$F$");
     sendMessageWithChecksum("$F$");            
   }
 
@@ -2069,33 +1802,39 @@ DLN("before readLastRebootInfo...");
 
 void getMeasurementData()
 {
-  DLN("getMeasurementData");
-//  lastIntervalTime = millis();
-//  return;
-  
+  bool sendJson = !strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? true : false;
+  bool sendPrivateCloudJson = !strcmp(configuration.getCloudParameter("privateenabled"), "true") ? true : false;
+  String jsonSendBuffer;
+
   if(configuration.containsKey("gateway") || gatewayMode)
   {      
     if(dev != NULL)
     {
       SensorData* sd = dev->readParameter();
-      lastMessage = "\"";
+      lastMessage = F("\"");
   
       if(sd != NULL)
       {
         String reply;
-        
+        if(sendJson || sendPrivateCloudJson)
+          jsonSendBuffer = "{";
+          
         for(int i = 0; i<sd->size; i++)
         {
           reply = sd->di[i].nameI+":"+sd->di[i].valueI;
 
           lastMessage += "(" + String(i)+ ")" +sd->di[i].nameI+"="+sd->di[i].valueI+"&#13;&#10;";
 
-          DV(reply);
-
           if(gatewayMode)
           {
-            DLN("MQTT Publish data "+String((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str()));
-            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+            if(sendJson || sendPrivateCloudJson)
+            {
+              jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",";
+            }
+            else
+            {
+              mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
+            }
 
             // send to cloud
             if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0)
@@ -2106,23 +1845,41 @@ void getMeasurementData()
           }
           else   
           {             
-           // simpleEspConnection.sendMessage((char *)("$D$"+reply).c_str());          
-           sendMessageWithChecksum((char *)("$D$"+reply).c_str());                       
+            sendMessageWithChecksum((char *)("$D$"+reply).c_str());                       
           }
         }
+
+        if(sendJson || sendPrivateCloudJson)
+        {
+          jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-1);
+          jsonSendBuffer += "}";
+
+          if(sendJson)
+            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
+
+          if(sendPrivateCloudJson)
+          {
+            jsonSendBuffer = "{\"id\":\"" + String(configuration.getCloudParameter("privateid")) + "\",\"data\":" +
+                            jsonSendBuffer + "}";
+
+            DV(jsonSendBuffer);
+            sendPrivateCloudData(configuration.getCloudParameter("privateendpoint"), 
+                        configuration.getCloudParameter("privateuser"), 
+                        configuration.getCloudParameter("privatepassword"), 
+                        jsonSendBuffer.c_str() );
+          }
+        }
+        
         delete sd;
         sd = NULL;  
       }
 
-      lastMessage += "\"";      
+      lastMessage += F("\"");      
 
       // send message about last measurement;
       if(!gatewayMode)
       {
-//        simpleEspConnection.sendMessage("$F$");
         sendMessageWithChecksum("$F$");                       
-        
-        DLN("Send $F$");
         
         if(!preparing)
           lastIntervalTime = millis();            
@@ -2143,22 +1900,24 @@ void handleGatewayLoop()
       apConnectingOngoing = false;
       DLN("Connected to AP. Starting Webserver...");
 
+      controlConnectionBlinker(false);
+
       DV(WiFi.localIP());
       DV(WiFi.dnsIP());
       DV(WiFi.gatewayIP());
       DV(WiFi.subnetMask());
       
       
-      server.on("/", handleRoot);
-      server.on("/reboot", handleReboot);
-      server.on("/general", handleRoot);
-      server.on("/settings", handleSettings);
-      server.on("/gateway", handleGateway);
-      server.on("/NTP", handleNTP);
-      server.on("/experimental", handleExperimental);
+      server.on(F("/"), handleRoot);
+      server.on(F("/reboot"), handleReboot);
+      server.on(F("/general"), handleRoot);
+      server.on(F("/settings"), handleSettings);
+      server.on(F("/gateway"), handleGateway);
+      server.on(F("/NTP"), handleNTP);
+      server.on(F("/cloud"), handleCloud);
 
-      server.on("/j.js", handleJs);      
-      server.on("/json", handleJson);
+      server.on(F("/j.js"), handleJs);      
+      server.on(F("/json"), handleJson);
       
       server.onNotFound(handleNotFound);
       server.begin();     
@@ -2172,7 +1931,7 @@ void handleGatewayLoop()
     } 
     else
     {
-      if(millis() > apConnectionStartTime + 10000)
+/*      if(millis() > apConnectionStartTime + 10000)
       {
         DLN("Connection timeout. Will start a local AP to reconfigure.");
 
@@ -2180,29 +1939,32 @@ void handleGatewayLoop()
 
         delay(500);
         ESP.restart();
-      }
+      }*/
     }
   }
 
   if(WiFi.status() == WL_CONNECTED)
-  {    
-    if(!mqttclient.connected())
-    {
-      if(millis() > mqttNextTry)
+  {        
+    if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
+    {  
+      if(!mqttclient.connected())
       {
-        if(!mqttreconnect())
+        if(millis() > mqttNextTry)
         {
-          mqttNextTry = millis() + 5000;
-          return;
+          if(!mqttreconnect())
+          {
+            mqttNextTry = millis() + 5000;
+            return;
+          }
         }
       }
+      else
+        mqttclient.loop();
     }
-    else
-      mqttclient.loop();
   }
   else
     return;
-
+  
   if(setNewDeviceType)
   {
     initDeviceType(newDeviceType.c_str(), true);
@@ -2255,16 +2017,6 @@ void handleGatewayLoop()
       DLN("Start prepare");
       preparing = true;
     }
-
-  // get measurement data
-    loopDone = dev->loop();
-    if(dev->isNewDataAvailable())
-    {
-//      initDeviceType(
-//      initDeviceType(configuration.get("devicetype"), true, false);
-      
-      getMeasurementData();
-    } 
   }  
 
   if(millis() > preparestart + atoi(configuration.get("preparetime")) * 1000)
@@ -2326,8 +2078,6 @@ void handleESPNowLoop()
     preparing = false;
   }
 
-//  handleBatteryCheck();
-
   if(!isDeviceInitialized)
   {
     if(strcmp(configuration.get("devicetype"), "UNKNOWN") != 0)
@@ -2352,8 +2102,6 @@ void handleESPNowLoop()
       preparing = false;
       preparestart = 0;
 
-//      delay(200);
-//      DLN("Will start measurement");
       getMeasurementData();
 
       handleBatteryCheck();
@@ -2441,6 +2189,15 @@ void gotoInfiniteSleep()
 {
   int sleepSecs;
   DLN("Up for "+String(millis())+" ms, going down for sleep and hope will not be waked up by myself... \n"); 
+
+  if(!configuration.containsKey("interval"))
+  {
+    configuration.resetConfiguration();
+    ESP.restart();
+    delay(500);
+
+    return;
+  }
 
   sleepSecs = atoi(configuration.get("interval"))*(-1);
   if(atoi(configuration.get("sensorpowerpin")) != 99)

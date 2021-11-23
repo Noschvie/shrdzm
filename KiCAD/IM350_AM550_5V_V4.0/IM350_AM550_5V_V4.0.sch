@@ -1,0 +1,290 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L RF_Module:ESP-12F U2
+U 1 1 61460645
+P 5450 3100
+F 0 "U2" H 5450 4081 50  0000 C CNN
+F 1 "ESP-12F" H 5450 3990 50  0000 C CNN
+F 2 "RF_Module:ESP-12E" H 5450 3100 50  0001 C CNN
+F 3 "http://wiki.ai-thinker.com/_media/esp8266/esp8266_series_modules_user_manual_v1.1.pdf" H 5100 3200 50  0001 C CNN
+	1    5450 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C1
+U 1 1 61461A3E
+P 3800 3100
+F 0 "C1" H 3915 3146 50  0000 L CNN
+F 1 "22uF" H 3915 3055 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3838 2950 50  0001 C CNN
+F 3 "~" H 3800 3100 50  0001 C CNN
+	1    3800 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Regulator_Linear:AMS1117-3.3 U1
+U 1 1 61462090
+P 2950 2850
+F 0 "U1" H 2950 3092 50  0000 C CNN
+F 1 "AMS1117-3.3" H 2950 3001 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 2950 3050 50  0001 C CNN
+F 3 "http://www.advanced-monolithic.com/pdf/ds1117.pdf" H 3050 2600 50  0001 C CNN
+	1    2950 2850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Erich:USB_B_Micro_Power J1
+U 1 1 614630D6
+P 1750 3050
+F 0 "J1" H 1807 3517 50  0000 C CNN
+F 1 "USB_B_Micro_Power" H 1807 3426 50  0000 C CNN
+F 2 "SHRDZM:USB_Micro-B_Power" H 1900 3000 50  0001 C CNN
+F 3 "~" H 1900 3000 50  0001 C CNN
+	1    1750 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:BC847 Q1
+U 1 1 61463C8C
+P 7550 2900
+F 0 "Q1" H 7741 2946 50  0000 L CNN
+F 1 "BC847" H 7741 2855 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 7750 2825 50  0001 L CIN
+F 3 "http://www.infineon.com/dgdl/Infineon-BC847SERIES_BC848SERIES_BC849SERIES_BC850SERIES-DS-v01_01-en.pdf?fileId=db3a304314dca389011541d4630a1657" H 7550 2900 50  0001 L CNN
+	1    7550 2900
+	-1   0    0    -1  
+$EndComp
+$Comp
+L Device:R R4
+U 1 1 614653DE
+P 7450 2550
+F 0 "R4" H 7520 2596 50  0000 L CNN
+F 1 "10k" H 7520 2505 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 7380 2550 50  0001 C CNN
+F 3 "~" H 7450 2550 50  0001 C CNN
+	1    7450 2550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R5
+U 1 1 61465C4E
+P 8050 2550
+F 0 "R5" H 8120 2596 50  0000 L CNN
+F 1 "10k" H 8120 2505 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 7980 2550 50  0001 C CNN
+F 3 "~" H 8050 2550 50  0001 C CNN
+	1    8050 2550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R1
+U 1 1 61465FC7
+P 6200 2800
+F 0 "R1" V 6150 2950 50  0000 C CNN
+F 1 "0" V 6200 2800 50  0000 C CNN
+F 2 "Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder" V 6130 2800 50  0001 C CNN
+F 3 "~" H 6200 2800 50  0001 C CNN
+	1    6200 2800
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R2
+U 1 1 61466A9B
+P 6200 2900
+F 0 "R2" V 6250 3050 50  0000 C CNN
+F 1 "0" V 6200 2900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0201_0603Metric_Pad0.64x0.40mm_HandSolder" V 6130 2900 50  0001 C CNN
+F 3 "~" H 6200 2900 50  0001 C CNN
+	1    6200 2900
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R3
+U 1 1 61466CF6
+P 6450 3650
+F 0 "R3" H 6520 3696 50  0000 L CNN
+F 1 "2.2k" H 6520 3605 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 6380 3650 50  0001 C CNN
+F 3 "~" H 6450 3650 50  0001 C CNN
+	1    6450 3650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:RJ12 J2
+U 1 1 61467AE7
+P 9200 3100
+F 0 "J2" H 8870 3104 50  0000 R CNN
+F 1 "RJ12" H 8870 3195 50  0000 R CNN
+F 2 "ErichCollection:RJ12_Amphenol_54601" V 9200 3125 50  0001 C CNN
+F 3 "~" V 9200 3125 50  0001 C CNN
+	1    9200 3100
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	2050 2850 2400 2850
+Wire Wire Line
+	3800 2950 3800 2850
+Wire Wire Line
+	3800 2700 4850 2700
+Wire Wire Line
+	3800 2700 3800 2300
+Wire Wire Line
+	3800 2300 5450 2300
+Connection ~ 3800 2700
+Wire Wire Line
+	5450 3800 5450 3950
+Wire Wire Line
+	5450 3950 3800 3950
+Wire Wire Line
+	3800 3950 3800 3450
+Wire Wire Line
+	3250 2850 3800 2850
+Connection ~ 3800 2850
+Wire Wire Line
+	3800 2850 3800 2700
+Wire Wire Line
+	1750 3450 2950 3450
+Connection ~ 3800 3450
+Wire Wire Line
+	3800 3450 3800 3250
+Wire Wire Line
+	2950 3150 2950 3450
+Connection ~ 2950 3450
+Wire Wire Line
+	2950 3450 3800 3450
+Connection ~ 5450 3950
+Wire Wire Line
+	6050 3500 6150 3500
+Wire Wire Line
+	6150 3500 6150 3850
+Wire Wire Line
+	6150 3850 4550 3850
+Wire Wire Line
+	4550 3850 4550 2500
+Wire Wire Line
+	4550 2500 4850 2500
+$Comp
+L Switch:SW_Push SW1
+U 1 1 6146B626
+P 6850 3650
+F 0 "SW1" V 6804 3798 50  0000 L CNN
+F 1 "SW_Push" V 6895 3798 50  0000 L CNN
+F 2 "Button_Switch_SMD:SW_SPST_CK_RS282G05A3" H 6850 3850 50  0001 C CNN
+F 3 "~" H 6850 3850 50  0001 C CNN
+	1    6850 3650
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6050 3400 6450 3400
+Wire Wire Line
+	6450 3400 6450 3500
+Wire Wire Line
+	6450 3800 6450 3950
+Connection ~ 6450 3950
+Wire Wire Line
+	6450 3950 5450 3950
+Wire Wire Line
+	6050 3200 6850 3200
+Wire Wire Line
+	6850 3200 6850 3450
+Wire Wire Line
+	6850 3850 6850 3950
+Wire Wire Line
+	6450 3950 6850 3950
+Wire Wire Line
+	7450 3100 7450 3950
+Wire Wire Line
+	7450 3950 6850 3950
+Connection ~ 6850 3950
+Wire Wire Line
+	6050 3300 6600 3300
+Wire Wire Line
+	6600 3300 6600 2400
+Wire Wire Line
+	6600 2400 7450 2400
+Wire Wire Line
+	7450 2400 8050 2400
+Connection ~ 7450 2400
+Wire Wire Line
+	8050 2700 8050 2900
+Wire Wire Line
+	8050 2900 7750 2900
+Wire Wire Line
+	8050 2900 8050 3300
+Wire Wire Line
+	8050 3300 8800 3300
+Connection ~ 8050 2900
+Wire Wire Line
+	7450 2700 6750 2700
+Wire Wire Line
+	6750 2700 6750 2850
+Wire Wire Line
+	6750 2850 6500 2850
+Wire Wire Line
+	6500 2850 6500 2800
+Wire Wire Line
+	6500 2800 6350 2800
+Connection ~ 7450 2700
+Wire Wire Line
+	6500 2850 6500 2900
+Wire Wire Line
+	6500 2900 6350 2900
+Connection ~ 6500 2850
+Wire Wire Line
+	6050 3000 6950 3000
+Wire Wire Line
+	6950 3000 6950 3200
+Wire Wire Line
+	6950 3200 8300 3200
+Wire Wire Line
+	8300 3200 8300 3000
+Wire Wire Line
+	8300 3000 8800 3000
+Wire Wire Line
+	8800 3100 8550 3100
+Wire Wire Line
+	8550 3100 8550 3400
+Wire Wire Line
+	8550 3950 7450 3950
+Connection ~ 7450 3950
+Wire Wire Line
+	8800 3400 8550 3400
+Connection ~ 8550 3400
+Wire Wire Line
+	8550 3400 8550 3950
+NoConn ~ 8800 3200
+NoConn ~ 6050 3100
+NoConn ~ 6050 2500
+NoConn ~ 6050 2600
+NoConn ~ 6050 2700
+NoConn ~ 4850 2900
+NoConn ~ 4850 3100
+NoConn ~ 4850 3200
+NoConn ~ 4850 3300
+NoConn ~ 4850 3400
+NoConn ~ 4850 3500
+NoConn ~ 4850 3600
+Wire Wire Line
+	2400 2850 2400 2050
+Wire Wire Line
+	2400 2050 8800 2050
+Connection ~ 2400 2850
+Wire Wire Line
+	2400 2850 2650 2850
+Wire Wire Line
+	8800 2050 8800 2900
+$EndSCHEMATC

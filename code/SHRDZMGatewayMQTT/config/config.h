@@ -14,19 +14,27 @@
 #include <SoftwareSerial.h>
 #include "StringSplitter.h"
 #include <MQTT.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <ESP8266httpUpdate.h>
 #include <RCSwitch.h>
 #include <Ticker.h>
 #include <time.h>
 
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+
 #ifdef LITTLEFS
 #include <LittleFS.h>
 #endif
 
 #include "..\Configuration.h"
+#include "..\definitions.h"
 
 
 #ifdef DEBUG_SHRDZM

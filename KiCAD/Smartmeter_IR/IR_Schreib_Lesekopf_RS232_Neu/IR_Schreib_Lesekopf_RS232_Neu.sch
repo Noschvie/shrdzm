@@ -1,0 +1,595 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Wire Wire Line
+	6575 3325 6575 3400
+Text Label 6575 3325 0    10   ~ 0
+GND
+Wire Wire Line
+	7850 5150 7850 5325
+Text Label 7850 5150 0    10   ~ 0
+GND
+Wire Wire Line
+	5900 5250 5900 5325
+Text Label 5900 5250 0    10   ~ 0
+GND
+Wire Wire Line
+	4600 5225 4600 5325
+Text Label 4600 5225 0    10   ~ 0
+GND
+Wire Wire Line
+	5250 5250 5250 5325
+Wire Wire Line
+	5250 5250 5150 5250
+Wire Wire Line
+	5350 5250 5250 5250
+Wire Wire Line
+	5150 5250 5150 4950
+Wire Wire Line
+	5350 5250 5350 4950
+Connection ~ 5250 5250
+Text Label 5250 5250 0    10   ~ 0
+GND
+Wire Wire Line
+	6850 3350 6850 3400
+Text Label 6850 3350 0    10   ~ 0
+GND
+Wire Wire Line
+	2975 5025 2975 5325
+Text Label 2975 5025 0    10   ~ 0
+GND
+Wire Wire Line
+	3225 3350 3225 3425
+Text Label 3225 3350 0    10   ~ 0
+GND
+Wire Wire Line
+	4325 3350 4325 3275
+Text Label 4325 3350 0    10   ~ 0
+GND
+Wire Wire Line
+	3950 5275 3950 5325
+Text Label 3950 5275 0    10   ~ 0
+GND
+Wire Wire Line
+	3525 4499 3525 5325
+Text Label 3525 4499 0    10   ~ 0
+GND
+Wire Wire Line
+	6275 3325 6275 3400
+Text Label 6275 3325 0    10   ~ 0
+GND
+Wire Wire Line
+	7675 2925 7850 2925
+Wire Wire Line
+	5775 3350 5875 3350
+Wire Wire Line
+	5875 3350 5875 3375
+Wire Wire Line
+	5775 3700 5875 3700
+Wire Wire Line
+	5875 3700 5875 3675
+Wire Wire Line
+	4675 3350 4575 3350
+Wire Wire Line
+	4575 3350 4575 3375
+Wire Wire Line
+	4675 3700 4575 3700
+Wire Wire Line
+	4575 3700 4575 3675
+Wire Wire Line
+	5775 4725 5900 4725
+Wire Wire Line
+	5900 4725 5900 4950
+Wire Wire Line
+	4675 4725 4600 4725
+Wire Wire Line
+	4600 4725 4600 4925
+Wire Wire Line
+	4675 4275 4650 4275
+Wire Wire Line
+	7850 4000 5775 4000
+Wire Wire Line
+	7850 4350 5775 4350
+Wire Wire Line
+	7325 2925 7300 2925
+Wire Wire Line
+	2975 4300 2975 4050
+Wire Wire Line
+	2975 4300 2975 4625
+Wire Wire Line
+	2975 4300 3298 4300
+Connection ~ 2975 4300
+Wire Wire Line
+	4177 4275 4250 4275
+Wire Wire Line
+	3950 4477 3950 4500
+Wire Wire Line
+	3950 4850 3950 4875
+Wire Wire Line
+	3525 4000 3525 3375
+Wire Wire Line
+	3525 4000 3525 4099
+Wire Wire Line
+	3525 4000 4675 4000
+Connection ~ 3525 4000
+Wire Wire Line
+	4325 2925 5125 2925
+Wire Wire Line
+	5225 2925 5125 2925
+Wire Wire Line
+	5125 3150 5125 2925
+Wire Wire Line
+	4325 2925 3950 2925
+Wire Wire Line
+	4325 2975 4325 2925
+Wire Wire Line
+	5325 2925 5225 2925
+Wire Wire Line
+	5225 3150 5225 2925
+Wire Wire Line
+	3525 2925 3950 2925
+Wire Wire Line
+	3950 4077 3950 2925
+Wire Wire Line
+	6275 2925 5325 2925
+Wire Wire Line
+	5325 3150 5325 2925
+Wire Wire Line
+	3225 2925 3525 2925
+Wire Wire Line
+	3525 2975 3525 2925
+Wire Wire Line
+	6275 3025 6275 2925
+Wire Wire Line
+	6575 2925 6275 2925
+Wire Wire Line
+	3225 2925 3225 3050
+Wire Wire Line
+	2975 2925 3225 2925
+Wire Wire Line
+	6575 3025 6575 2925
+Wire Wire Line
+	2975 2925 2975 3650
+Wire Wire Line
+	6850 3000 6850 2925
+Wire Wire Line
+	6850 2925 6900 2925
+Connection ~ 4325 2925
+Connection ~ 5125 2925
+Connection ~ 5225 2925
+Connection ~ 3950 2925
+Connection ~ 5325 2925
+Connection ~ 3525 2925
+Connection ~ 6275 2925
+Connection ~ 3225 2925
+Connection ~ 6575 2925
+Connection ~ 6850 2925
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_0 C4
+U 1 1 6E706370
+P 4600 5075
+F 0 "C4" H 4485 5140 50  0000 L BNN
+F 1 "0,47µF" V 4753 5177 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_0" H 4600 5075 50  0001 C CNN
+F 3 "" H 4600 5075 50  0001 C CNN
+	1    4600 5075
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_1 C6
+U 1 1 E9D7B564
+P 5900 5100
+F 0 "C6" H 5775 5169 50  0000 L BNN
+F 1 "0,47µF" V 6055 5225 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_1" H 5900 5100 50  0001 C CNN
+F 3 "" H 5900 5100 50  0001 C CNN
+	1    5900 5100
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_2 C8
+U 1 1 4085EC5D
+P 6575 3175
+F 0 "C8" H 6475 3244 50  0000 L BNN
+F 1 "10µF" V 6730 3246 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0805_KLEIN_2" H 6575 3175 50  0001 C CNN
+F 3 "" H 6575 3175 50  0001 C CNN
+	1    6575 3175
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_3 #REF06
+U 1 1 232079DD
+P 4600 5325
+F 0 "#REF06" H 4600 5325 50  0001 C CNN
+F 1 "GND" H 4600 5325 50  0001 C CNN
+F 2 "" H 4600 5325 50  0001 C CNN
+F 3 "" H 4600 5325 50  0001 C CNN
+	1    4600 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_4 #REF08
+U 1 1 32BD4424
+P 5900 5325
+F 0 "#REF08" H 5900 5325 50  0001 C CNN
+F 1 "GND" H 5900 5325 50  0001 C CNN
+F 2 "" H 5900 5325 50  0001 C CNN
+F 3 "" H 5900 5325 50  0001 C CNN
+	1    5900 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_5 #REF010
+U 1 1 A7D63178
+P 6575 3400
+F 0 "#REF010" H 6575 3400 50  0001 C CNN
+F 1 "GND" H 6575 3400 50  0001 C CNN
+F 2 "" H 6575 3400 50  0001 C CNN
+F 3 "" H 6575 3400 50  0001 C CNN
+	1    6575 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_6 #REF012
+U 1 1 8CE20D0B
+P 7850 5325
+F 0 "#REF012" H 7850 5325 50  0001 C CNN
+F 1 "GND" H 7850 5325 50  0001 C CNN
+F 2 "" H 7850 5325 50  0001 C CNN
+F 3 "" H 7850 5325 50  0001 C CNN
+	1    7850 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:LOETPUNKT_7 X1
+U 1 1 4BA10BB3
+P 7850 2925
+F 0 "X1" H 7945 2975 50  0000 L BNN
+F 1 "PIN4/DTR" H 7941 2900 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:LOETPUNKT_7" H 7850 2925 50  0001 C CNN
+F 3 "" H 7850 2925 50  0001 C CNN
+	1    7850 2925
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:LOETPUNKT_8 X3
+U 1 1 C68E9320
+P 7850 4350
+F 0 "X3" H 7945 4400 50  0000 L BNN
+F 1 "PIN2/TXD" H 7941 4325 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:LOETPUNKT_8" H 7850 4350 50  0001 C CNN
+F 3 "" H 7850 4350 50  0001 C CNN
+	1    7850 4350
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:LOETPUNKT_9 X2
+U 1 1 8C4157F9
+P 7850 4000
+F 0 "X2" H 7945 4050 50  0000 L BNN
+F 1 "PIN3/RXD" H 7941 3975 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:LOETPUNKT_9" H 7850 4000 50  0001 C CNN
+F 3 "" H 7850 4000 50  0001 C CNN
+	1    7850 4000
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:LOETPUNKT_10 X4
+U 1 1 2014F246
+P 7850 5150
+F 0 "X4" H 7945 5200 50  0000 L BNN
+F 1 "PIN5/GND" H 7955 5125 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:LOETPUNKT_10" H 7850 5150 50  0001 C CNN
+F 3 "" H 7850 5150 50  0001 C CNN
+	1    7850 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:MAX3221CAE_11 IC1
+U 1 1 3DE8C1B4
+P 5225 4000
+F 0 "IC1" H 5555 4769 50  0000 L BNN
+F 1 "MAX3221CAE" H 5421 4289 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:SSOP16_11" H 5225 4000 50  0001 C CNN
+F 3 "" H 5225 4000 50  0001 C CNN
+	1    5225 4000
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_12 C5
+U 1 1 91E257A2
+P 5875 3525
+F 0 "C5" H 5775 3594 50  0000 L BNN
+F 1 "0,1µF" V 6030 3610 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_12" H 5875 3525 50  0001 C CNN
+F 3 "" H 5875 3525 50  0001 C CNN
+	1    5875 3525
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_13 C3
+U 1 1 E5E1ECCB
+P 4575 3525
+F 0 "C3" H 4475 3594 50  0000 L BNN
+F 1 "0,47µF" V 4730 3625 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_13" H 4575 3525 50  0001 C CNN
+F 3 "" H 4575 3525 50  0001 C CNN
+	1    4575 3525
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_14 #REF07
+U 1 1 47CF787E
+P 5250 5325
+F 0 "#REF07" H 5250 5325 50  0001 C CNN
+F 1 "GND" H 5250 5325 50  0001 C CNN
+F 2 "" H 5250 5325 50  0001 C CNN
+F 3 "" H 5250 5325 50  0001 C CNN
+	1    5250 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:BZG03C_15 D2
+U 1 1 779E6AF8
+P 6850 3200
+F 0 "D2" H 6815 3321 50  0000 R BNN
+F 1 "MMSZ4689" V 7009 3317 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:DO214AA_15" H 6850 3200 50  0001 C CNN
+F 3 "" H 6850 3200 50  0001 C CNN
+	1    6850 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_16 #REF011
+U 1 1 B6DEA2C6
+P 6850 3400
+F 0 "#REF011" H 6850 3400 50  0001 C CNN
+F 1 "GND" H 6850 3400 50  0001 C CNN
+F 2 "" H 6850 3400 50  0001 C CNN
+F 3 "" H 6850 3400 50  0001 C CNN
+	1    6850 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:BAT46W_17 D3
+U 1 1 5A00C0C3
+P 7525 2925
+F 0 "D3" H 7539 3046 50  0000 R BNN
+F 1 "CRS08" H 7402 2725 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:SOD123_17" H 7525 2925 50  0001 C CNN
+F 3 "" H 7525 2925 50  0001 C CNN
+	1    7525 2925
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:R-1206_18 R5
+U 1 1 15CD18EF
+P 7100 2925
+F 0 "R5" H 7046 3000 50  0000 L BNN
+F 1 "22" H 7046 2775 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:1206_18" H 7100 2925 50  0001 C CNN
+F 3 "" H 7100 2925 50  0001 C CNN
+	1    7100 2925
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:SFH309-4_19 T1
+U 1 1 43DE61C4
+P 2875 3850
+F 0 "T1" H 2840 4025 50  0000 L BNN
+F 1 "SFH309FA-4" V 3095 3640 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:FOTO_4MM_19" H 2875 3850 50  0001 C CNN
+F 3 "" H 2875 3850 50  0001 C CNN
+	1    2875 3850
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:R-0805_20 R1
+U 1 1 53B6B5B2
+P 2975 4825
+F 0 "R1" H 2860 4940 50  0000 L BNN
+F 1 "13K" V 3125 4725 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_KLEIN_20" H 2975 4825 50  0001 C CNN
+F 3 "" H 2975 4825 50  0001 C CNN
+	1    2975 4825
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:R-0805_21 R2
+U 1 1 828E520F
+P 3525 3175
+F 0 "R2" H 3410 3290 50  0000 L BNN
+F 1 "13K" V 3675 3075 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_KLEIN_21" H 3525 3175 50  0001 C CNN
+F 3 "" H 3525 3175 50  0001 C CNN
+	1    3525 3175
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_22 #REF01
+U 1 1 508012BE
+P 2975 5325
+F 0 "#REF01" H 2975 5325 50  0001 C CNN
+F 1 "GND" H 2975 5325 50  0001 C CNN
+F 2 "" H 2975 5325 50  0001 C CNN
+F 3 "" H 2975 5325 50  0001 C CNN
+	1    2975 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_23 #REF03
+U 1 1 FCF7108D
+P 3525 5325
+F 0 "#REF03" H 3525 5325 50  0001 C CNN
+F 1 "GND" H 3525 5325 50  0001 C CNN
+F 2 "" H 3525 5325 50  0001 C CNN
+F 3 "" H 3525 5325 50  0001 C CNN
+	1    3525 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_24 #REF02
+U 1 1 DF6AF775
+P 3225 3425
+F 0 "#REF02" H 3225 3425 50  0001 C CNN
+F 1 "GND" H 3225 3425 50  0001 C CNN
+F 2 "" H 3225 3425 50  0001 C CNN
+F 3 "" H 3225 3425 50  0001 C CNN
+	1    3225 3425
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:C_KERAMIK_0,1µF_0805_25 C1
+U 1 1 0244426D
+P 3225 3200
+F 0 "C1" H 3112 3269 50  0000 L BNN
+F 1 "1µF" V 3378 3110 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_KLEIN_25" H 3225 3200 50  0001 C CNN
+F 3 "" H 3225 3200 50  0001 C CNN
+	1    3225 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:CN304_26 D1
+U 1 1 8EB84F51
+P 3950 4650
+F 0 "D1" H 3825 4746 50  0000 L BNN
+F 1 "SFH487-2" V 4125 4497 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:LED_3MM_26" H 3950 4650 50  0001 C CNN
+F 3 "" H 3950 4650 50  0001 C CNN
+	1    3950 4650
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:R-0805_27 R4
+U 1 1 BD4ED420
+P 4450 4275
+F 0 "R4" H 4375 4350 50  0000 L BNN
+F 1 "13K" H 4382 4141 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_KLEIN_27" H 4450 4275 50  0001 C CNN
+F 3 "" H 4450 4275 50  0001 C CNN
+	1    4450 4275
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_28 #REF04
+U 1 1 E9B034E6
+P 3950 5325
+F 0 "#REF04" H 3950 5325 50  0001 C CNN
+F 1 "GND" H 3950 5325 50  0001 C CNN
+F 2 "" H 3950 5325 50  0001 C CNN
+F 3 "" H 3950 5325 50  0001 C CNN
+	1    3950 5325
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:C_KERAMIK_0,1µF_0805_29 C2
+U 1 1 66C0F0DD
+P 4325 3125
+F 0 "C2" H 4187 3194 50  0000 L BNN
+F 1 "1µF" V 4478 3035 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:1206_29" H 4325 3125 50  0001 C CNN
+F 3 "" H 4325 3125 50  0001 C CNN
+	1    4325 3125
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_30 #REF05
+U 1 1 CCDCA1E8
+P 4325 3350
+F 0 "#REF05" H 4325 3350 50  0001 C CNN
+F 1 "GND" H 4325 3350 50  0001 C CNN
+F 2 "" H 4325 3350 50  0001 C CNN
+F 3 "" H 4325 3350 50  0001 C CNN
+	1    4325 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:R-0805_31 R3
+U 1 1 50C8975C
+P 3950 5075
+F 0 "R3" H 3914 5190 50  0000 R BNN
+F 1 "220" V 4084 5032 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0603_KLEIN_31" H 3950 5075 50  0001 C CNN
+F 3 "" H 3950 5075 50  0001 C CNN
+	1    3950 5075
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:BC807-40_32 T3
+U 1 1 288EDC38
+P 4175 4277
+F 0 "T3" H 4162 4349 50  0000 R BNN
+F 1 "BC807-40" V 3909 4430 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:SOT23_3_32" H 4175 4277 50  0001 C CNN
+F 3 "" H 4175 4277 50  0001 C CNN
+	1    4175 4277
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:BC817-40_33 T2
+U 1 1 17D88867
+P 3300 4299
+F 0 "T2" H 3338 4372 50  0000 L BNN
+F 1 "BC817-40" V 3644 4137 50  0000 L BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:SOT23_3_33" H 3300 4299 50  0001 C CNN
+F 3 "" H 3300 4299 50  0001 C CNN
+	1    3300 4299
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:223858615609_34 C7
+U 1 1 263FB4CA
+P 6275 3175
+F 0 "C7" H 6175 3244 50  0000 L BNN
+F 1 "10µF" V 6430 3246 50  0000 R BNN
+F 2 "IR_Schreib_Lesekopf_RS232_Neu:0805_KLEIN_34" H 6275 3175 50  0001 C CNN
+F 3 "" H 6275 3175 50  0001 C CNN
+	1    6275 3175
+	1    0    0    -1  
+$EndComp
+$Comp
+L IR_Schreib_Lesekopf_RS232_Neu-eagle-import:GND_35 #REF09
+U 1 1 5E38C75A
+P 6275 3400
+F 0 "#REF09" H 6275 3400 50  0001 C CNN
+F 1 "GND" H 6275 3400 50  0001 C CNN
+F 2 "" H 6275 3400 50  0001 C CNN
+F 3 "" H 6275 3400 50  0001 C CNN
+	1    6275 3400
+	1    0    0    -1  
+$EndComp
+Text Notes 7693 2775 0    50   ~ 0
+9pol. SUB-D-Stecker
+Text Notes 7941 3050 0    50   ~ 0
+PIN7/RTS
+Wire Notes Line
+	8475 2725 8475 5450
+Text Notes 8575 2950 0    50   ~ 0
+PIN4/DTR
+Text Notes 8575 3050 0    50   ~ 0
+PIN7/RTS
+Text Notes 8550 4025 0    50   ~ 0
+PIN2/TXD
+Text Notes 8550 4375 0    50   ~ 0
+PIN3/RXD
+Text Notes 8575 5175 0    50   ~ 0
+PIN5/GND
+Text Notes 9225 2785 0    50   ~ 0
+9pol. SUB-D-Buchse
+Wire Wire Line
+	6575 2925 6850 2925
+$EndSCHEMATC

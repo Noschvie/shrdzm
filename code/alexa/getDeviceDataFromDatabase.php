@@ -5,12 +5,21 @@ require __DIR__.'/classes/Database.php';
 
 const appID = 'amzn1.ask.skill.3f009f9d-ad83-49fc-b4f8-d2d162417f45';
 
-class Reply {
-    public $appID = "";
-    public $antwort  = "";
-	public $state = "NOK";
-	public $closing = true;
+function msg($success,$status,$message,$extra = []){
+    return array_merge([
+        'success' => $success,
+        'status' => $status,
+        'message' => $message,
+		'antwort' => $message
+    ],$extra);
 }
+
+$returnData = [
+    "success" => 0,
+    "status" => 401,
+    "message" => "Unauthorized",
+    "antwort" => "Unauthorized"
+];
 
 function getDeviceDataParameterList($conn, $type)
 {
@@ -31,17 +40,20 @@ function getDeviceDataParameterList($conn, $type)
 	return $deviceDataParameterList;
 }
 
-function getDeviceDataValues($token, $aliasname)
+function getDeviceDataValues($token, $alias, $name)
 {
 	$closing = true;
 	
 	$db_connection = new Database();
 	$conn = $db_connection->dbConnection();
 
-	if($aliasname != "")
-		$returnData = "leider keine messwerte von ".$aliasname.". welche werte soll ich dir anstelle dessen sagen?";
+	if($alias != "")
+		$returnData = "leider keine messwerte von ".$alias.". welche werte soll ich dir anstelle dessen sagen?";
 	else
 		$returnData = "leider keine messwerte. ";
+
+	$messageString = "";
+
 
 	try{
 		
@@ -54,21 +66,22 @@ function getDeviceDataValues($token, $aliasname)
 		{
             $rowUser = $query_stmt->fetch(PDO::FETCH_ASSOC);			
 			
-			if($aliasname != "")
-				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'" AND alias="'.$aliasname.'"';
-			else
+			if($alias != "")
+				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'" AND alias="'.$alias.'"';
+			else if($name != "")
+				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'" AND name="'.$name.'"';
+			else			
 				$fetch_devices_from_id = 'SELECT name, type, alias FROM `devices` WHERE `userid`="'.$rowUser['id'].'"';
 			
-
+			loging2file($fetch_devices_from_id);
+			
 			$query_devices = $conn->prepare($fetch_devices_from_id);
 			$query_devices->execute();
-			
+
 			if($query_devices->rowCount())
 			{
-				if($aliasname != "")
-					$returnData = "Letzte messungen für ".$aliasname.": ";
-				else
-					$returnData = "Letzte messungen für alle sensoren: ";
+				$returnDataString = '{ "success" : 1, "status" : 201, "message" : "%message%", "message" : "%message%", "antwort" : "%antwort%", "data" : [';
+				$counter = 0;
 								
 				while ($row = $query_devices->fetch(PDO::FETCH_ASSOC))				
 				{
@@ -80,6 +93,7 @@ function getDeviceDataValues($token, $aliasname)
 						$fetch_last_value_from_device = 'SELECT * FROM `data` WHERE `name`="'.$row['name'].'" AND reading="'.$para.'" order by timestamp desc limit 1';
 						$query_last_value_from_device = $conn->prepare($fetch_last_value_from_device);
 						$query_last_value_from_device->execute();
+
 						
 						if($query_last_value_from_device->rowCount())
 						{
@@ -93,56 +107,78 @@ function getDeviceDataValues($token, $aliasname)
 								if($query_devicetype_parameter->rowCount() == 1)
 								{
 									$rowParameter = $query_devicetype_parameter->fetch(PDO::FETCH_ASSOC);
-									if($aliasname != "")
-										$returnData .= $rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
+									
+									if($counter > 0)
+										$returnDataString .= ',';
+										
+									$counter++;		
+								
+									$returnDataString .= '{"timestamp" : "'.$rowValue['timestamp'].'", "name" : "'.$row['name'].'", "alias" : "'.$row['alias'].'", "value" : "'.$rowValue['value'].'", "unit" : "'.$rowParameter['unit'].'", "desc" : "'.$rowParameter['alias_de'].'"}';									
+
+									if($alias != "")
+										$messageString .= $rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
 									else
-										$returnData .= $row['alias'].": ".$rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";
-								}
-								else
-								{
-									$returnData .= $rowValue['reading']." : ".$rowValue['value']." einheiten. ";
+										$messageString .= $row['alias'].": ".$rowParameter['alias_de']." : ".str_replace('.', ' komma ', $rowValue['value'])." ".$rowParameter['unit'].". ";																		
 								}
 							}						
 						}					
 					}
-				}				
+				}		
+
+				$returnDataString .= "]}";
+				
+				$returnDataString = str_replace("%message%", $messageString, $returnDataString);
+				$returnDataString = str_replace("%antwort%", $messageString, $returnDataString);
+				
+				$returnData = json_decode($returnDataString);				
 			}
-			$closing = false;
+			else
+			{
+				return msg(0, 501, "Device not found");
+			}
 		}
+		else
+		{
+			return msg(0, 401, "Unauthorized");
+		}		
 	}
 	catch(PDOException $e)
 	{
-		return array("hatte leider einen fehler bei der datenbankabfrage. versuche es bitte später nochmal", true);
+		return msg(0, $e->$code, $e->$message);
 	}	
 	
-	return array($returnData, $closing);
+	return $returnData;
 }
 
 
 $entityBody = file_get_contents ( 'php://input' );
 $entityBodyJSON = json_decode($entityBody);
 
-// prepare reply
-$reply = new Reply();
-$reply->appID = $entityBodyJSON->appID;
-
-// check appID
-if($entityBodyJSON->appID != appID)
+if(!isset($entityBodyJSON->userID) 
+    || !isset($entityBodyJSON->accessToken) 
+    || (!isset($entityBodyJSON->alias) && !isset($entityBodyJSON->name) && !isset($entityBodyJSON->aliasname)) 
+    || empty(trim($entityBodyJSON->userID))
+    || empty(trim($entityBodyJSON->accessToken))
+    )
 {
-	loging2file('WRONG APPID');
-	$reply->state = 'WRONG APPID';
-	$reply->closing = true;
+    $fields = ['fields' => ['userID','accessToken','name','alias']];
+    $replyToSender = json_encode(msg(0,422,'Please Fill in all Required Fields!',$fields));		
 }
 else
 {
-	$reply->state = 'OK';	
-
-	$replyArray = getDeviceDataValues($entityBodyJSON->accessToken, $entityBodyJSON->aliasname);
-	$reply->antwort = $replyArray[0];
-	$reply->closing = $replyArray[1];
+	if(isset($entityBodyJSON->aliasname))
+	{
+		$alias = $entityBodyJSON->aliasname;	
+	}
+	else
+	{
+		$alias = isset($entityBodyJSON->alias) ? $entityBodyJSON->alias : "";	
+	}
+	
+	$name = isset($entityBodyJSON->name) ? $entityBodyJSON->name : "";	
+		
+	$replyToSender = json_encode ( getDeviceDataValues($entityBodyJSON->accessToken, $alias, $name) );
 }
-
-$replyToSender = json_encode ( $reply );
 
 header ( 'Content-Type: application/json' );
 echo $replyToSender;

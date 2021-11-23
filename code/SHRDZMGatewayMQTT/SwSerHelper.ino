@@ -1,60 +1,81 @@
-//String cmd = "";
-
 char serBuffer[MAXLINELENGTH];
+uint8_t sum1 = 0;
+uint8_t sum2 = 0;
 
 void SwSerLoop()
 {
-//  while (swSer.available()) 
   if (swSer.available()) 
   {
     char r = swSer.read();
     
     if ( r == '*' ) 
     {
-      readSerialSS();  
-      yield(); 
-      sendSensorData();      
-//      sendSensorData(&cmd);      
+      if(readSerialSS())
+      {
+        yield(); 
+        sendSensorData();      
+      }
     }
     else if(r == '#' ) 
     {
       readGatewayReply();
       yield(); 
       sendGatewayUpdate();
-//      sendGatewayUpdate(&cmd);
     }
     else if(r == '~' ) 
     {
-      readSerialSS();
-      yield(); 
-      handleGatewayMessage();
-//      handleGatewayMessage(&cmd);
+      if(readSerialSS())
+      {
+        yield(); 
+        handleGatewayMessage();
+      }
     }
   }
 }
 
-void readSerialSS()
+bool readSerialSS()
 {
   byte inByte = 0;
   int counter = 0;
-  bool finished = false;
-  unsigned int timeoutStart = millis();
-
+  uint16_t checksum = 0;
+    
   swSer.readBytes(cmd, 3);
+  if(cmd[0] == 'A')// checksum added
+  {
+    memcpy(&checksum, cmd+1, 2);
+  }
   
   int len = swSer.readBytesUntil('\n', cmd, MAXLINELENGTH);
   cmd[len] = '\0';
 
+  if(checksum != 0)
+  {
+    sum1 = 0;
+    sum2 = 0;
+    
+    for(int i = 0; i<strlen(cmd); i++)
+    {
+      sum1 = (sum1 + cmd[i]) % 255;
+      sum2 = (sum2 + sum1) % 255;
+    }        
+
+    if(((sum2 << 8) | sum1) != checksum)
+    {
+      sendChecksumError();
+      return false;
+    }
+  }
+
   DV(cmd);
+
+  return true;
 }
 
 void readGatewayReply()
 {
-//  String cmd = "";
   byte inByte = 0;
   int counter = 0;
   bool finished = false;
-//  cmd = "";
   
   while (!finished)
   {
@@ -81,7 +102,6 @@ void readGatewayReply()
       else
       {
         cmd[counter++] = (char)inByte;
-//        cmd += (char)inByte;
       }
     }    
   }  
@@ -89,8 +109,6 @@ void readGatewayReply()
   cmd[counter] = '\0';
 
   delay(100);
-  
-//  return cmd;  
 }
 
 void sendGatewayUpdate()
@@ -100,10 +118,8 @@ void sendGatewayUpdate()
 
 }
 
-//void handleGatewayMessage(String *cmd)
 void handleGatewayMessage()
 {
-//  StringSplitter *splitter = new StringSplitter(*cmd, '$', 4);
   StringSplitter *splitter = new StringSplitter(cmd, '$', 4);
   int itemCount = splitter->getItemCount();
 
@@ -141,10 +157,13 @@ void handleGatewayMessage()
   delete splitter;
 }
 
-//void sendSensorData(String *data)
+void sendChecksumError()
+{
+  mqttclient.publish((String(MQTT_TOPIC)+"/LastError").c_str(), "Checksum Error");
+}
+
 void sendSensorData()
 {
-//  StringSplitter *splitter = new StringSplitter(*data, '$', 3);
   StringSplitter *splitter = new StringSplitter(cmd, '$', 3);
   int itemCount = splitter->getItemCount();
   String subject = "SHRDZM/";
@@ -158,15 +177,12 @@ void sendSensorData()
 
       if(splitter->getItemAtIndex(0) == "[D]")
       {
-//        mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+t).c_str(), 
-//          v.c_str());
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensor/"+
         splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'))).c_str(), 
           splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1).c_str());
 
         if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
         {
-//          cloudAddMeasurement(splitter->getItemAtIndex(1).c_str(), t.c_str(), v.c_str());
           cloudAddMeasurement(splitter->getItemAtIndex(1).c_str(), 
           splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':')).c_str(), 
           splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1).c_str());
@@ -174,7 +190,6 @@ void sendSensorData()
       }
       else if(splitter->getItemAtIndex(0) == "[I]")  // Init
       {
-//        mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), String(t+" "+v).c_str());
         mqttclient.publish((String(MQTT_TOPIC)+"/state").c_str(), 
         (splitter->getItemAtIndex(2).substring(0, splitter->getItemAtIndex(2).indexOf(':'))+" "+
         splitter->getItemAtIndex(2).substring(splitter->getItemAtIndex(2).indexOf(':')+1)).c_str());
@@ -190,7 +205,10 @@ void sendSensorData()
           splitter->getItemAtIndex(2).c_str());
 
         if(t == "devicetype")
+        {
+          freeForRegistering = false;
           registerDeviceTypeBuffer = splitter->getItemAtIndex(1)+":"+v;
+        }
       }
       else if(splitter->getItemAtIndex(0) == "[A]")
       {
@@ -219,6 +237,8 @@ void sendSensorData()
       {
         mqttclient.publish((String(MQTT_TOPIC)+"/"+splitter->getItemAtIndex(1)+"/sensors").c_str(), 
           splitter->getItemAtIndex(2).c_str());
+
+        freeForRegistering = true;
       }  
       else
       {

@@ -15,6 +15,7 @@ function msg($success,$status,$message,$extra = []){
 
 // INCLUDING DATABASE AND MAKING OBJECT
 require __DIR__.'/classes/Database.php';
+require __DIR__.'/classes/logging.php';
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 
@@ -47,8 +48,8 @@ else:
 	if((strlen($email) > 0) && (!filter_var($email, FILTER_VALIDATE_EMAIL))):
 		$returnData = msg(0,422,'Invalid Email Address!');
 
-    elseif(strlen($password) < 8):
-        $returnData = msg(0,422,'Your password must be at least 8 characters long!');
+    elseif(strlen($password) < 6):
+        $returnData = msg(0,422,'Your password must be at least 6 characters long!');
 
     elseif(strlen($name) < 3):
         $returnData = msg(0,422,'Your name must be at least 3 characters long!');
@@ -84,7 +85,12 @@ else:
                 $insert_stmt->execute();
 
                 $returnData = msg(1,201,'You have successfully registered.');
-
+				
+				logging2file( "new user registered = ".$name );
+				
+				$command = '/opt/fhem/fhem.pl 127.0.0.1:7072 "set Telegram send ~~~new user '.$name.' registered.~~~"';
+				
+				shell_exec($command);
             endif;
 
         }

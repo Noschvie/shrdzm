@@ -4,14 +4,16 @@ StaticJsonDocument<512> replyDoc;
 
 void CloudLoop()
 {
-  if(registerDeviceTypeBuffer != "")
+  if(registerDeviceTypeBuffer != "" && freeForRegistering)
   {
     if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0 && cloudConnected)
     {
       StringSplitter *splitter = new StringSplitter(registerDeviceTypeBuffer, ':', 2);
       if(splitter->getItemCount() == 2)
-      {          
+      {     
+        yield();     
         cloudRegisterDevice(splitter->getItemAtIndex(0).c_str(), splitter->getItemAtIndex(1).c_str());
+        freeForRegistering = false;
       }
     }
     
@@ -161,8 +163,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     HTTPClient http;
   
     String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-    DV(finalAddress);
-    DV(content);
+//    DV(finalAddress);
+//    DV(content);
         
     if(http.begin(finalAddress))
     {
@@ -181,8 +183,8 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
         return false;
       }
           
-      DV(httpResponseCode);
-      DV(http.getString());
+//      DV(httpResponseCode);
+//      DV(http.getString());
 
       *reply = http.getString();
       http.end();

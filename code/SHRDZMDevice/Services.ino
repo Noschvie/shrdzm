@@ -1,3 +1,5 @@
+
+
 void handleBatteryCheck()
 {
   if(batterycheckDone)

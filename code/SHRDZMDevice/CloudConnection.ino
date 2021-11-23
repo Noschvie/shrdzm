@@ -2,10 +2,71 @@
 
 #define DEBUG_SHRDZM
 
+bool sendPrivateCloudData(const char* endpoint, const char* user, const char* password, const char* message )
+{
+  if(strncmp(endpoint, "https://", 8) != 0)
+  {
+    Serial.println(F("Only https connection allowed!"));
+    return false;
+  }
+
+  String host(endpoint);
+  host = host.substring(8);
+
+  String path;
+  int firstSlash = host.indexOf('/');
+  int port = 443;
+
+  if(firstSlash > 0)
+  {
+    path = host.substring(firstSlash);
+    host = host.substring(0,firstSlash);
+
+    if(host.indexOf(':') > 0)
+    {
+      port = atoi(host.substring(host.indexOf(':')+1).c_str());
+      host = host.substring(0,host.indexOf(':'));
+    }
+  }  
+
+  DLN(host);
+  DLN(port);
+  DLN(path);
+  
+    
+  if(WiFi.status()== WL_CONNECTED)
+  {  
+    WiFiClientSecure client;
+    client.setInsecure(); 
+    client.setBufferSizes(512,512);
+  
+    HTTPClient http;
+    if (!http.begin(client, host, port, path, true))
+    {
+      Serial.println(F("no connection possible!"));
+    }      
+  
+    http.setAuthorization(user, password);
+    http.addHeader("Content-Type", "application/json");
+  
+    int  httpCode = http.POST(message);
+
+    Serial.println(httpCode);
+    if(httpCode != 200)
+    {
+      
+    }
+
+  
+    http.end();
+  } 
+
+  return true;
+}
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {
-  DLN("Will now try to register new User on "+String(CloudApiAddress));
+//  DLN(F("Will now try to register new User on ")+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
@@ -22,13 +83,15 @@ bool cloudRegisterNewUser(const char* user, const char* email, const char* passw
 
   if(doc["success"].as<unsigned int>() == 1)
     return true;
+  else if(doc["status"].as<unsigned int>() == 422)
+    return true;
   else
     return false;
 }
 
 bool cloudUnregisterUser(const char* user, const char* password )
 {
-  DLN("Will now try to unregister new User on "+String(CloudApiAddress));
+  DLN("Will now try to unregister User on "+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("unregister.php", String("{\"name\":\""+String(user)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
@@ -46,7 +109,10 @@ bool cloudUnregisterUser(const char* user, const char* password )
   if(doc["success"].as<unsigned int>() == 1)
     return true;
   else
+  {
+    DV(reply);
     return false;
+  }
 }
 
 bool cloudRegisterDevice(const char* devicename, const char* type )
@@ -62,7 +128,7 @@ bool cloudRegisterDevice(const char* devicename, const char* type )
 
 bool cloudUnregisterDevice(const char* devicename)
 {
-  DLN("Will now try to register Device on "+String(CloudApiAddress));
+  DLN("Will now try to unregister Device on "+String(CloudApiAddress));
 
   String reply;
   if(!cloudSendRESTCommand("unregister-device.php", String("{\"name\":\""+String(devicename)+"\"}").c_str(), true, &reply, true))
@@ -111,9 +177,11 @@ bool cloudIsDeviceRegisteredHere(const char* devicename)
 
 bool cloudAddMeasurement(const char* devicename, const char* reading, const char* value )
 {
-  DLN("Will now try to add mesurement on "+String(CloudApiAddress));
-
   String reply;
+
+ // return cloudSendAsyncRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
+  //////// !!!!!!!!!!!!!!!
+  
   return cloudSendRESTCommand("measurement.php", String("{\"name\":\""+String(devicename)+"\",\"reading\":\""+String(reading)+"\",\"value\":\""+String(value)+"\"}").c_str(), true, &reply, true);
 }
 
@@ -145,6 +213,43 @@ bool cloudLogin(const char* user, const char* password )
   return true;
 }
 
+////////// Async Handling //////////////////
+bool cloudSendAsyncRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
+{
+  if(WiFi.status()== WL_CONNECTED)
+  {
+    String finalAddress = String(CloudApiAddress) + String("/") + String(address);
+//    request.setTimeout(1);
+
+    request.open("POST", finalAddress.c_str());
+    String auth = "Bearer " + cloudToken;    
+
+    request.setReqHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
+    request.setReqHeader("Content-Type","application/json");
+    request.send(content);
+//    state = waitPost;    
+
+    return true;
+  }
+    
+/*    if(request.readyState() == 0 || request.readyState() == 4)
+    {
+        request.open("GET", "http://worldtimeapi.org/api/timezone/Europe/London.txt");
+        request.send();
+    }*/
+}
+
+void requestCB(void* optParm, asyncHTTPrequest* request, int readyState)
+{
+    if(readyState == 4)
+    {
+        Serial.println(request->responseText());
+        Serial.println();
+        request->setDebug(false);
+    }
+}
+////////////////////////////////////////////
+
 bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
 {
   if(WiFi.status()== WL_CONNECTED)
@@ -152,25 +257,32 @@ bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNe
     HTTPClient http;
   
     String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-    DV(finalAddress);
-    DV(content);
+//    DV(finalAddress);
+//    DV(content);
+
+    WiFiClient client;
         
-    if(http.begin(finalAddress))
+//    if(http.begin(finalAddress))
+    if(http.begin(client, finalAddress))
     {
       http.addHeader("Content-Type", "application/json");
 
       if(tokenNeeded && cloudToken != "")
       {
-        http.addHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
+        http.addHeader(F("Authorization"), String(String("Basic ")+cloudToken).c_str());
       }      
 
       int httpResponseCode = http.POST(content);
 
       if(httpResponseCode != 200)
+      {
+        DV(httpResponseCode);
+        DV(http.getString());
         return false;
+      }
           
-      DV(httpResponseCode);
-      DV(http.getString());
+//      DV(httpResponseCode);
+//      DV(http.getString());
 
       *reply = http.getString();
       http.end();

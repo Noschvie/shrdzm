@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>C:\Users\erich\Nextcloud\Diverses\Arduino\Development\shrdzm\KiCAD\Smartmeter_IR\Smartmeter_IR\Smartmeter_IR.sch</source>
+    <date>25.10.2021 17:33:49</date>
+    <tool>Eeschema (5.1.9)-1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>Smartmeter_IR.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="D1">
+      <value>BAT46</value>
+      <footprint>Diode_SMD:D_SOD-123</footprint>
+      <datasheet>http://www.vishay.com/docs/85662/bat46.pdf</datasheet>
+      <libsource lib="Diode" part="BAT46" description="100V 0.15A Small Signal Schottky Diode, DO-35"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6177B564</tstamp>
+    </comp>
+    <comp ref="IC1">
+      <value>74LVC1G17DBVR</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23-5</footprint>
+      <datasheet>https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&amp;ts=1635086720658&amp;ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fsn74lvc1g17</datasheet>
+      <libsource lib="Erich" part="74LVC1G17DBVR" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617855D0</tstamp>
+    </comp>
+    <comp ref="Q1">
+      <value>BC817</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
+      <datasheet>https://www.onsemi.com/pub/Collateral/BC818-D.pdf</datasheet>
+      <libsource lib="Transistor_BJT" part="BC817" description="0.8A Ic, 45V Vce, NPN Transistor, SOT-23"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61786703</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>1µF/10V</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>61789C8C</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>13K</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6178A48F</tstamp>
+    </comp>
+    <comp ref="T1">
+      <value>SFH309FA-4</value>
+      <footprint>IR_Schreib_Lesekopf_RS232_Neu:FOTO_4MM_19</footprint>
+      <libsource lib="IR_Schreib_Lesekopf_RS232_Neu-import" part="SFH309-4_19" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6178BBB6</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>13K</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6178D514</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>1µF/10V</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6178E546</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>RJ12</value>
+      <footprint>ErichCollection:RJ12_Amphenol_54601</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector" part="RJ12" description="RJ connector, 6P6C (6 positions 6 connected)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6178F9C7</tstamp>
+    </comp>
+    <comp ref="IC2">
+      <value>74LVC1G17DBVR</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23-5</footprint>
+      <datasheet>https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&amp;ts=1635086720658&amp;ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fsn74lvc1g17</datasheet>
+      <libsource lib="Erich" part="74LVC1G17DBVR" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617957E2</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>13K</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6179C832</tstamp>
+    </comp>
+    <comp ref="D2">
+      <value>SFH487-2</value>
+      <footprint>IR_Schreib_Lesekopf_RS232_Neu:LED_3MM_26</footprint>
+      <libsource lib="IR_Schreib_Lesekopf_RS232_Neu-import" part="CN304_26" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>6179D28A</tstamp>
+    </comp>
+    <comp ref="Q2">
+      <value>BC807</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
+      <datasheet>https://www.onsemi.com/pub/Collateral/BC808-D.pdf</datasheet>
+      <libsource lib="Transistor_BJT" part="BC807" description="0.8A Ic, 45V Vce, PNP Transistor, SOT-23"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617A097C</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>1µF/10V</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617A6A16</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>180</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>617A97D2</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector" part="6P6C">
+      <aliases>
+        <alias>RJ12</alias>
+        <alias>RJ18</alias>
+        <alias>RJ25</alias>
+      </aliases>
+      <description>RJ connector, 6P6C (6 positions 6 connected), RJ12/RJ18/RJ25</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>6P6C*</fp>
+        <fp>RJ12*</fp>
+        <fp>RJ18*</fp>
+        <fp>RJ25*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">6P6C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+        <pin num="3" name="~" type="passive"/>
+        <pin num="4" name="~" type="passive"/>
+        <pin num="5" name="~" type="passive"/>
+        <pin num="6" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Diode" part="1N6263">
+      <aliases>
+        <alias>BAT41</alias>
+        <alias>BAT42</alias>
+        <alias>BAT43</alias>
+        <alias>BAT46</alias>
+        <alias>BAT48RL</alias>
+        <alias>BAT85</alias>
+        <alias>BAT86S</alias>
+        <alias>BAT86</alias>
+        <alias>1N5711</alias>
+        <alias>1N5712</alias>
+        <alias>1N6857</alias>
+        <alias>1N6858</alias>
+        <alias>DSB5712</alias>
+        <alias>DSB2810</alias>
+      </aliases>
+      <description>60V 15mA Schottky diode, DO-35</description>
+      <docs>www.st.com/resource/en/datasheet/1n6263.pdf</docs>
+      <footprints>
+        <fp>D*DO?35*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">1N6263</field>
+        <field name="Footprint">Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Erich" part="74LVC1G17DBVR">
+      <docs>https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&amp;ts=1635086720658&amp;ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fsn74lvc1g17</docs>
+      <fields>
+        <field name="Reference">IC</field>
+        <field name="Value">74LVC1G17DBVR</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23-5</field>
+      </fields>
+      <pins>
+        <pin num="1" name="NC" type="NotConnected"/>
+        <pin num="2" name="A" type="input"/>
+        <pin num="3" name="GND" type="passive"/>
+        <pin num="4" name="Y" type="output"/>
+        <pin num="5" name="VCC" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="IR_Schreib_Lesekopf_RS232_Neu-import" part="CN304_26">
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">CN304_26</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="IR_Schreib_Lesekopf_RS232_Neu-import" part="SFH309-4_19">
+      <fields>
+        <field name="Reference">T</field>
+        <field name="Value">SFH309-4_19</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Transistor_BJT" part="BC807">
+      <aliases>
+        <alias>BC808</alias>
+        <alias>BC856</alias>
+        <alias>BC857</alias>
+        <alias>BC858</alias>
+        <alias>BC859</alias>
+        <alias>BC860</alias>
+        <alias>MMBT3906</alias>
+      </aliases>
+      <description>0.8A Ic, 45V Vce, PNP Transistor, SOT-23</description>
+      <docs>https://www.onsemi.com/pub/Collateral/BC808-D.pdf</docs>
+      <footprints>
+        <fp>SOT?23*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">BC807</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
+      </fields>
+      <pins>
+        <pin num="1" name="B" type="input"/>
+        <pin num="2" name="E" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Transistor_BJT" part="BC817">
+      <aliases>
+        <alias>BC818</alias>
+        <alias>BC846</alias>
+        <alias>BC847</alias>
+        <alias>BC848</alias>
+        <alias>BC849</alias>
+        <alias>BC850</alias>
+        <alias>MMBT3904</alias>
+        <alias>MMBT5550L</alias>
+        <alias>MMBT5551L</alias>
+      </aliases>
+      <description>0.8A Ic, 45V Vce, NPN Transistor, SOT-23</description>
+      <docs>https://www.onsemi.com/pub/Collateral/BC818-D.pdf</docs>
+      <footprints>
+        <fp>SOT?23*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">BC817</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
+      </fields>
+      <pins>
+        <pin num="1" name="B" type="input"/>
+        <pin num="2" name="E" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Connector.lib</uri>
+    </library>
+    <library logical="Device">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Device.lib</uri>
+    </library>
+    <library logical="Diode">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Diode.lib</uri>
+    </library>
+    <library logical="Erich">
+      <uri>C:/Users/erich/Nextcloud/Diverses/KiCAD/lib/Erich.lib</uri>
+    </library>
+    <library logical="IR_Schreib_Lesekopf_RS232_Neu-import">
+      <uri>C:\Users\erich\Nextcloud\Diverses\Arduino\Development\shrdzm\KiCAD\Smartmeter_IR\Smartmeter_IR/IR_Schreib_Lesekopf_RS232_Neu-import.lib</uri>
+    </library>
+    <library logical="Transistor_BJT">
+      <uri>C:\Program Files\KiCad\share\kicad\library/Transistor_BJT.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Net-(D2-Pad2)">
+      <node ref="D2" pin="2"/>
+      <node ref="R4" pin="2"/>
+    </net>
+    <net code="2" name="Net-(D2-Pad1)">
+      <node ref="Q2" pin="3"/>
+      <node ref="D2" pin="1"/>
+    </net>
+    <net code="3" name="Net-(IC2-Pad4)">
+      <node ref="R3" pin="2"/>
+      <node ref="IC2" pin="4"/>
+    </net>
+    <net code="4" name="Net-(Q2-Pad1)">
+      <node ref="Q2" pin="1"/>
+      <node ref="R3" pin="1"/>
+    </net>
+    <net code="5" name="Net-(IC2-Pad2)">
+      <node ref="IC2" pin="2"/>
+      <node ref="J1" pin="4"/>
+    </net>
+    <net code="6" name="GND">
+      <node ref="C2" pin="2"/>
+      <node ref="C3" pin="2"/>
+      <node ref="R1" pin="2"/>
+      <node ref="Q1" pin="2"/>
+      <node ref="IC1" pin="3"/>
+      <node ref="J1" pin="6"/>
+      <node ref="C1" pin="2"/>
+      <node ref="R4" pin="1"/>
+      <node ref="IC2" pin="3"/>
+    </net>
+    <net code="7" name="Net-(IC2-Pad1)">
+      <node ref="IC2" pin="1"/>
+    </net>
+    <net code="8" name="Net-(J1-Pad3)">
+      <node ref="J1" pin="3"/>
+    </net>
+    <net code="9" name="Net-(J1-Pad2)">
+      <node ref="J1" pin="2"/>
+    </net>
+    <net code="10" name="Net-(IC1-Pad4)">
+      <node ref="J1" pin="5"/>
+      <node ref="IC1" pin="4"/>
+    </net>
+    <net code="11" name="Net-(IC1-Pad2)">
+      <node ref="R2" pin="2"/>
+      <node ref="IC1" pin="2"/>
+      <node ref="Q1" pin="3"/>
+    </net>
+    <net code="12" name="Net-(IC1-Pad1)">
+      <node ref="IC1" pin="1"/>
+    </net>
+    <net code="13" name="Net-(D1-Pad2)">
+      <node ref="J1" pin="1"/>
+      <node ref="D1" pin="2"/>
+    </net>
+    <net code="14" name="Net-(C1-Pad1)">
+      <node ref="IC2" pin="5"/>
+      <node ref="D1" pin="1"/>
+      <node ref="C1" pin="1"/>
+      <node ref="Q2" pin="2"/>
+      <node ref="T1" pin="2"/>
+      <node ref="IC1" pin="5"/>
+      <node ref="C3" pin="1"/>
+      <node ref="C2" pin="1"/>
+      <node ref="R2" pin="1"/>
+    </net>
+    <net code="15" name="Net-(Q1-Pad1)">
+      <node ref="T1" pin="1"/>
+      <node ref="R1" pin="1"/>
+      <node ref="Q1" pin="1"/>
+    </net>
+  </nets>
+</export>

@@ -38,6 +38,7 @@ class SensorData
     };  
 
     String getDataItem(String name);    
+    const char* getDataItemPtr(const char *name);    
     void setDataItem(const char *name, const char *value);
   
     DataItem *di;
@@ -74,8 +75,8 @@ class DeviceBase
 
     DynamicJsonDocument *m_pConfigurationObject;
     
-    StaticJsonDocument<JSON_OBJECT_SIZE(10)> doc;
-    StaticJsonDocument<JSON_OBJECT_SIZE(10)> docAction;
+    StaticJsonDocument<JSON_OBJECT_SIZE(15)> doc;
+    StaticJsonDocument<JSON_OBJECT_SIZE(15)> docAction;
 };
 
 #endif

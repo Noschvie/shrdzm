@@ -39,18 +39,18 @@ elseif(!isset($data->name)
     || !isset($data->value) 
     || empty(trim($data->name))
     || empty(trim($data->reading))
-    || empty(trim($data->value))
+//    || empty($data->value)
     )
 {
-
-    $fields = ['fields' => ['name','reading','value']];
-    $returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);	
+	$fields = ['fields' => ['name','reading','value']];
+	$returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);	
 }
 else
 {
 	if(array_key_exists('Authorization',$allHeaders) && !empty(trim($allHeaders['Authorization'])))
 	{
 		$token = explode(" ", trim($allHeaders['Authorization']));
+				
 		if(isset($token[1]) && !empty(trim($token[1])))
 		{
 			$userInfo = fetchUserByToken($conn, trim($token[1]));
@@ -84,6 +84,14 @@ else
                 $returnData = msg(0,422,'Invalid Name!');				
 			}
 		}
+		else
+		{
+			logging2file( "no token" );
+		}
+	}
+	else
+	{
+		logging2file( "token not in header ".implode(",",$allHeaders) );
 	}
 }
 

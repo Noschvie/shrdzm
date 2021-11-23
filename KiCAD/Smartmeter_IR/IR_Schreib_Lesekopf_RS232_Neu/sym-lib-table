@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name IR_Schreib_Lesekopf_RS232_Neu-eagle-import)(type Legacy)(uri ${KIPRJMOD}/IR_Schreib_Lesekopf_RS232_Neu-eagle-import.lib)(options "")(descr ""))
+)

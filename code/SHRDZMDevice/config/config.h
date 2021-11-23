@@ -2,15 +2,17 @@
 #define CONFIG_H
 
 
-#define VERSION		"0.5.1"
+#define VERSION		"0.5.2"
 #define NAME		"SHRDZMDevice"
 
 #define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
+#define NTP_SERVER "at.pool.ntp.org"
+#define TZ "CET-1CEST,M3.5.0,M10.5.0/3"
 
-//#define LITTLEFS
+#define LITTLEFS
 
 #define SLEEP_SECS 10
-//#define SLEEP_SECS 2 * 60 
+#define SERIAL_BAUD 115200
 #define SEND_TIMEOUT 1000  // 245 millis seconds timeout 
 #define LEDPIN 		2
 #define PAIRING_PIN	13
@@ -29,7 +31,9 @@
 
 #include <ArduinoJson.h>
 #include "SimpleEspNowConnection.h"
+#include "../definitions.h"
 #include "StringSplitter.h"
+#include <asyncHTTPrequest.h>
 //#include "FS.h"
 
 #ifdef LITTLEFS
@@ -41,6 +45,10 @@
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <Ticker.h>
+#include <time.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
+//#include <TimeLib.h>
 #include "..\Configuration.h"
 
 

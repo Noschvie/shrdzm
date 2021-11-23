@@ -4,8 +4,10 @@
 class SerialBufferObject
 {
   public:
-    SerialBufferObject(){};
+    SerialBufferObject(){sum1 = 0; sum2 = 0;};
     ~SerialBufferObject(){};
+    uint8_t sum1;
+    uint8_t sum2;
 
   class SerialBufferItem
   {
@@ -18,15 +20,32 @@ class SerialBufferObject
       };      
   };
 
+  void calculateChecksum(String& message)
+  {
+    sum1 = 0;
+    sum2 = 0;
+        
+    for(int i = 4; i<message.length(); i++)
+    {
+      sum1 = (sum1 + message[i]) % 255;
+      sum2 = (sum2 + sum1) % 255;
+    }
+
+    message[2] = sum1;
+    message[3] = sum2;
+  }
+
   void executeSerialSend()
   {
       SerialBufferItem *i = GetNextItem();
       if(i != NULL)
       {
+        i->m_text[1] = 'A';
+        calculateChecksum(i->m_text);
         Serial.print(i->m_text.c_str());
         Serial.print('\n');
         RemoveItem(i);
-        delay(100);
+        delay(200);
         yield();
       }    
   }

@@ -27,6 +27,7 @@ my @topics = (
 	"update",
     "paired",
     "RCData",
+    "LastError",
     "IP",
     "version",
     "gatewayaddress",
@@ -548,6 +549,10 @@ sub onmessage($$$) # from mqtt
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);
 			}
+			elsif($item eq "LastError")
+			{
+				readingsSingleUpdate($hash, $item, $message, 1);
+			}			
 			elsif($item eq "IP")
 			{
 				readingsSingleUpdate($hash, $item, $message, 1);

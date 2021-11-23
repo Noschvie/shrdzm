@@ -13,6 +13,10 @@ class Configuration
     ~Configuration();
     char sendESPBuffer[MAX_ESP_BUFFERSIZE];
 
+    void setDeviceName(const char* devicename)
+    {
+      m_deviceName = devicename;
+    };
     bool load();
     bool store();
     bool initialize();
@@ -46,6 +50,7 @@ class Configuration
     void resetConfiguration();
    protected:
     void sendMessageWithChecksum(SimpleEspNowConnection *simpleEspConnection, const char *message);
+    String m_deviceName;
 
 };
 

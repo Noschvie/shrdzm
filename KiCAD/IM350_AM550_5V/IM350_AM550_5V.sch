@@ -143,17 +143,6 @@ NoConn ~ 5450 2800
 NoConn ~ 5450 2900
 NoConn ~ 5450 3000
 NoConn ~ 5450 3100
-$Comp
-L Device:R P3
-U 1 1 606C9BA3
-P 7150 2300
-F 0 "P3" V 7100 2450 50  0000 C CNN
-F 1 "0R" V 7150 2300 50  0000 C CNN
-F 2 "Resistor_SMD:R_0402_1005Metric_Pad0.72x0.64mm_HandSolder" V 7080 2300 50  0001 C CNN
-F 3 "~" H 7150 2300 50  0001 C CNN
-	1    7150 2300
-	0    1    1    0   
-$EndComp
 Connection ~ 7650 2600
 Wire Wire Line
 	6750 2200 7650 2200
@@ -165,27 +154,11 @@ Wire Wire Line
 Wire Wire Line
 	6650 2500 7500 2500
 Wire Wire Line
-	7300 2300 7300 2400
-Wire Wire Line
 	7300 2600 7650 2600
 Wire Wire Line
 	7900 2700 8650 2700
 Wire Wire Line
 	3500 2500 4200 2500
-$Comp
-L Device:R P4
-U 1 1 60715416
-P 7150 2400
-F 0 "P4" V 7100 2550 50  0000 C CNN
-F 1 "0R" V 7150 2400 50  0000 C CNN
-F 2 "Resistor_SMD:R_0402_1005Metric_Pad0.72x0.64mm_HandSolder" V 7080 2400 50  0001 C CNN
-F 3 "~" H 7150 2400 50  0001 C CNN
-	1    7150 2400
-	0    1    1    0   
-$EndComp
-Connection ~ 7300 2400
-Wire Wire Line
-	7300 2400 7300 2600
 Wire Wire Line
 	6650 2400 7000 2400
 Text Label 6950 2300 0    50   ~ 0
@@ -272,4 +245,32 @@ Wire Wire Line
 	6650 2300 7000 2300
 NoConn ~ 6650 2000
 NoConn ~ 6650 2100
+$Comp
+L Diode:1N4148 D1
+U 1 1 610C3121
+P 7150 2300
+F 0 "D1" H 7050 2400 50  0000 C CNN
+F 1 "1N4148" H 7350 2350 50  0000 C CNN
+F 2 "Diode_SMD:D_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 7150 2125 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/1N4148_1N4448.pdf" H 7150 2300 50  0001 C CNN
+	1    7150 2300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7300 2300 7300 2400
+$Comp
+L Diode:1N4148 D2
+U 1 1 610C5275
+P 7150 2400
+F 0 "D2" H 7050 2450 50  0000 C CNN
+F 1 "1N4148" H 7350 2450 50  0000 C CNN
+F 2 "Diode_SMD:D_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 7150 2225 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/1N4148_1N4448.pdf" H 7150 2400 50  0001 C CNN
+	1    7150 2400
+	1    0    0    -1  
+$EndComp
+Connection ~ 7300 2400
+Wire Wire Line
+	7300 2400 7300 2600
+Connection ~ 7300 2600
 $EndSCHEMATC
