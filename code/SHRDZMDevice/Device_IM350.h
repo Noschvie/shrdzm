@@ -31,6 +31,7 @@ class Device_IM350 : public DeviceBase
     enum devicetype {
       unknown,
       im350,
+      e450,
       am550,
       im350Wels,
       sagemcom
@@ -51,7 +52,9 @@ class Device_IM350 : public DeviceBase
     
     void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
     void decrypt_text(Vector_GCM *vect, byte *bufferResult);
+    uint16_t byteToUInt16(byte array[], unsigned int startByte);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);
+    uint8_t readDataStream(bool withTimeout);
     void parse_message(byte array[], devicetype dt);
     void hexToBytes(const char* code, byte* result);  
     String hexToString(byte array[], int readCnt);
@@ -59,13 +62,15 @@ class Device_IM350 : public DeviceBase
     uint32_t writeHourValue(const char *value);
     uint32_t writeDayValue(const char *value);
     time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss);
-//    devicetype dt;
 
     bool softwareSerialUsed;
     SoftwareSerial mySoftwareSerial;
     bool inverted;
     bool done;
     int interval;
+    byte *lastReadMessage;
+    uint8_t lastReadMessageLen;
+    uint8_t cachedDataAvailable;
     
     char m_cipherkey[33];
     byte m_blockCipherKey[16];

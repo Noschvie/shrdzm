@@ -1984,6 +1984,14 @@ void handleGatewayLoop()
   if(firmwareUpdate)
     upgradeFirmware();
 
+  // check if new data available
+  if(dev != NULL && !preparing)
+  {
+    if(dev->isNewDataAvailable())
+    {
+      // TODO
+    }
+  }
 
   // only if interval is reached or if preparing ongoing
   if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
