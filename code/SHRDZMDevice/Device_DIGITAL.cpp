@@ -8,7 +8,7 @@ Device_DIGITAL::Device_DIGITAL()
 
 Device_DIGITAL::~Device_DIGITAL()
 {
-  Serial.println("DIGITAL Instance deleted");
+  DLN(F("DIGITAL Instance deleted"));
 }
 
 bool Device_DIGITAL::setDeviceParameter(JsonObject obj)

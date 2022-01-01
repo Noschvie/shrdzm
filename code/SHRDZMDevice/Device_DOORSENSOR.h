@@ -1,6 +1,7 @@
 #ifndef Device_DOORSENSOR_H
 #define Device_DOORSENSOR_H
 
+#include "config/config.h"
 #include "DeviceBase.h"
 
 // Sensors

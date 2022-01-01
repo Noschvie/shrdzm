@@ -12,7 +12,7 @@ Device_BMP280::Device_BMP280()
 
 Device_BMP280::~Device_BMP280()
 {
-  Serial.println("BMP280 Instance deleted");
+  DLN(F("BMP280 Instance deleted"));
 }
 
 bool Device_BMP280::isNewDataAvailable()
@@ -32,7 +32,7 @@ bool Device_BMP280::setDeviceParameter(JsonObject obj)
 
   if(!avail)
   {
-    Serial.println("Sensor not found!"); 
+    DLN(F("Sensor not found!")); 
     sensorAvailable = false;    
   }
   else

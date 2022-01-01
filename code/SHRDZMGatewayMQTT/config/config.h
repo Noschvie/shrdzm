@@ -4,7 +4,7 @@
 #define VERSION		"0.5.1"
 #define NAME		"SHRDZMGatewayMQTT"
 
-#define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
+#define CloudApiAddress "https://api.shrdzm.com/shrdzm/api"
 #define NTP_SERVER "at.pool.ntp.org"
 #define TZ "CET-1CEST,M3.5.0,M10.5.0/3"
 

@@ -8,7 +8,7 @@ Device_DHT22::Device_DHT22()
 
 Device_DHT22::~Device_DHT22()
 {
-  Serial.println("DHT22 Instance deleted");
+  DLN(F("DHT22 Instance deleted"));
 }
 
 bool Device_DHT22::setDeviceParameter(JsonObject obj)

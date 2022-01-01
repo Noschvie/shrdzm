@@ -1,6 +1,6 @@
 #include "Device_DOORSENSOR.h"   
 
-struct rst_info {
+/*struct rst_info {
   uint32 reason;
   uint32 exccause;
   uint32 epc1;
@@ -8,7 +8,7 @@ struct rst_info {
   uint32 epc3;
   uint32 excvaddr;
   uint32 depc;
-};   
+};   */
 
 Device_DOORSENSOR::Device_DOORSENSOR()
 {  
@@ -21,7 +21,7 @@ Device_DOORSENSOR::Device_DOORSENSOR()
 
 Device_DOORSENSOR::~Device_DOORSENSOR()
 {
-  Serial.println("DOORSENSOR Instance deleted");
+  DLN(F("DOORSENSOR Instance deleted"));
 }
 
 bool Device_DOORSENSOR::setDeviceParameter(JsonObject obj)
@@ -88,17 +88,17 @@ SensorData* Device_DOORSENSOR::readParameter()
           unclearState = true;
         }
 
-        Serial.println((*xyz).reason);
+        DLN((*xyz).reason);
       }
     }  
     else
     {
-      Serial.println("interval not found!");
+      DLN(F("interval not found!"));
     }
   }
   else
   {
-    Serial.println("m_pConfigurationObject is NULL!");
+    DLN(F("m_pConfigurationObject is NULL!"));
   }
 
 

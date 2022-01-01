@@ -71,26 +71,28 @@ bool Configuration::initialize()
 
 bool Configuration::store()
 {
-  Serial.println(F("Store configuration..."));
+  DLN(F("Store configuration..."));
+#ifdef DEBUG_SHRDZM  
   serializeJson(g_configdoc, Serial);
+#endif
 
-  Serial.println();
+  DLN("");
 #ifdef LITTLEFS  
   File configFile = LittleFS.open("/shrdzm_config.json", "w");
 #else
   File configFile = SPIFFS.open("/shrdzm_config.json", "w");
 #endif
-  Serial.println(F("file opened..."));
+  DLN(F("file opened..."));
   
   if (!configFile) 
   {
-    Serial.println(F("failed to open config file for writing"));
+    DLN(F("failed to open config file for writing"));
     return false;
   }
 
-  Serial.println(F("serializing..."));
+  DLN(F("serializing..."));
   serializeJson(g_configdoc, configFile);
-  Serial.println(F("serialized..."));
+  DLN(F("serialized..."));
   configFile.close();
     
   return true;
@@ -302,14 +304,16 @@ bool Configuration::load()
     DeserializationError error = deserializeJson(g_configdoc, content);
     if (error)
     {
-      Serial.println("Error at deserializeJson");
+      DLN("Error at deserializeJson");
       return false;
     }
 
     configFile.close();    
 
+#ifdef DEBUG_SHRDZM
     serializeJson(g_configdoc, Serial);    
-    Serial.println();
+    DLN("");
+#endif
 
     // check validity
     if(g_configdoc.containsKey("interval"))
@@ -398,7 +402,7 @@ void Configuration::setDeviceParameter(const char *name, const char *value)
   String v(value);
   String k(name);
 
-  v.replace( " ", "" );
+//  v.replace( " ", "" );
   
   g_configdoc["device"][k] = v;
 }
@@ -408,7 +412,7 @@ void Configuration::setWlanParameter(const char *name, const char *value)
   String v(value);
   String k(name);
 
-  v.replace( " ", "" );
+//  v.replace( " ", "" );
   
   g_configdoc["wlan"][k] = v;
 }
@@ -418,7 +422,7 @@ void Configuration::setCloudParameter(const char *name, const char *value)
   String v(value);
   String k(name);
 
-  v.replace( " ", "" );
+//  v.replace( " ", "" );
   
   g_configdoc["cloud"][k] = v;
 }
@@ -543,7 +547,7 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
 #endif  
   if (!file) 
   {
-      Serial.println("Error opening reboot info file for writing");
+      DLN(F("Error opening reboot info file for writing"));
       return;
   }  
 
@@ -551,7 +555,7 @@ void Configuration::storeLastRebootInfo(const char *rebootinformation)
    
   if (bytesWritten == 0) 
   {
-      Serial.println("Reboot info file write failed");
+      DLN(F("Reboot info file write failed"));
   }
 
   file.close();
@@ -566,7 +570,7 @@ void Configuration::storeVersionNumber()
 #endif  
   if (!file) 
   {
-      Serial.println("Error opening version file for writing");
+      DLN(F("Error opening version file for writing"));
       return;
   }  
 
@@ -580,7 +584,7 @@ void Configuration::storeVersionNumber()
    
   if (bytesWritten == 0) 
   {
-      Serial.println("Version file write failed");
+      DLN(F("Version file write failed"));
   }
 
   file.close();
@@ -608,7 +612,7 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 //  simpleEspConnection->sendMessage((char *)reply.c_str());
   sendMessageWithChecksum(simpleEspConnection,(char *)reply.c_str());                       
 
-  Serial.println("reply 1 = "+reply);
+  DV(reply);
 
 
   // send device parameter
@@ -626,7 +630,7 @@ void Configuration::sendSetup(SimpleEspNowConnection *simpleEspConnection)
 
     sendMessageWithChecksum(simpleEspConnection, (char *)reply.c_str());                       
   
-    Serial.println("reply 2 = "+reply);
+    DV(reply);
   }   
 }
 

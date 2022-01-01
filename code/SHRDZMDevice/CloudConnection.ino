@@ -1,12 +1,40 @@
 #include "config/config.h"
 
-#define DEBUG_SHRDZM
+String cloudHost;
+String cloudPath;
+int cloudPort = 443;
+
+bool initCloud()
+{
+  cloudHost = CloudApiAddress;
+  cloudHost = cloudHost.substring(8);
+  int firstSlash = cloudHost.indexOf('/');
+
+  if(firstSlash > 0)
+  {
+    cloudPath = cloudHost.substring(firstSlash);
+    cloudHost = cloudHost.substring(0,firstSlash);
+
+    if(cloudHost.indexOf(':') > 0)
+    {
+      cloudPort = atoi(cloudHost.substring(cloudHost.indexOf(':')+1).c_str());
+      cloudHost = cloudHost.substring(0,cloudHost.indexOf(':'));
+    }
+  }  
+
+  DLN(cloudHost);
+  DLN(cloudPath);
+  DLN(cloudPort);
+
+  return true;
+}
 
 bool sendPrivateCloudData(const char* endpoint, const char* user, const char* password, const char* message )
 {
   if(strncmp(endpoint, "https://", 8) != 0)
   {
-    Serial.println(F("Only https connection allowed!"));
+    DLN(F("Only https connection allowed!"));
+//    Serial.println(F("Only https connection allowed!"));
     return false;
   }
 
@@ -43,7 +71,7 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
     HTTPClient http;
     if (!http.begin(client, host, port, path, true))
     {
-      Serial.println(F("no connection possible!"));
+      DLN(F("no connection possible!"));
     }      
   
     http.setAuthorization(user, password);
@@ -51,12 +79,11 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
   
     int  httpCode = http.POST(message);
 
-    Serial.println(httpCode);
+    DLN(httpCode);
     if(httpCode != 200)
     {
       
     }
-
   
     http.end();
   } 
@@ -66,8 +93,6 @@ bool sendPrivateCloudData(const char* endpoint, const char* user, const char* pa
 
 bool cloudRegisterNewUser(const char* user, const char* email, const char* password )
 {
-//  DLN(F("Will now try to register new User on ")+String(CloudApiAddress));
-
   String reply;
   if(!cloudSendRESTCommand("register.php", String("{\"name\":\""+String(user)+"\",\"email\":\""+String(email)+"\",\"password\":\""+String(password)+"\"}").c_str(), false, &reply, false))
     return false;
@@ -213,109 +238,67 @@ bool cloudLogin(const char* user, const char* password )
   return true;
 }
 
-////////// Async Handling //////////////////
-bool cloudSendAsyncRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
-{
-  if(WiFi.status()== WL_CONNECTED)
-  {
-    String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-//    request.setTimeout(1);
-
-    request.open("POST", finalAddress.c_str());
-    String auth = "Bearer " + cloudToken;    
-
-    request.setReqHeader("Authorization", String(String("Basic ")+cloudToken).c_str());
-    request.setReqHeader("Content-Type","application/json");
-    request.send(content);
-//    state = waitPost;    
-
-    return true;
-  }
-    
-/*    if(request.readyState() == 0 || request.readyState() == 4)
-    {
-        request.open("GET", "http://worldtimeapi.org/api/timezone/Europe/London.txt");
-        request.send();
-    }*/
-}
-
-void requestCB(void* optParm, asyncHTTPrequest* request, int readyState)
+/*void requestCB(void* optParm, asyncHTTPrequest* request, int readyState)
 {
     if(readyState == 4)
     {
-        Serial.println(request->responseText());
-        Serial.println();
+        DLN(request->responseText());
+        DLN("");
         request->setDebug(false);
     }
-}
+}*/
 ////////////////////////////////////////////
-
 bool cloudSendRESTCommand(const char* address, const char* content, bool tokenNeeded, String *reply, bool newTokenIfNeeded)
 {
   if(WiFi.status()== WL_CONNECTED)
-  {
+  {  
+    WiFiClientSecure client;
+    client.setInsecure(); 
+    client.setBufferSizes(512,512);
+  
     HTTPClient http;
-  
-    String finalAddress = String(CloudApiAddress) + String("/") + String(address);
-//    DV(finalAddress);
-//    DV(content);
-
-    WiFiClient client;
-        
-//    if(http.begin(finalAddress))
-    if(http.begin(client, finalAddress))
+    if (!http.begin(client, cloudHost, cloudPort, cloudPath+"/"+String(address), true))
     {
-      http.addHeader("Content-Type", "application/json");
-
-      if(tokenNeeded && cloudToken != "")
-      {
-        http.addHeader(F("Authorization"), String(String("Basic ")+cloudToken).c_str());
-      }      
-
-      int httpResponseCode = http.POST(content);
-
-      if(httpResponseCode != 200)
-      {
-        DV(httpResponseCode);
-        DV(http.getString());
-        return false;
-      }
-          
-//      DV(httpResponseCode);
-//      DV(http.getString());
-
-      *reply = http.getString();
-      http.end();
-
-      if(tokenNeeded && newTokenIfNeeded)
-      {
-        // check valid topken
-        DynamicJsonDocument doc(512);
-        DeserializationError error = deserializeJson(doc, *reply);
+      DLN(F("no connection possible!"));
+    }      
   
-        if(doc["success"].as<unsigned int>() == 0)
+    http.addHeader("Content-Type", "application/json");
+    if(tokenNeeded && cloudToken != "")
+    {
+      http.addHeader(F("Authorization"), String(String("Basic ")+cloudToken).c_str());
+    }      
+  
+    int httpCode = http.POST(content);
+
+    DV(httpCode);
+    if(httpCode != 200)
+    {
+      DV(httpCode);
+      DV(http.getString());
+      return false;
+    }
+  
+    *reply = http.getString();
+    http.end();
+
+    if(tokenNeeded && newTokenIfNeeded)
+    {
+      // check valid topken
+      DynamicJsonDocument doc(512);
+      DeserializationError error = deserializeJson(doc, *reply);
+
+      if(doc["success"].as<unsigned int>() == 0)
+      {
+        if(doc["status"].as<unsigned int>() == 401) // Unauthorized
         {
-          if(doc["status"].as<unsigned int>() == 401) // Unauthorized
+          if(cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password")))
           {
-            if(cloudLogin(configuration.getCloudParameter("user"), configuration.getCloudParameter("password")))
-            {
-              return cloudSendRESTCommand(address, content, tokenNeeded, reply, false);
-            }
+            return cloudSendRESTCommand(address, content, tokenNeeded, reply, false);
           }
         }
       }
-      
-      return true;
-    }
-    else
-    {
-      DLN("http.begin not passed");
-      return false;
-    }
-  }
-  else
-  {
-    DLN("WiFi not connected");
-    return false;
-  }
+    }    
+  }   
+
+  return true;
 }

@@ -1,6 +1,7 @@
 #ifndef DEVICEBASE_H
 #define DEVICEBASE_H
 
+//#include "config/config.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 

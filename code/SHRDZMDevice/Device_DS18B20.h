@@ -1,6 +1,7 @@
 #ifndef Device_DS18B20_H
 #define Device_DS18B20_H
 
+#include "config/config.h"
 #include "DeviceBase.h"
 
 // Sensors

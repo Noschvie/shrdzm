@@ -1,8 +1,8 @@
 #ifndef Device_IM350_H
 #define Device_IM350_H
 
-#include "DeviceBase.h"
 #include "config/config.h"
+#include "DeviceBase.h"
 
 #include <Crypto.h>
 #include <AES.h>
@@ -34,7 +34,9 @@ class Device_IM350 : public DeviceBase
       e450,
       am550,
       im350Wels,
-      sagemcom
+      sagemcom,
+      no,
+      e450Steiermark
     };
         
     bool setDeviceParameter(JsonObject obj);
@@ -46,17 +48,20 @@ class Device_IM350 : public DeviceBase
     SensorData* readInitialSetupParameter();
     
   protected:   
+    bool wrongDebugSetupDetected;
     Vector_GCM Vector_SM;
     GCM<AES128> *gcmaes128 = 0;
     long baud = 115200;
+    bool requestNeeded = false;
     
     void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
     void decrypt_text(Vector_GCM *vect, byte *bufferResult);
     uint16_t byteToUInt16(byte array[], unsigned int startByte);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);
-    uint8_t readDataStream(bool withTimeout);
+    bool readDataStream(bool withTimeout);
     void parse_message(byte array[], devicetype dt);
     void hexToBytes(const char* code, byte* result);  
+    byte hexToByte(const char* code);
     String hexToString(byte array[], int readCnt);
     void timeToString(char* string, size_t size);
     uint32_t writeHourValue(const char *value);
@@ -69,8 +74,8 @@ class Device_IM350 : public DeviceBase
     bool done;
     int interval;
     byte *lastReadMessage;
-    uint8_t lastReadMessageLen;
-    uint8_t cachedDataAvailable;
+    uint16_t lastReadMessageLen;
+    bool cachedDataAvailable;
     
     char m_cipherkey[33];
     byte m_blockCipherKey[16];

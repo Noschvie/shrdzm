@@ -66,7 +66,7 @@ const char* SensorData::getDataItemPtr(const char *name)
 
 void DeviceBase::PrintText(String text)
 {
-  Serial.println(text);
+//  DLN(text);
 }
 
 bool DeviceBase::setDeviceParameter(JsonObject obj)

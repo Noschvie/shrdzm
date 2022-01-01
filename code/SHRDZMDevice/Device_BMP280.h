@@ -2,6 +2,7 @@
 #define Device_BMP280_H
 
 #include <Wire.h>
+#include "config/config.h"
 #include "DeviceBase.h"
 
 // Sensors

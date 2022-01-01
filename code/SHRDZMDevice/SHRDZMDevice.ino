@@ -10,8 +10,6 @@
 
 */
 
-#define DEBUG_SHRDZM
-
 #include "config/config.h"
 
 Configuration configuration;
@@ -78,7 +76,7 @@ String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
-asyncHTTPrequest request;
+//asyncHTTPrequest request;
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -274,12 +272,19 @@ void handleRoot()
       WiFi.subnetMask().toString().c_str()
   );  
 
-  Serial.println(strlen(contentBuffer));
+#ifdef SMARTMETER
+  String ugt = F("<br/><br/><input type='hidden' id='upgrade' name='upgrade' value='false'/><br/>\
+<input class='factoryresetbutton' type='submit' onclick='submitFormUpgrade()' value='OTA Upgrade' />\
+<input type='text' id='upgradepath' name='upgradepath' size='45' value='http://shrdzm-smartmeter.pintarweb.net/upgrade.php'>\
+<br/>");
+#else
+  String ugt = upgradetext_template;
+#endif
   
   sprintf(menuContextBuffer,  
       handleRoot_template,
       contentBuffer,
-      gatewayMode ? upgradetext_template : ""
+      gatewayMode ? ugt.c_str() : ""
   );  
 
   char * temp = getWebsite(menuContextBuffer, true);
@@ -470,6 +475,9 @@ void handleSettings()
   } 
     
   // Fill select box
+#ifdef SMARTMETER
+  strcpy_P(contentBuffer, PSTR("<option>SMARTMETER</option>"));
+#else
   strcpy_P(contentBuffer, PSTR("<option></option>"));
 
   char rest[strlen(SUPPORTED_DEVICES+1)];
@@ -496,7 +504,7 @@ void handleSettings()
   }
 
   DV(strlen(parameterBuffer));
-
+#endif
 
   sprintf(menuContextBuffer,  
       settings_template,
@@ -532,6 +540,8 @@ void handleCloud()
 
               if(gatewayipset)
               {
+                initCloud();
+                
                 if(cloudRegisterNewUser(server.arg("user").c_str(), "", server.arg("password").c_str()))
                 {
                   cloudConnected = cloudLogin(server.arg("user").c_str(), server.arg("password").c_str());
@@ -748,18 +758,22 @@ bool mqttreconnect()
     // Attempt to connect
     if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
     {
-      subcribeTopicSet = String(MQTT_TOPIC)+"/set";
-      subscribeTopicConfig = String(MQTT_TOPIC)+"/config/set";
+      subcribeTopicSet = MQTT_TOPIC+"/set";
+      subscribeTopicConfig = MQTT_TOPIC+"/config/set";
       
       DLN("connected");
       
-      DLN("MQTTHost : "+String(configuration.getWlanParameter("MQTTbroker")));
-      DLN("MQTTPort : "+String(configuration.getWlanParameter("MQTTport")));
-      DLN("MQTTUser : "+String(configuration.getWlanParameter("MQTTuser")));
+/*      DLN("MQTTHost : "+configuration.getWlanParameter("MQTTbroker"));
+      DLN("MQTTPort : "+configuration.getWlanParameter("MQTTport"));
+      DLN("MQTTUser : "+configuration.getWlanParameter("MQTTuser"));
       DLN("MQTTPassword : xxxxxxxxxxxxxxxxxxx");
       DLN("MQTT_TOPIC : "+MQTT_TOPIC);
-      DLN("MQTT_TOPIC_SUBSCRIBE Set : "+String(subcribeTopicSet));
-      DLN("MQTT_TOPIC_SUBSCRIBE Config : "+String(subscribeTopicConfig));
+      Serial.println(subcribeTopicSet);
+      Serial.println(subscribeTopicConfig);
+
+//      DLN("MQTT_TOPIC_SUBSCRIBE Set : "+subcribeTopicSet);
+//      DLN("MQTT_TOPIC_SUBSCRIBE Config : "+subscribeTopicConfig);
+  */
             
       // ... and resubscribe
       if(!mqttclient.subscribe(subcribeTopicSet.c_str()))
@@ -916,10 +930,11 @@ void startGatewayWebserver()
     }
   }
 
+/*
 #ifdef DEBUG_SHRDZM
   request.setDebug(true);
 #endif  
-  request.onReadyStateChange(requestCB);  
+  request.onReadyStateChange(requestCB);  */
 }
 
 ///////////////////////////
@@ -928,6 +943,9 @@ void startGatewayWebserver()
 
 DeviceBase * createDeviceObject(const char *deviceType)
 {  
+#ifdef SMARTMETER
+  return new Device_IM350();
+#else  
   if(strcmp(deviceType, "DHT22") == 0)
   {
     return new Device_DHT22();
@@ -1010,6 +1028,7 @@ DeviceBase * createDeviceObject(const char *deviceType)
     DLN("Device Type "+String(deviceType)+" not known");
     return NULL;
   }
+#endif
 
   return NULL;
 }
@@ -1453,6 +1472,9 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
 {
   delete dev;
 
+#ifdef SMARTMETER
+  dev = new Device_IM350();
+#else
   if(strcmp(deviceType, "DHT22") == 0)
   {
     dev = new Device_DHT22();
@@ -1534,6 +1556,7 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
   {
     return;
   }
+#endif
   
   if(dev != NULL)
   {
@@ -1568,17 +1591,14 @@ void initDeviceType(const char *deviceType, bool firstInit, bool reboot=true)
     }
 
     dev->setDeviceParameter(configuration.getDeviceParameter());    
-
-    Serial.println("nach setDeviceParameter");
-    
   }
 }
 
 void setup() 
 {
-#ifdef DEBUG_SHRDZM
-Serial.begin(SERIAL_BAUD); Serial.println();
-#endif
+  // open serial comunication for debugging
+  SB();
+
   DV("setup start ");  
   
   bool writeConfigAndReboot = false;
@@ -1740,8 +1760,15 @@ Serial.begin(SERIAL_BAUD); Serial.println();
   if( String(configuration.getWlanParameter("enabled")) == "true" && !pairingOngoing)
     gatewayMode = true;
 
+  if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
+  {
+    mqttclient.setBufferSize(MQTTBufferSize);
+  }
+
   if(gatewayMode)
   {
+    initCloud();
+    
     startGatewayWebserver();    
     mqttNextTry = 0;
     clockmillis = millis();      
@@ -1972,7 +1999,7 @@ void handleGatewayLoop()
     newDeviceType = "";
   
     configuration.store();        
-    DLN("vor sendSetup");
+    DLN(F("vor sendSetup"));
     sendSetup();    
     DLN("nach sendSetup");
     configuration.storeLastRebootInfo("devicechanged");

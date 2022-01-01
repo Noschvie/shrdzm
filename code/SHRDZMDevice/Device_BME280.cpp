@@ -1,3 +1,4 @@
+
 #include "Device_BME280.h"
 
 Device_BME280::Device_BME280()
@@ -8,7 +9,7 @@ Device_BME280::Device_BME280()
 
 Device_BME280::~Device_BME280()
 {
-  Serial.println("BME280 Instance deleted");
+  DLN(F("BME280 Instance deleted"));
 }
 
 bool Device_BME280::isNewDataAvailable()
@@ -28,7 +29,7 @@ bool Device_BME280::setDeviceParameter(JsonObject obj)
 
   if(!avail)
   {
-    Serial.println("Sensor not found!"); 
+    DLN(F("Sensor not found!")); 
   }
   else
   {

@@ -1,6 +1,7 @@
 #ifndef Device_DIGITALGROUND_H
 #define Device_DIGITALGROUND_H
 
+#include "config/config.h"
 #include "DeviceBase.h"
 
 // Sensors

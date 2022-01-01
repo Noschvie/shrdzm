@@ -8,7 +8,7 @@ Device_ANALOG::Device_ANALOG()
 
 Device_ANALOG::~Device_ANALOG()
 {
-  Serial.println("ANALOG Instance deleted");
+  DLN(F("ANALOG Instance deleted"));
 }
 
 bool Device_ANALOG::setDeviceParameter(JsonObject obj)

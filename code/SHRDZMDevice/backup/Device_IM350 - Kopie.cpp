@@ -68,7 +68,7 @@ Device_IM350::Device_IM350()
 
 Device_IM350::~Device_IM350()
 {
-  Serial.println("IM350 Instance deleted");
+  DLN(F("IM350 Instance deleted"));
 }
 
 bool Device_IM350::isNewDataAvailable()
@@ -123,7 +123,7 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
   {
     if(obj["rxpin"].as<uint8_t>() != 3) // if not pin 3, software serial is needed
     {
-      Serial.println("Device is running with SoftwareSerial");
+      DLN(F("Device is running with SoftwareSerial"));
 
       mySoftwareSerial.begin(115200, SWSERIAL_8N1, obj["rxpin"].as<uint8_t>(), -1, inverted, 140);
       softwareSerialUsed = true;
@@ -198,7 +198,7 @@ SensorData* Device_IM350::readParameter()
       // Check whether to reboot first
       if(millis() > (atol(deviceParameter["autoRebootMinutes"]) * 1000 * 60))
       {
-        Serial.println("Will reboot now");
+        DLN(F("Will reboot now"));
         
         delay(500); 
         ESP.restart();      
@@ -209,7 +209,7 @@ SensorData* Device_IM350::readParameter()
   {
     if(millis() > 3600000)
     {
-      Serial.println("Will reboot now");
+      DLN(F("Will reboot now"));
       
       delay(500); 
       ESP.restart();      
@@ -383,7 +383,7 @@ SensorData* Device_IM350::readParameter()
   }  
   else
   {    
-    Serial.println( "SmartMeter Type = "+String(dt));  
+    DLN( "SmartMeter Type = "+String(dt));  
   }
 
   if(code == "" || code == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
@@ -407,8 +407,6 @@ SensorData* Device_IM350::readParameter()
   {
     code = code.substring(0, code.length()-18);
   }
-
-  Serial.println("code = "+code);
 
 //  if(Translate(deviceParameter["cipherkey"].as<char*>(), code.c_str()))
   if(Translate(ck.c_str(), code.c_str()))
@@ -476,7 +474,7 @@ bool Device_IM350::Translate(const char* code, const char *data)
   String codeBuffer(code);
   codeBuffer.replace( " ", "" );
 
-  Serial.printf("Cipher = %s\n", code);
+  DV(code);
   
   m_position = 0;
   m_cipher.ResetData();
@@ -515,7 +513,7 @@ bool Device_IM350::Translate(const char* code, const char *data)
   else
   {
     // not implemented
-    Serial.println("HDLC not implemented!");
+    DLN(F("HDLC not implemented!"));
     return false;
   }
   
@@ -577,8 +575,8 @@ void Device_IM350::extractData()
   }
   else
   {
-    Serial.println("no GENERAL_GLO_CIPHERING");    
-    Serial.println(m_data.m_position);
+    DLN("no GENERAL_GLO_CIPHERING");    
+    DV(m_data.m_position);
   }
 }
 
@@ -605,7 +603,7 @@ void Device_IM350::decryptAesGcm(Data *data)
     
     if(security != ENCRYPTION)
     {
-      Serial.println("No Encryption!");
+      DLN(F("No Encryption!"));
       return;
     }
 
@@ -625,7 +623,7 @@ void Device_IM350::decryptAesGcm(Data *data)
       aad.set(m_pMessage+30, len_-9);
     else
     {
-      Serial.println("Decryption Type not implemented!");
+      DLN(F("Decryption Type not implemented!"));
       return;    
     }
 

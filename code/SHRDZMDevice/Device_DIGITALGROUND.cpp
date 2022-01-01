@@ -8,7 +8,7 @@ Device_DIGITALGROUND::Device_DIGITALGROUND()
 
 Device_DIGITALGROUND::~Device_DIGITALGROUND()
 {
-  Serial.println("DIGITAL Instance deleted");
+  DLN(F("DIGITAL Instance deleted"));
 }
 
 bool Device_DIGITALGROUND::setDeviceParameter(JsonObject obj)

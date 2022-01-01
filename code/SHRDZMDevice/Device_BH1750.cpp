@@ -8,7 +8,7 @@ Device_BH1750::Device_BH1750()
 
 Device_BH1750::~Device_BH1750()
 {
-  Serial.println("BH1750 Instance deleted");
+  DLN(F("BH1750 Instance deleted"));
 }
 
 bool Device_BH1750::isNewDataAvailable()
@@ -28,7 +28,7 @@ bool Device_BH1750::setDeviceParameter(JsonObject obj)
   avail = BH1750.begin(address);
 
   if(!avail)
-    Serial.println("Sensor not found!");
+    DLN(F("Sensor not found!"));
 }
 
 bool Device_BH1750::initialize()

@@ -1,17 +1,16 @@
 #include "Device_IM350.h"
 
 #define UART_RXD_INV (BIT(19)) 
-#define DEBUG_SHRDZM
 
 const byte firstByte = 0x7E; 
 const byte firstByteSagemcom = 0xDB; 
+const byte firstByteNO = 0x68; 
 const byte lastByte = 0x7E; 
 const int lenNormal = 123;
 const int lenSagemcom = 511;
+const int lenNO = 271;
+const int lenDebug = 512;
 
-/*Vector_GCM Vector_SM;
-GCM<AES128> *gcmaes128 = 0;
-*/
 
   // IM350
 //  String c2 = "7EA079CF0002002313D986E6E700DB08534D53677004C4465F200001A92916FC1EF62AB5F476F8A59772745CC99365500ACF5EBEEA82F95581762C2D18804A1E7F7700FB10752F04D9344779C6A332C973EAF3CF375095D1821E87C68909EE47759AD925976C42E4D92FF9727E4213FDEE5F1ABE45D9D97F5E5E7E";
@@ -46,75 +45,30 @@ Device_IM350::Device_IM350()
   
   memset(meterTime, 0, 20);
   lastReadMessageLen = 0;
-  cachedDataAvailable = 0;
+  cachedDataAvailable = false;
+  wrongDebugSetupDetected = false;
+  requestNeeded = true;
+
+  lastReadMessage = new byte[lenDebug];
 
   done = false;
 }
 
 Device_IM350::~Device_IM350()
-{
-  Serial.println(F("IM350 Instance deleted"));
+{  
+  DLN(F("IM350 Instance deleted"));
 }
 
 bool Device_IM350::isNewDataAvailable()
 {
-  if(softwareSerialUsed)
+  if(requestNeeded)     
   {
-    if(mySoftwareSerial.available() > 0)
-    {
-      cachedDataAvailable = readDataStream(false);
-
-      return true;
-    }
+    return false;
   }
-  else
-  {
-    if(baud != SERIAL_BAUD)
-    {
-      Serial.end();
-      Serial.begin(baud);
-    }
 
-    if(inverted)
-    {
-      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);
-    }    
-/*    Serial.flush();
-    if(inverted)
-      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
+  cachedDataAvailable = readDataStream(false) > 0 || cachedDataAvailable ? true : false;
 
-    if(baud != SERIAL_BAUD)
-    {
-      Serial.end();
-      Serial.begin(baud);
-    }
-
-    if(inverted)
-      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); */
-
-    if(Serial.available() > 0)
-    {
-      cachedDataAvailable = readDataStream(false);
-      
-      if(baud != SERIAL_BAUD)
-      {
-        Serial.end();
-        Serial.begin(SERIAL_BAUD);
-      } 
-
-      return true;
-    }
-    else
-    {
-      if(baud != SERIAL_BAUD)
-      {
-        Serial.end();
-        Serial.begin(SERIAL_BAUD);    
-      } 
-    }
-  }
-  
-  return false;
+  return cachedDataAvailable;
 }
 
 bool Device_IM350::setDeviceParameter(JsonObject obj)
@@ -123,8 +77,18 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
   
   if(obj.containsKey(F("requestpin")))
   {
-    pinMode(atoi(obj[F("requestpin")]), OUTPUT);
-    digitalWrite(atoi(obj[F("requestpin")]), LOW);   
+    if( obj[F("requestpin")] == "-1" ||
+        obj[F("requestpin")] == "OFF" ||
+        obj[F("requestpin")] == "off")     
+    {
+      requestNeeded = false;
+    }
+    else
+    {        
+      requestNeeded = true;
+      pinMode(atoi(obj[F("requestpin")]), OUTPUT);
+      digitalWrite(atoi(obj[F("requestpin")]), LOW);   
+    }
   }
   if(obj.containsKey(F("baud")))
   {
@@ -174,23 +138,21 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
       mySoftwareSerial.enableIntTx(false);
       softwareSerialUsed = true;    
     }
-    else
+    else // hardwre serial is used
     {
-/*      if(inverted)
+      if(DEBUGGING_ENABLED == true &&  baud != SERIAL_BAUD)
       {
-        U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);        
-      }      
+        wrongDebugSetupDetected = true;
+      }    
+      else
+      {
+        Serial.begin(baud);  
 
-      if(baud != SERIAL_BAUD)
-      {
-        Serial.end();
-        Serial.begin(baud);
+        Serial.println("Test");
+        if(inverted)
+                U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);        
+        Serial.println("Test1");
       }
-
-      if(inverted)
-      {
-        U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);
-      } */
     }
   }  
 
@@ -244,33 +206,35 @@ SensorData* Device_IM350::readInitialSetupParameter()
   return al; 
 }
 
-uint8_t Device_IM350::readDataStream(bool withTimeout)
+bool Device_IM350::readDataStream(bool withTimeout)
 {
   uint32_t start_time = millis();
   byte tempChar = 0;
-  uint8_t messageLen = 0;
   int readCnt = 0;
   bool finished = false;
-  uint32_t timeout=2000;
+  uint32_t timeout=1000;
 
-  while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && !finished)
+  while (!finished)
   {
     if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
     {
       tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+      finished = true;
     }
-
-    finished = withTimeout ? !((millis() - start_time) < timeout) : true;
-  }
+    else
+      finished = withTimeout ? !((millis() - start_time) < timeout) : true;
+  } 
 
   if(tempChar == 0)
     return 0;
+
+  Serial.printf("%02X", tempChar);
 
   start_time = millis();
   timeout=1000;
   bool done = false;
   
-  if (tempChar == firstByte) // if first byte == 0x7E
+/*  if (tempChar == firstByte) // if first byte == 0x7E
   {
     while ((millis() - start_time) < timeout && !done)
     {
@@ -300,11 +264,10 @@ uint8_t Device_IM350::readDataStream(bool withTimeout)
               lastReadMessage[1] = 0xA0;
               lastReadMessage[2] = tempChar;
               lastReadMessageLen = ((uint32_t)(tempChar))+2;  
-              messageLen = lastReadMessageLen;
 
               readCnt = 3;
       
-              while ( readCnt < messageLen && ((millis() - start_time) < timeout))  // minimum len 120 chars for 0x7E format
+              while ( readCnt < lastReadMessageLen && ((millis() - start_time) < timeout))  // minimum len 120 chars for 0x7E format
               {
                 if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
                 {
@@ -314,13 +277,44 @@ uint8_t Device_IM350::readDataStream(bool withTimeout)
                   if(readCnt == (tempChar+2) && lastReadMessage[readCnt-1] != lastByte)
                   {
                     done = true;
+#ifdef DEBUG_SHRDZM
                     Serial.printf("Wrong end byte found - %d\n", lastReadMessage[readCnt-1]);  
+#endif                    
                   }
                   else if(readCnt == tempChar+2)
                     done = true;
                 }
               }
             }      
+          }
+        }
+        else
+        {
+          if(lastReadMessageLen != lenDebug && lastReadMessageLen != 0)
+          {
+            delete lastReadMessage;
+            lastReadMessageLen = 0;                
+          }
+      
+          if(lastReadMessageLen == 0)
+          {
+            lastReadMessage = new byte[lenDebug];
+          }
+          
+          memset(lastReadMessage, 0, lenDebug);
+          lastReadMessage[0] = firstByte;          
+          lastReadMessage[1] = tempChar;
+          lastReadMessageLen = lenDebug;
+
+          readCnt = 2;
+          
+          while ( readCnt < lenDebug && (millis() - start_time < timeout+2000) ) 
+          {
+            if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+            {
+              lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+              readCnt++; 
+            }
           }
         }
       }
@@ -339,11 +333,9 @@ uint8_t Device_IM350::readDataStream(bool withTimeout)
     if(lastReadMessageLen == 0)
       lastReadMessage = new byte[lenSagemcom];
 
-    lastReadMessage = new byte[lenSagemcom];
     memset(lastReadMessage, 0, lenSagemcom);
     lastReadMessage[0] = tempChar;
     lastReadMessageLen = lenSagemcom;
-    messageLen = lastReadMessageLen;
     
     while ( readCnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
     {
@@ -353,9 +345,82 @@ uint8_t Device_IM350::readDataStream(bool withTimeout)
         readCnt++; 
       }
     }
-  }    
+  }
+  else if(tempChar == firstByteNO)
+  {
+    readCnt++;
+    
+    // last byte 0x16?
+    if(lastReadMessageLen != lenNO && lastReadMessageLen != 0)
+    {
+      delete lastReadMessage;
+      lastReadMessageLen = 0;                
+    }
+
+    if(lastReadMessageLen == 0)
+    {
+      lastReadMessage = new byte[lenNO];
+    }
+
+    memset(lastReadMessage, 0, lenNO);
+    lastReadMessage[0] = tempChar;
+    lastReadMessageLen = lenNO;
+    uint32_t lastCharTime = millis();
+    finished = false;
+
+    
+    while ( readCnt < lenNO && !finished ) 
+    {
+      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+      {
+        lastReadMessage[readCnt++] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+        lastCharTime = millis();
+      }
+      else
+      {
+        finished = millis() - lastCharTime > timeout ? true : false;
+      }
+    }        
+  }
+  else // just to debug */
+  {
+    // lenDebug
+/*    if(lastReadMessageLen != lenDebug && lastReadMessageLen != 0)
+    {
+      delete lastReadMessage;
+      lastReadMessageLen = 0;                
+    }
+
+    if(lastReadMessageLen == 0)
+    {
+      lastReadMessage = new byte[lenDebug];
+    }
+    */
+    
+    memset(lastReadMessage, 0, lenDebug);
+    lastReadMessage[0] = tempChar;
+    lastReadMessageLen = 0;
+
+    readCnt = 1;
+    
+    while ( readCnt < lenDebug && (millis() - start_time < timeout+2000) ) 
+    {
+      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+      {
+        lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
+
+//  Serial.printf("%02X", lastReadMessage[readCnt]);
+        
+        readCnt++; 
+      }
+    }            
+
+    lastReadMessageLen = readCnt;
+  }
+
+  Serial.println();
   
-  return messageLen;
+  return readCnt > 0 ? true : false;
 }
 
 SensorData* Device_IM350::readParameter()
@@ -363,6 +428,20 @@ SensorData* Device_IM350::readParameter()
   SensorData *al = NULL;  
   char str[15] = "";
   devicetype dt = unknown;
+
+  if(wrongDebugSetupDetected)
+  {
+    al = new SensorData(2);
+    
+    al->di[0].nameI = F("lasterror");
+    al->di[0].valueI = F("firmware is compiled for debug mode. This does not fit with the current serial settings.");  
+    
+    timeToString(str, sizeof(str));
+    al->di[1].nameI = F("uptime");
+    al->di[1].valueI = String(str);       
+
+    return al;
+  }
 
   String ck = deviceParameter[F("cipherkey")];
 
@@ -373,7 +452,7 @@ SensorData* Device_IM350::readParameter()
       // Check whether to reboot first
       if(millis() > (atol(deviceParameter[F("autoRebootMinutes")]) * 1000 * 60))
       {
-        Serial.println(F("Will reboot now"));
+        DLN(F("Will reboot now"));
         
         delay(500); 
         ESP.restart();      
@@ -395,183 +474,65 @@ SensorData* Device_IM350::readParameter()
     return al;
   }
 
-  digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW);
+  bool newData = false;
 
-  // clear serial buffer
-  if(softwareSerialUsed)
+  // if requestpin == -1, active request is disabled and smartmeter pushes the data without requesting
+  if( !requestNeeded )     
   {
-    mySoftwareSerial.flush();
-
-    while(mySoftwareSerial.available() > 0)
-    {
-      byte trash = mySoftwareSerial.read();
-    }
+    newData = cachedDataAvailable;
+    cachedDataAvailable = false;
   }
   else
   {
-//    Serial.flush();
-    while(Serial.available() > 0)
-    {
-      byte trash = Serial.read();
-    }
-    
-    if(inverted)
-      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN); 
+    digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW);
   
-    Serial.end();
-    Serial.begin(baud);
+    pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
+  
+    // enable request
+    digitalWrite(atoi(deviceParameter[F("requestpin")]), HIGH); 
+    digitalWrite(LED_BUILTIN, LOW);
 
-    if(inverted)
-      U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);
+    newData = readDataStream(true);
 
-    while(Serial.available() > 0)
-    {
-      byte trash = Serial.read();
-    }
+    digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW); 
+    digitalWrite(LED_BUILTIN, HIGH); 
   }
-
-  pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
-
-  // enable request
-  digitalWrite(atoi(deviceParameter[F("requestpin")]), HIGH); 
-  digitalWrite(LED_BUILTIN, LOW);
-
-  int readCnt = 0;
-
-  if(cachedDataAvailable == 0)
-    readCnt = readDataStream(true);
-  else
-  {
-    readCnt = cachedDataAvailable;
-    cachedDataAvailable = 0;
-  }
-  
-  
-/*  uint32_t timeout=2000;
-
-  bool finished = false;
-  int readCnt = 0;
-  uint32_t start_time = millis();
-  byte tempChar = 0;
-  byte *readMessage;
-  uint32_t messageLen = 0;
-
-  while ((tempChar != 0x7E  && tempChar != firstByteSagemcom) && (millis() - start_time < timeout)) 
-  {
-    if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
-    {
-      tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
-    }
-  }
-
-  start_time = millis();
-  timeout = 1000;
-  bool done = false;
-  
-  if (tempChar == firstByte) // if first byte == 0x7E
-  {
-    while ((millis() - start_time) < timeout && !done)
-    {
-      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
-      {
-        tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); // second byte must be 0xA0
-        
-        if(tempChar == 0xA0)
-        {
-          while ((millis() - start_time) < timeout && !done)
-          {
-            if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
-            {
-              tempChar = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); // 3rd byte tells the legth of the message
     
-              readMessage = new byte[tempChar+2];
-              memset(readMessage, 0, tempChar+2);
-              readMessage[0] = firstByte;
-              readMessage[1] = 0xA0;
-              readMessage[2] = tempChar;
-              messageLen = ((uint32_t)(tempChar))+2;  
-              readCnt = 3;
-      
-              while ( readCnt < messageLen && ((millis() - start_time) < timeout))  // minimum len 120 chars for 0x7E format
-              {
-                if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
-                {
-                  readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
-                  readCnt++; 
-        
-                  if(readCnt == tempChar+2 && readMessage[readCnt-1] != lastByte)
-                  {
-                    done = true;
-                    Serial.printf("Wrong end byte found - %d\n", readMessage[readCnt-1]);  
-                  }
-                  else if(readCnt == tempChar+2)
-                    done = true;
-                }
-              }
-            }      
-          }
-        }
-      }
-    }    
-  }  
-  else if(tempChar == firstByteSagemcom)
-  {
-    readCnt++;
-
-    readMessage = new byte[lenSagemcom];
-    memset(readMessage, 0, lenSagemcom);
-    readMessage[0] = tempChar;
-    messageLen = lenSagemcom;
-    
-    while ( readCnt < lenSagemcom && (millis() - start_time < timeout+2000) ) 
-    {
-      if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
-      {
-        readMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
-        readCnt++; 
-      }
-    }
-  }    */
-
-  
-
-  // disable read request as soon as we have finished the data collection
-
-  digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW); 
-  digitalWrite(LED_BUILTIN, HIGH); 
-
-  if(!softwareSerialUsed)
-  {
-    Serial.flush();
-    Serial.end();
-    Serial.begin(SERIAL_BAUD);
-  } 
-
-  if(readCnt > 10)
+  if(newData)
   {  
+    Serial.printf("%d bytes to interprete.\n", lastReadMessageLen);
+    
     if(lastReadMessage[0] == firstByteSagemcom)  
     {
       dt = sagemcom;
     }
-    else if(readCnt == 110)
+    else if(lastReadMessage[0] == firstByteNO)
+    {
+      dt = no;
+    }
+    else if(lastReadMessageLen == 110)
     {
       dt = e450;
     }
-    else if(readCnt == 123)
+    else if(lastReadMessageLen == 123)
     {
       dt = im350;
     }
-    else if(readCnt == 121)
+    else if(lastReadMessageLen == 121)
     {
       dt = am550;
     }
-    else if(readCnt == 114)
+    else if(lastReadMessageLen == 114)
     {
       dt = im350Wels;
     }
+    else if(lastReadMessageLen == 332)
+    {
+      dt = e450Steiermark;
+    }
   }
 
-  if(readCnt == 0)
+  if(!newData)
   {
     al = new SensorData(2);    
     
@@ -590,7 +551,7 @@ SensorData* Device_IM350::readParameter()
     {    
       al = new SensorData(3);
       al->di[2].nameI = F("data");
-      al->di[2].valueI = hexToString(lastReadMessage, readCnt);
+      al->di[2].valueI = hexToString(lastReadMessage, lastReadMessageLen);
     }
     else
     {
@@ -604,9 +565,6 @@ SensorData* Device_IM350::readParameter()
     al->di[1].nameI = F("uptime");
     al->di[1].valueI = String(str);       
     
-/*    if(readCnt)
-      delete readMessage; */
-            
     return al;
   }  
   else // IM350 or AM550 or T210 read
@@ -677,7 +635,7 @@ SensorData* Device_IM350::readParameter()
         if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
         {
           al->di[counter].nameI = F("data");
-          al->di[counter].valueI = hexToString(lastReadMessage, readCnt);
+          al->di[counter].valueI = hexToString(lastReadMessage, lastReadMessageLen);
           counter++;
         }
           
@@ -703,7 +661,7 @@ SensorData* Device_IM350::readParameter()
         if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
         {
           al->di[2].nameI = F("data");
-          al->di[2].valueI = hexToString(lastReadMessage, readCnt);
+          al->di[2].valueI = hexToString(lastReadMessage, lastReadMessageLen);
         }
       }
     }
@@ -711,7 +669,7 @@ SensorData* Device_IM350::readParameter()
               bufferResult[56] == 0x06 &&
               bufferResult[61] == 0x06 &&
               bufferResult[66] == 0x06 &&
-              bufferResult[71] == 0x06) || dt == im350) // AM550/IM350 Carinthia
+              bufferResult[71] == 0x06) || dt == im350 || dt == im350Wels) // AM550/IM350 Carinthia, IM350 Wels
     {
       parse_message(bufferResult, dt);
    
@@ -748,7 +706,7 @@ SensorData* Device_IM350::readParameter()
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
       {
         al->di[8].nameI = F("data");
-        al->di[8].valueI = hexToString(lastReadMessage, readCnt);
+        al->di[8].valueI = hexToString(lastReadMessage, lastReadMessageLen);
       }      
     }
     else if(dt == am550 && bufferResult[38] == 0x06) // parse Slovenia am550
@@ -757,7 +715,7 @@ SensorData* Device_IM350::readParameter()
       {
         al = new SensorData(11);
         al->di[10].nameI = F("data");
-        al->di[10].valueI = hexToString(lastReadMessage, readCnt); 
+        al->di[10].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
       }
       else
         al = new SensorData(10);
@@ -789,13 +747,56 @@ SensorData* Device_IM350::readParameter()
       al->di[9].nameI = F("uptime");
       al->di[9].valueI = String(str);          
     }
-    else if(dt == e450) // parse e550
+    else if(dt == e450Steiermark)
+    {
+      char bh[6];
+      bh[5] = 0;
+      
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(8);
+        al->di[7].nameI = F("data");
+        al->di[7].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+      }
+      else
+        al = new SensorData(7);
+      
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime);  
+
+      sprintf(bh, "%d.%d.%d", bufferResult[38], bufferResult[39],bufferResult[40]);
+      al->di[1].nameI = bh;
+      al->di[1].valueI = String(byteToUInt32(bufferResult,43));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[51], bufferResult[52],bufferResult[53]);
+      al->di[2].nameI = bh;
+      al->di[2].valueI = String(byteToUInt32(bufferResult,56));         
+                          
+      sprintf(bh, "%d.%d.%d", bufferResult[64], bufferResult[65],bufferResult[66]);
+      al->di[3].nameI = bh;
+      al->di[3].valueI = String(byteToUInt32(bufferResult,69));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[77], bufferResult[78],bufferResult[79]);
+      al->di[4].nameI = bh;
+      al->di[4].valueI = String(byteToUInt32(bufferResult,82));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[90], bufferResult[91],bufferResult[92]);
+      al->di[5].nameI = bh;
+      al->di[5].valueI = String(byteToUInt32(bufferResult,95));                
+
+      timeToString(str, sizeof(str));
+      al->di[6].nameI = F("uptime");
+      al->di[6].valueI = String(str);                     
+    }
+    else if(dt == e450) // parse e450
     {
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
       {
         al = new SensorData(13);
         al->di[12].nameI = F("data");
-        al->di[12].valueI = hexToString(lastReadMessage, readCnt); 
+        al->di[12].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
       }
       else
         al = new SensorData(12);
@@ -839,13 +840,80 @@ SensorData* Device_IM350::readParameter()
       al->di[11].nameI = F("uptime");
       al->di[11].valueI = String(str);                     
     }
+    else if(dt == no) // parse niederoesterreich
+    {
+      char bh[6];
+      bh[5] = 0;
+      
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(14);
+        al->di[13].nameI = F("data");
+        al->di[13].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+      }
+      else
+        al = new SensorData(13);
+      
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime);  
+
+      sprintf(bh, "%d.%d.%d", bufferResult[38], bufferResult[39],bufferResult[40]);
+      al->di[1].nameI = bh;
+      al->di[1].valueI = String(byteToUInt32(bufferResult,43));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[57], bufferResult[58],bufferResult[59]);
+      al->di[2].nameI = bh;
+      al->di[2].valueI = String(byteToUInt32(bufferResult,62));         
+                          
+      sprintf(bh, "%d.%d.%d", bufferResult[76], bufferResult[77],bufferResult[78]);
+      al->di[3].nameI = bh;
+      al->di[3].valueI = String(byteToUInt32(bufferResult,81));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[95], bufferResult[96],bufferResult[97]);
+      al->di[4].nameI = bh;
+      al->di[4].valueI = String(byteToUInt32(bufferResult,100));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[114], bufferResult[115],bufferResult[116]);
+      al->di[5].nameI = bh;
+      al->di[5].valueI = String(byteToUInt16(bufferResult,119));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[131], bufferResult[132],bufferResult[133]);
+      al->di[6].nameI = bh;
+      al->di[6].valueI = String(byteToUInt16(bufferResult,136));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[148], bufferResult[149],bufferResult[150]);
+      al->di[7].nameI = bh;
+      al->di[7].valueI = String(byteToUInt16(bufferResult,153));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[165], bufferResult[166],bufferResult[167]);
+      al->di[8].nameI = bh;
+      al->di[8].valueI = String(byteToUInt16(bufferResult,170));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[182], bufferResult[183],bufferResult[184]);
+      al->di[9].nameI = bh;
+      al->di[9].valueI = String(byteToUInt16(bufferResult,187));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[199], bufferResult[200],bufferResult[201]);
+      al->di[10].nameI = bh;
+      al->di[10].valueI = String(byteToUInt16(bufferResult,204));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[216], bufferResult[217],bufferResult[218]);
+      al->di[11].nameI = bh;
+      al->di[11].valueI = String(byteToUInt16(bufferResult,221));         
+
+      timeToString(str, sizeof(str));
+      al->di[12].nameI = F("uptime");
+      al->di[12].valueI = String(str);                     
+    }
     else
     {
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
       {
         al = new SensorData(3);
         al->di[2].nameI = F("data");
-        al->di[2].valueI = hexToString(lastReadMessage, readCnt); 
+        al->di[2].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
       }
       else
         al = new SensorData(2);
@@ -858,12 +926,14 @@ SensorData* Device_IM350::readParameter()
       al->di[1].valueI = String(str);          
     }            
         
- //   delete readMessage;
-
     return al;
   }
 }
 
+byte Device_IM350::hexToByte(const char* code)
+{
+   return strtoul(code, NULL, 16);
+}
 
 /////////////////////////////
 uint32_t Device_IM350::writeHourValue(const char *value)
@@ -875,7 +945,7 @@ uint32_t Device_IM350::writeHourValue(const char *value)
 #else
   File hourFile = SPIFFS.open("/IM350_hour.txt", "r");
 #endif
-  Serial.println("file opened...");
+  DLN(F("file opened..."));
   
   if (hourFile) 
   {
@@ -919,7 +989,7 @@ uint32_t Device_IM350::writeDayValue(const char *value)
 #else
   File dayFile = SPIFFS.open("/IM350_day.txt", "r");
 #endif
-  Serial.println("file opened...");
+  DLN(F("file opened..."));
   
   if (dayFile) 
   {
@@ -1042,7 +1112,7 @@ void Device_IM350::parse_message(byte array[], devicetype dt)
     startPos = 52;
   
   sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (array[6] << 8) + (array[7]),array[8], array[9], array[11], array[12], array[13]);
-  Serial.printf("Timestamp = %s\n", meterTime);
+  DV(meterTime);
     
   counter_reading_p_in = byteToUInt32(array, startPos);
   counter_reading_p_out = byteToUInt32(array, startPos+5);
@@ -1060,7 +1130,7 @@ void Device_IM350::decrypt_text(Vector_GCM *vect, byte *bufferResult)
   gcmaes128->decrypt((byte*)bufferResult, (byte*)vect->ciphertextPos, vect->datasize);
   delete gcmaes128;
 
-  Serial.println(hexToString(bufferResult, vect->datasize));
+  DLN(hexToString(bufferResult, vect->datasize));
 }
 
 void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt) 
@@ -1082,6 +1152,13 @@ void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     iv1start = 16;
     iv2start = 18;  
   }
+  else if(dt == no)
+  {
+    inaddi = 26;
+    vect->datasize = 243;
+    iv1start = 11;
+    iv2start = 14;  
+  }
   else if(dt == am550)
   {
     inaddi = 28;
@@ -1095,6 +1172,13 @@ void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     vect->datasize = 80;
     iv1start = 13;
     iv2start = 15;  
+  }
+  else if(dt == e450Steiermark)
+  {
+    inaddi = 37;
+    vect->datasize = 293;
+    iv1start = 21;
+    iv2start = 25;  
   }
   else if(dt == im350Wels)
   {

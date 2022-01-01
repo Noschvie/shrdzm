@@ -48,7 +48,7 @@ Device_GW60::Device_GW60()
 
 Device_GW60::~Device_GW60()
 {
-  Serial.println("GW60 Instance deleted");
+  DLN(F("GW60 Instance deleted"));
 }
 
 bool Device_GW60::setDeviceParameter(JsonObject obj)
@@ -100,7 +100,7 @@ void Device_GW60::savemaxcount()
   File configFile = SPIFFS.open("/GW60maxcount.txt", "w");
   if (!configFile) 
   {
-    Serial.println("failed to open config file for writing");
+    DLN(F("failed to open config file for writing"));
     return;
   }
 
@@ -114,7 +114,7 @@ void Device_GW60::readmaxcount()
   File configFile = SPIFFS.open("/GW60maxcount.txt", "r");
   if (!configFile) 
   {
-    Serial.println("failed to open config file for reading");
+    DLN(F("failed to open config file for reading"));
     return;
   }
 
@@ -137,8 +137,8 @@ bool Device_GW60::setAction(String action)
       {
         newpercentage = tempnewpercentage;
         remote = true;
-        Serial.print("Neuen Prozentwert empfangen: ");
-        Serial.println(String(newpercentage));   
+        DLN(F("Neuen Prozentwert empfangen: "));
+        DV(newpercentage);   
         actionSet = true;
       }
     }
@@ -194,7 +194,7 @@ void Device_GW60::newposition()
   if ( ( newpercentage > String(percentage).toInt() )  && dir == 0 && remote == true )
   {
     down(); // -- start
-    Serial.println("Neuer Prozentwert unterscheidet sich, fahre runter");
+    DLN(F("Neuer Prozentwert unterscheidet sich, fahre runter"));
     
   // -- wenn aktueller Wert größer als neuer ist und momentan nach unten gefahren wird, dann stopp
   } else if ( ( String(percentage).toInt() > newpercentage )  && dir == 1 && remote == true )

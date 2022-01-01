@@ -8,7 +8,7 @@ Device_DS18B20::Device_DS18B20()
 
 Device_DS18B20::~Device_DS18B20()
 {
-  Serial.println("BH1750 Instance deleted");
+  DLN(F("BH1750 Instance deleted"));
 }
 
 bool Device_DS18B20::setDeviceParameter(JsonObject obj)

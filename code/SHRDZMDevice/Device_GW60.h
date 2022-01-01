@@ -1,6 +1,7 @@
 #ifndef Device_GW60_H
 #define Device_GW60_H
 
+#include "config/config.h"
 #include "DeviceBase.h"
 #include <FS.H>
 
