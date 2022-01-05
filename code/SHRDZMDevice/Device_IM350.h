@@ -32,6 +32,7 @@ class Device_IM350 : public DeviceBase
       unknown,
       im350,
       e450,
+      e450IRWien,
       am550,
       im350Wels,
       sagemcom,

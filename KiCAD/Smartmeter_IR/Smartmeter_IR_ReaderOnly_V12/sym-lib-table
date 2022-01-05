@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Smartmeter_IR_ReaderOnly_V12-rescue)(type Legacy)(uri ${KIPRJMOD}/Smartmeter_IR_ReaderOnly_V12-rescue.lib)(options "")(descr ""))
+)

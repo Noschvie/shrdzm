@@ -25,28 +25,6 @@ F 3 "" H 6500 2350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Erich:74LVC1G17DBVR IC2
-U 1 1 6177C6B9
-P 6050 2600
-F 0 "IC2" H 6300 2250 50  0000 L CNN
-F 1 "74LVC1G17DBVR" H 6100 2350 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-5" H 5500 3350 50  0001 C CNN
-F 3 "https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1635086720658&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fsn74lvc1g17" H 5500 3350 50  0001 C CNN
-	1    6050 2600
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C3
-U 1 1 6177D25E
-P 5300 2500
-F 0 "C3" H 5415 2546 50  0000 L CNN
-F 1 "1uF" H 5415 2455 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder" H 5338 2350 50  0001 C CNN
-F 3 "~" H 5300 2500 50  0001 C CNN
-	1    5300 2500
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:C C1
 U 1 1 6177D771
 P 4100 2500
@@ -91,21 +69,12 @@ F 3 "~" H 3900 3650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6350 2350 6250 2350
-Wire Wire Line
 	3900 2350 3900 2900
 Connection ~ 4100 2350
 Wire Wire Line
 	4100 2350 3900 2350
-Connection ~ 4800 2350
 Wire Wire Line
 	4800 2350 4100 2350
-Connection ~ 5300 2350
-Wire Wire Line
-	5300 2350 4800 2350
-Connection ~ 6050 2350
-Wire Wire Line
-	6050 2350 5300 2350
 Wire Wire Line
 	3900 3300 3900 3450
 Wire Wire Line
@@ -124,39 +93,6 @@ F 3 "" H 3900 3800 50  0001 C CNN
 	1    3900 3800
 	1    0    0    -1  
 $EndComp
-$Comp
-L power:GND #PWR06
-U 1 1 61782010
-P 6050 3800
-F 0 "#PWR06" H 6050 3550 50  0001 C CNN
-F 1 "GND" H 6055 3627 50  0000 C CNN
-F 2 "" H 6050 3800 50  0001 C CNN
-F 3 "" H 6050 3800 50  0001 C CNN
-	1    6050 3800
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR05
-U 1 1 61782498
-P 5300 2650
-F 0 "#PWR05" H 5300 2400 50  0001 C CNN
-F 1 "GND" H 5305 2477 50  0000 C CNN
-F 2 "" H 5300 2650 50  0001 C CNN
-F 3 "" H 5300 2650 50  0001 C CNN
-	1    5300 2650
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4800 2650 4800 3050
-Wire Wire Line
-	5750 3050 4800 3050
-Connection ~ 4800 3050
-Wire Wire Line
-	4800 3050 4800 3250
-Wire Wire Line
-	6050 2350 6050 2800
-Wire Wire Line
-	6050 3500 6050 3800
 $Comp
 L Connector:RJ12 J1
 U 1 1 61783447
@@ -228,13 +164,6 @@ F 3 "https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymo
 	1    6050 5150
 	-1   0    0    -1  
 $EndComp
-Text GLabel 6250 2500 3    50   Input ~ 0
-PWR
-Wire Wire Line
-	6250 2350 6250 2500
-Connection ~ 6250 2350
-Wire Wire Line
-	6250 2350 6050 2350
 Text GLabel 6050 4750 1    50   Input ~ 0
 PWR
 Wire Wire Line
@@ -323,7 +252,7 @@ $EndComp
 Wire Wire Line
 	3850 5350 3850 5450
 $Comp
-L sfh309-4_19:SFH309-4_19 T1
+L Sensor_Optical:SFH309 T1
 U 1 1 61793D38
 P 3800 3100
 F 0 "T1" H 3944 3146 50  0000 L CNN
@@ -372,17 +301,6 @@ Wire Wire Line
 	6550 5600 6350 5600
 Wire Wire Line
 	6050 6050 6050 6150
-$Comp
-L power:PWR_FLAG #FLG02
-U 1 1 6179C024
-P 6050 2350
-F 0 "#FLG02" H 6050 2425 50  0001 C CNN
-F 1 "PWR_FLAG" H 6050 2523 50  0000 C CNN
-F 2 "" H 6050 2350 50  0001 C CNN
-F 3 "~" H 6050 2350 50  0001 C CNN
-	1    6050 2350
-	1    0    0    -1  
-$EndComp
 NoConn ~ 7450 3950
 NoConn ~ 7450 4050
 $Comp
@@ -425,4 +343,86 @@ Wire Wire Line
 Connection ~ 4800 3700
 Wire Wire Line
 	4800 3700 4800 3800
+Connection ~ 4800 3050
+Wire Wire Line
+	4800 3050 4800 3250
+Wire Wire Line
+	4800 2650 4800 3050
+Connection ~ 4800 2350
+$Comp
+L power:PWR_FLAG #FLG02
+U 1 1 6179C024
+P 6050 2350
+F 0 "#FLG02" H 6050 2425 50  0001 C CNN
+F 1 "PWR_FLAG" H 6050 2523 50  0000 C CNN
+F 2 "" H 6050 2350 50  0001 C CNN
+F 3 "~" H 6050 2350 50  0001 C CNN
+	1    6050 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6250 2350 6050 2350
+Connection ~ 6250 2350
+Wire Wire Line
+	6250 2350 6250 2500
+Text GLabel 6250 2500 3    50   Input ~ 0
+PWR
+Wire Wire Line
+	6050 3500 6050 3800
+Wire Wire Line
+	6050 2350 6050 2800
+Wire Wire Line
+	5750 3050 4800 3050
+$Comp
+L power:GND #PWR05
+U 1 1 61782498
+P 5300 2650
+F 0 "#PWR05" H 5300 2400 50  0001 C CNN
+F 1 "GND" H 5305 2477 50  0000 C CNN
+F 2 "" H 5300 2650 50  0001 C CNN
+F 3 "" H 5300 2650 50  0001 C CNN
+	1    5300 2650
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR06
+U 1 1 61782010
+P 6050 3800
+F 0 "#PWR06" H 6050 3550 50  0001 C CNN
+F 1 "GND" H 6055 3627 50  0000 C CNN
+F 2 "" H 6050 3800 50  0001 C CNN
+F 3 "" H 6050 3800 50  0001 C CNN
+	1    6050 3800
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6050 2350 5300 2350
+Connection ~ 6050 2350
+Wire Wire Line
+	5300 2350 4800 2350
+Connection ~ 5300 2350
+Wire Wire Line
+	6350 2350 6250 2350
+$Comp
+L Device:C C3
+U 1 1 6177D25E
+P 5300 2500
+F 0 "C3" H 5415 2546 50  0000 L CNN
+F 1 "1uF" H 5415 2455 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder" H 5338 2350 50  0001 C CNN
+F 3 "~" H 5300 2500 50  0001 C CNN
+	1    5300 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Erich:74LVC1G17DBVR IC2
+U 1 1 6177C6B9
+P 6050 2600
+F 0 "IC2" H 6300 2250 50  0000 L CNN
+F 1 "74LVC1G17DBVR" H 6100 2350 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-5" H 5500 3350 50  0001 C CNN
+F 3 "https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1635086720658&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fsn74lvc1g17" H 5500 3350 50  0001 C CNN
+	1    6050 2600
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

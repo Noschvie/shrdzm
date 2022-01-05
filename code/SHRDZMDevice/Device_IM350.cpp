@@ -514,6 +514,10 @@ SensorData* Device_IM350::readParameter()
     {
       dt = e450;
     }
+    else if(lastReadMessageLen == 105)
+    {
+      dt = e450IRWien;
+    }
     else if(lastReadMessageLen == 123)
     {
       dt = im350;
@@ -746,6 +750,50 @@ SensorData* Device_IM350::readParameter()
       timeToString(str, sizeof(str));
       al->di[9].nameI = F("uptime");
       al->di[9].valueI = String(str);          
+    }
+    else if(dt == e450IRWien)
+    {
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(11);
+        al->di[10].nameI = F("data");
+        al->di[10].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+      }
+      else
+        al = new SensorData(10);
+
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime);  
+
+      al->di[1].nameI = "1.8.0";
+      al->di[1].valueI = String(byteToUInt32(bufferResult,35));         
+
+      al->di[2].nameI = "2.8.0";
+      al->di[2].valueI = String(byteToUInt32(bufferResult,40));         
+
+      al->di[3].nameI = "3.8.0";
+      al->di[3].valueI = String(byteToUInt32(bufferResult,45));         
+
+      al->di[4].nameI = "4.8.0";
+      al->di[4].valueI = String(byteToUInt32(bufferResult,50));         
+
+      al->di[5].nameI = "1.7.0";
+      al->di[5].valueI = String(byteToUInt32(bufferResult,55));         
+
+      al->di[6].nameI = "2.7.0";
+      al->di[6].valueI = String(byteToUInt32(bufferResult,60));         
+
+      al->di[7].nameI = "3.7.0";
+      al->di[7].valueI = String(byteToUInt32(bufferResult,65));         
+
+      al->di[8].nameI = "4.7.0";
+      al->di[8].valueI = String(byteToUInt32(bufferResult,70));         
+
+      timeToString(str, sizeof(str));
+      al->di[9].nameI = F("uptime");
+      al->di[9].valueI = String(str);                           
     }
     else if(dt == e450Steiermark)
     {
@@ -1172,6 +1220,13 @@ void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     vect->datasize = 80;
     iv1start = 13;
     iv2start = 15;  
+  }
+  else if(dt == e450IRWien)
+  {
+    inaddi = 28;
+    vect->datasize = 74;
+    iv1start = 14;
+    iv2start = 16;  
   }
   else if(dt == e450Steiermark)
   {
