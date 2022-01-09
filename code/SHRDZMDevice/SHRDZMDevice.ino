@@ -755,8 +755,15 @@ bool mqttreconnect()
   {
     DLN("Attempting MQTT connection...");
     String clientId = "SHRDZMDevice-"+deviceName;
+    String willTopic = MQTT_TOPIC+"/LWT";
     // Attempt to connect
-    if(mqttclient.connect(deviceName.c_str(), configuration.getWlanParameter("MQTTuser"), configuration.getWlanParameter("MQTTpassword")))
+    if(mqttclient.connect(deviceName.c_str(), 
+                          configuration.getWlanParameter("MQTTuser"), 
+                          configuration.getWlanParameter("MQTTpassword"),
+                          willTopic.c_str(),
+                          0,
+                          false,
+                          "Offline"))
     {
       subcribeTopicSet = MQTT_TOPIC+"/set";
       subscribeTopicConfig = MQTT_TOPIC+"/config/set";
