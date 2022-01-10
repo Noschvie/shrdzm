@@ -506,6 +506,10 @@ SensorData* Device_IM350::readParameter()
     {
       dt = sagemcom;
     }
+    else if(lastReadMessage[0] == firstByteNO && lastReadMessageLen == 376) // TINETZ, Salzburg, Vorarlberg
+    {
+      dt = kaifaMBus1;
+    }
     else if(lastReadMessage[0] == firstByteNO)
     {
       dt = no;
@@ -574,8 +578,8 @@ SensorData* Device_IM350::readParameter()
   else // IM350 or AM550 or T210 read
   {
     init_vector(&Vector_SM, m_blockCipherKey, lastReadMessage, dt); 
-    byte bufferResult[Vector_SM.datasize+1];
-    memset(bufferResult, 0, Vector_SM.datasize+1);
+    byte bufferResult[Vector_SM.datasize+Vector_SM.datasize2+1];
+    memset(bufferResult, 0, Vector_SM.datasize+Vector_SM.datasize2+1);
 
     decrypt_text(&Vector_SM, bufferResult);
 
@@ -955,6 +959,73 @@ SensorData* Device_IM350::readParameter()
       al->di[12].nameI = F("uptime");
       al->di[12].valueI = String(str);                     
     }
+    else if(dt == kaifaMBus1)
+    {
+      char bh[6];
+      bh[5] = 0;
+      
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(14);
+        al->di[13].nameI = F("data");
+        al->di[13].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+      }
+      else
+        al = new SensorData(13);
+      
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime);  
+
+      sprintf(bh, "%d.%d.%d", bufferResult[121], bufferResult[122],bufferResult[123]);
+      al->di[1].nameI = bh;
+      al->di[1].valueI = String(byteToUInt16(bufferResult,126));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[140], bufferResult[141],bufferResult[142]);
+      al->di[2].nameI = bh;
+      al->di[2].valueI = String(byteToUInt16(bufferResult,145));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[159], bufferResult[160],bufferResult[161]);
+      al->di[3].nameI = bh;
+      al->di[3].valueI = String(byteToUInt16(bufferResult,164));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[178], bufferResult[179],bufferResult[180]);
+      al->di[4].nameI = bh;
+      al->di[4].valueI = String(byteToUInt16(bufferResult,183));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[197], bufferResult[198],bufferResult[199]);
+      al->di[5].nameI = bh;
+      al->di[5].valueI = String(byteToUInt16(bufferResult,202));         
+
+      sprintf(bh, "%d.%d.%d", bufferResult[216], bufferResult[217],bufferResult[218]);
+      al->di[6].nameI = bh;
+      al->di[6].valueI = String(byteToUInt32(bufferResult,221));         
+      
+      sprintf(bh, "%d.%d.%d", bufferResult[237], bufferResult[238],bufferResult[239]);
+      al->di[7].nameI = bh;
+      al->di[7].valueI = String(byteToUInt32(bufferResult,242));         
+      
+      sprintf(bh, "%d.%d.%d", bufferResult[258], bufferResult[259],bufferResult[260]);
+      al->di[8].nameI = bh;
+      al->di[8].valueI = String(byteToUInt32(bufferResult,263));         
+      
+      sprintf(bh, "%d.%d.%d", bufferResult[279], bufferResult[280],bufferResult[281]);
+      al->di[9].nameI = bh;
+      al->di[9].valueI = String(byteToUInt32(bufferResult,284));
+      
+      sprintf(bh, "%d.%d.%d", bufferResult[300], bufferResult[301],bufferResult[302]);
+      al->di[10].nameI = bh;
+      al->di[10].valueI = String(byteToUInt32(bufferResult,305));
+      
+      sprintf(bh, "%d.%d.%d", bufferResult[321], bufferResult[322],bufferResult[323]);
+      al->di[11].nameI = bh;
+      al->di[11].valueI = String(byteToUInt32(bufferResult,326));      
+
+      timeToString(str, sizeof(str));
+      al->di[12].nameI = F("uptime");
+      al->di[12].valueI = String(str);                     
+    }
     else
     {
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
@@ -1175,19 +1246,39 @@ void Device_IM350::decrypt_text(Vector_GCM *vect, byte *bufferResult)
   gcmaes128 = new GCM<AES128>();
   gcmaes128->setKey(vect->key, gcmaes128->keySize());
   gcmaes128->setIV(vect->iv, vect->ivsize);
-  gcmaes128->decrypt((byte*)bufferResult, (byte*)vect->ciphertextPos, vect->datasize);
+
+  if(vect->datasize2 == 0)
+  {
+    gcmaes128->decrypt((byte*)bufferResult, (byte*)vect->ciphertextPos, vect->datasize);
+    DLN(hexToString((byte*)vect->ciphertextPos, vect->datasize));
+  }
+  else
+  {
+    byte combinedCiphertext[vect->datasize+vect->datasize2];
+
+    memcpy(combinedCiphertext, (byte*)vect->ciphertextPos, vect->datasize);
+    memcpy(combinedCiphertext+vect->datasize, (byte*)vect->ciphertextPos2, vect->datasize2);
+    
+    gcmaes128->decrypt((byte*)bufferResult, combinedCiphertext, vect->datasize+vect->datasize2);
+    DLN(hexToString((byte*)combinedCiphertext, vect->datasize+vect->datasize2));    
+  }
+  
   delete gcmaes128;
 
-  DLN(hexToString(bufferResult, vect->datasize));
+  DLN(hexToString(bufferResult, vect->datasize+vect->datasize2));
 }
 
 void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt) 
 {
   int inaddi = 0;
+  int inaddi2 = 0;
   int iv1start = 0;
   int iv2start = 0;  
-  byte tag[] = {0,0,0,0,0,0,0,0,0,0,0,0}; 
-
+  byte tag[] = {0,0,0,0,0,0,0,0,0,0,0,0};   
+  
+  vect->ciphertextPos2 = NULL;
+  vect->datasize2 = 0;
+  
   for (int i = 0; i < 12; i++) 
   {
     vect->tag[i] = tag[i];
@@ -1206,6 +1297,16 @@ void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     vect->datasize = 243;
     iv1start = 11;
     iv2start = 14;  
+  }
+  else if(dt == kaifaMBus1)
+  {
+    inaddi = 27;
+    inaddi2 = 265;
+    vect->datasize = 227;
+    vect->datasize2 = 109;
+    iv1start = 11;
+    iv2start = 15;     
+    vect->ciphertextPos2 = readMessage+inaddi2;
   }
   else if(dt == am550)
   {
@@ -1266,6 +1367,8 @@ void Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
   {
      vect->iv[i] = readMessage[iv2start+i]; // frame counter
   }
+
+  DLN(hexToString(vect->iv, 12));
     
   vect->authsize = 16;
   vect->tagsize = 12;
