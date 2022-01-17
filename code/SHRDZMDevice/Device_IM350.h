@@ -40,7 +40,8 @@ class Device_IM350 : public DeviceBase
       sagemcom,
       no,
       e450Steiermark,
-      kaifaMBus1
+      kaifaMBus1,
+      start68
     };
         
     bool setDeviceParameter(JsonObject obj);
@@ -58,7 +59,7 @@ class Device_IM350 : public DeviceBase
     long baud = 115200;
     bool requestNeeded = false;
     
-    void init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
+    bool init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt);
     void decrypt_text(Vector_GCM *vect, byte *bufferResult);
     uint16_t byteToUInt16(byte array[], unsigned int startByte);
     uint32_t byteToUInt32(byte array[], unsigned int startByte);

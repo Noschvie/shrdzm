@@ -69,7 +69,7 @@ char websideBuffer[6500];
 char menuContextBuffer[4300];
 char contentBuffer[750];
 const uint16_t ajaxIntervall = 2;
-String lastMessage = "";
+String lastMessage = "\"\"";
 bool cloudConnected = false;
 String cloudToken = "";
 String cloudID = "";
@@ -1845,10 +1845,11 @@ void getMeasurementData()
     if(dev != NULL)
     {
       SensorData* sd = dev->readParameter();
-      lastMessage = F("\"");
   
       if(sd != NULL)
-      {
+      {  
+        lastMessage = F("\"");
+
         String reply;
         if(sendJson || sendPrivateCloudJson)
           jsonSendBuffer = "{";
@@ -1905,10 +1906,9 @@ void getMeasurementData()
         }
         
         delete sd;
-        sd = NULL;  
+        sd = NULL;          
+        lastMessage += F("\"");      
       }
-
-      lastMessage += F("\"");      
 
       // send message about last measurement;
       if(!gatewayMode)
