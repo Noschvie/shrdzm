@@ -252,7 +252,6 @@ bool Device_IM350::readDataStream(bool withTimeout)
         {
           finished1 = true;
           lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read();
-//    Serial.printf("Address = %02X\n", lastReadMessage[readCnt]);
           readCnt++; 
           while(!finished2)
           {
@@ -260,20 +259,28 @@ bool Device_IM350::readDataStream(bool withTimeout)
             {
               finished2 = true;
               lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read();
-//      Serial.printf("Len = HEX %02X\n", lastReadMessage[readCnt]);
-//      Serial.printf("Len = DEC %02d\n", lastReadMessage[readCnt]);
-            readCnt++; 
-    
+              readCnt++; 
+              int mL = 0;
+
+              // !!!
+              // needs to be refactored. currently fix check of styria MBus format
+              if(lastReadMessage[2] == 0x8B)
+                mL = 330;
+              else
+                mL = lastReadMessage[2];
+                
               while (!finished3) 
               {
                 if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
                 {
-                  if(readCnt == lastReadMessage[2]+1)
-                    finished3 = true;
+//                  if(readCnt == lastReadMessage[2]+1)
                     
                   lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
 //      Serial.printf("%02X", lastReadMessage[readCnt]);
                   readCnt++; 
+
+                  if(readCnt == mL+2)
+                    finished3 = true;
                 }            
                 if((millis() - start_time) > 1700) // first timeout reached
                 {
@@ -295,7 +302,6 @@ bool Device_IM350::readDataStream(bool withTimeout)
           if((millis() - start_time) > 1000) // first timeout reached
           {
             finished1 = true;
-//    Serial.println("finished1 Timeout reached");
           }
         }
       }
@@ -307,9 +313,7 @@ bool Device_IM350::readDataStream(bool withTimeout)
         if (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
         {
           lastReadMessage[readCnt] = softwareSerialUsed ? mySoftwareSerial.read() : Serial.read(); 
-  
-  //  Serial.printf("%02X", lastReadMessage[readCnt]);
-          
+            
           readCnt++; 
         }
       }
@@ -384,6 +388,12 @@ SensorData* Device_IM350::readParameter()
   }
   else
   {
+    // cleanup eventually reported waste
+    while (softwareSerialUsed ? mySoftwareSerial.available() : Serial.available()) 
+    {
+      softwareSerialUsed ? mySoftwareSerial.read() : Serial.read();
+    }    
+    
     digitalWrite(atoi(deviceParameter[F("requestpin")]), LOW);
   
     pinMode(LED_BUILTIN, OUTPUT); // LED als Output definieren
@@ -734,12 +744,12 @@ SensorData* Device_IM350::readParameter()
       
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
       {
-        al = new SensorData(8);
-        al->di[7].nameI = F("data");
-        al->di[7].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+        al = new SensorData(19);
+        al->di[18].nameI = F("data");
+        al->di[18].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
       }
       else
-        al = new SensorData(7);
+        al = new SensorData(18);
       
       sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (bufferResult[6] << 8) + (bufferResult[7]),bufferResult[8], bufferResult[9], bufferResult[11], bufferResult[12], bufferResult[13]);
 
@@ -766,9 +776,57 @@ SensorData* Device_IM350::readParameter()
       al->di[5].nameI = bh;
       al->di[5].valueI = String(byteToUInt32(bufferResult,95));                
 
+
+      sprintf(bh, "%d.%d.%d", bufferResult[103], bufferResult[104],bufferResult[105]);
+      al->di[6].nameI = bh;
+      al->di[6].valueI = String(byteToUInt32(bufferResult,108));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[116], bufferResult[117],bufferResult[118]);
+      al->di[7].nameI = bh;
+      al->di[7].valueI = String(byteToUInt32(bufferResult,121));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[129], bufferResult[130],bufferResult[131]);
+      al->di[8].nameI = bh;
+      al->di[8].valueI = String(byteToUInt32(bufferResult,134));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[142], bufferResult[143],bufferResult[144]);
+      al->di[9].nameI = bh;
+      al->di[9].valueI = String(byteToUInt32(bufferResult,147));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[155], bufferResult[156],bufferResult[157]);
+      al->di[10].nameI = bh;
+      al->di[10].valueI = String(byteToUInt32(bufferResult,160));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[168], bufferResult[169],bufferResult[170]);
+      al->di[11].nameI = bh;
+      al->di[11].valueI = String(byteToUInt32(bufferResult,173));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[181], bufferResult[182],bufferResult[183]);
+      al->di[12].nameI = bh;
+      al->di[12].valueI = String(byteToUInt32(bufferResult,186));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[194], bufferResult[195],bufferResult[196]);
+      al->di[13].nameI = bh;
+      al->di[13].valueI = String(byteToUInt32(bufferResult,199));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[207], bufferResult[208],bufferResult[209]);
+      al->di[14].nameI = bh;
+      al->di[14].valueI = String(byteToUInt32(bufferResult,212));                
+
+      sprintf(bh, "%d.%d.%d", bufferResult[220], bufferResult[221],bufferResult[222]);
+      al->di[15].nameI = bh;
+      al->di[15].valueI = String(byteToUInt32(bufferResult,225));                
+
+//      sprintf(bh, "%d.%d.%d", bufferResult[233], bufferResult[234],bufferResult[235]);
+//      al->di[16].nameI = bh;
+      al->di[16].nameI = F("4.7.0");
+      al->di[16].valueI = String(byteToUInt32(bufferResult,238));                
+
+
+
       timeToString(str, sizeof(str));
-      al->di[6].nameI = F("uptime");
-      al->di[6].valueI = String(str);                     
+      al->di[17].nameI = F("uptime");
+      al->di[17].valueI = String(str);                     
     }
     else if(dt == e450) // parse e450
     {
@@ -1231,7 +1289,7 @@ void Device_IM350::decrypt_text(Vector_GCM *vect, byte *bufferResult)
     gcmaes128->decrypt((byte*)bufferResult, (byte*)vect->ciphertextPos, vect->datasize);
     DLN(hexToString((byte*)vect->ciphertextPos, vect->datasize));
   }
-  else
+  else if(vect->datasize2 > 0 && vect->datasize3 == 0)
   {
     byte combinedCiphertext[vect->datasize+vect->datasize2];
 
@@ -1241,23 +1299,37 @@ void Device_IM350::decrypt_text(Vector_GCM *vect, byte *bufferResult)
     gcmaes128->decrypt((byte*)bufferResult, combinedCiphertext, vect->datasize+vect->datasize2);
     DLN(hexToString((byte*)combinedCiphertext, vect->datasize+vect->datasize2));    
   }
+  else if(vect->datasize2 > 0 && vect->datasize3 > 0)
+  {
+    byte combinedCiphertext[vect->datasize+vect->datasize2+vect->datasize3];
+
+    memcpy(combinedCiphertext, (byte*)vect->ciphertextPos, vect->datasize);
+    memcpy(combinedCiphertext+vect->datasize, (byte*)vect->ciphertextPos2, vect->datasize2);
+    memcpy(combinedCiphertext+vect->datasize+vect->datasize2, (byte*)vect->ciphertextPos3, vect->datasize3);
+    
+    gcmaes128->decrypt((byte*)bufferResult, combinedCiphertext, vect->datasize+vect->datasize2+vect->datasize3);
+    DLN(hexToString((byte*)combinedCiphertext, vect->datasize+vect->datasize2+vect->datasize3));    
+  }
+  
   
   delete gcmaes128;
-
-  DLN(hexToString(bufferResult, vect->datasize+vect->datasize2));
 }
 
 bool Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage, devicetype dt) 
 {
   int inaddi = 0;
   int inaddi2 = 0;
+  int inaddi3 = 0;
   int iv1start = 0;
   int iv2start = 0;  
   byte tag[] = {0,0,0,0,0,0,0,0,0,0,0,0};   
   
   vect->ciphertextPos2 = NULL;
   vect->datasize2 = 0;
-  
+
+  vect->ciphertextPos3 = NULL;
+  vect->datasize3 = 0;
+
   for (int i = 0; i < 12; i++) 
   {
     vect->tag[i] = tag[i];
@@ -1346,10 +1418,24 @@ bool Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
   else if(dt == e450Steiermark)
   {
     inaddi = 37;
+    inaddi2 = 157;
+    inaddi3 = 298;
+    vect->datasize = 101;
+    vect->datasize2 = 122;
+    vect->datasize3 = 31;
+
+    iv1start = 21;
+    iv2start = 25;  
+    vect->ciphertextPos2 = readMessage+inaddi2;
+    vect->ciphertextPos3 = readMessage+inaddi3;
+  }
+/*  else if(dt == e450Steiermark)
+  {
+    inaddi = 37;
     vect->datasize = 293;
     iv1start = 21;
     iv2start = 25;  
-  }
+  } */
   else if(dt == im350Wels)
   {
     inaddi = 30;

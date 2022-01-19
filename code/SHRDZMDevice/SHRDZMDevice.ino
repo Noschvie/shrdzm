@@ -276,7 +276,7 @@ void handleRoot()
   String ugt = F("<br/><br/><input type='hidden' id='upgrade' name='upgrade' value='false'/><br/>\
 <input class='factoryresetbutton' type='submit' onclick='submitFormUpgrade()' value='OTA Upgrade' />\
 <input type='text' id='upgradepath' name='upgradepath' size='45' value='http://shrdzm-smartmeter.pintarweb.net/upgrade.php'>\
-<br/>");
+<br/><br/><br/><div><i>Caution! Do not upgrade a working version if you dont have a valid reason!</i></div><br><br/>");
 #else
   String ugt = upgradetext_template;
 #endif

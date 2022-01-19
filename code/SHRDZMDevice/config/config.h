@@ -6,7 +6,7 @@
 //#define DEBUG_SHRDZM
 
 
-#define VERSION		"0.5.2"
+#define VERSION		"0.5.3"
 #define NAME		"SHRDZMDevice"
 
 //#define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"

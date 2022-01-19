@@ -54,7 +54,7 @@ const static char upgrade_template[] PROGMEM =
 <head>\
 </head>\
 <body>\
-<h1>Upgrade started. SHRDZMDevice will reboot after upgrade.</h1>\
+<h1>Upgrade started. SHRDZMDevice will reboot after upgrade. Please refresh this view manually after SHRDZMDevice is back on Network</h1>\
 </body>\
 </html>"
 };
@@ -64,7 +64,7 @@ const static char upgradetext_template[] PROGMEM =
 "<br/><br/><input type='hidden' id='upgrade' name='upgrade' value='false'/><br/>\
 <input class='factoryresetbutton' type='submit' onclick='submitFormUpgrade()' value='OTA Upgrade' />\
 <input type='text' id='upgradepath' name='upgradepath' size='35' value='http://shrdzm.pintarweb.net/upgrade.php'>\
-<br/>"  
+<br/><br/><br/><div>Caution! Do not upgrade a working version if you dont have a valid reason!</div><br><br/>"  
 };
 
 const static char handleReboot_template[] PROGMEM = 

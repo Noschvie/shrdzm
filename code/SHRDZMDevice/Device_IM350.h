@@ -14,12 +14,14 @@ struct Vector_GCM {
     uint8_t key[16];
     uint8_t *ciphertextPos;
     uint8_t *ciphertextPos2;
+    uint8_t *ciphertextPos3;
     uint8_t authdata[16];
     uint8_t iv[12];
     uint8_t tag[12];
     size_t authsize;
     size_t datasize;
     size_t datasize2;
+    size_t datasize3;
     size_t tagsize;
     size_t ivsize;
 };
