@@ -1429,13 +1429,6 @@ bool Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     vect->ciphertextPos2 = readMessage+inaddi2;
     vect->ciphertextPos3 = readMessage+inaddi3;
   }
-/*  else if(dt == e450Steiermark)
-  {
-    inaddi = 37;
-    vect->datasize = 293;
-    iv1start = 21;
-    iv2start = 25;  
-  } */
   else if(dt == im350Wels)
   {
     inaddi = 30;
