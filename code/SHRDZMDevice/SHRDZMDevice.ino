@@ -67,16 +67,16 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4300];
-char contentBuffer[750];
+char contentBuffer[950];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "\"\"";
+String jsonSendBuffer = "{}";
 bool cloudConnected = false;
 String cloudToken = "";
 String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
-//asyncHTTPrequest request;
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -146,6 +146,7 @@ void startConfigurationAP()
   server.on(F("/gateway"), handleGateway);
   server.on(F("/NTP"), handleNTP);
   server.on(F("/cloud"), handleCloud);
+  server.on(F("/getLastData"), handleGetLastData);
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -220,6 +221,8 @@ void handleJs()
 
 void handleRoot() 
 {
+  bool gatewayipset = WiFi.localIP().toString() != F("(IP unset)");
+
   memset(contentBuffer, 0, sizeof(contentBuffer));
 
   if(server.hasArg(F("factoryreset")))
@@ -256,6 +259,8 @@ void handleRoot()
       }
     }    
   }
+
+  String restAddress = "http://"+WiFi.localIP().toString()+"/getLastData?user="+deviceName+"&password="+ESP.getChipId();
   
   sprintf(contentBuffer,  
       informationtable_template,
@@ -266,6 +271,7 @@ void handleRoot()
       configuration.get("gateway"),
       configuration.get("gateway"),deviceName.c_str(),
       configuration.get("gateway"),deviceName.c_str(),
+      gatewayipset ? restAddress.c_str() : "Currently not reachable",
       WiFi.localIP().toString().c_str(),
       WiFi.dnsIP().toString().c_str(),
       WiFi.gatewayIP().toString().c_str(),
@@ -742,6 +748,30 @@ void handleGateway()
 
   DLN("after getWebsite size = "+String(strlen(temp)));
   server.send(200, F("text/html"), temp);
+}
+
+// REST Interface to get last measurement data
+void handleGetLastData()
+{
+  bool isUserCheckOK = false;
+  bool isPassordCheckOK = false;
+  
+  // check user:password
+  for (uint8_t i = 0; i < server.args(); i++) 
+  {
+    if(server.argName(i) == "user" && server.arg(i) == deviceName)
+      isUserCheckOK = true;
+    if(server.argName(i) == "password" && server.arg(i) == String(ESP.getChipId()))
+      isPassordCheckOK = true;
+  }
+
+  if(!isUserCheckOK || !isPassordCheckOK)
+  {
+    server.send(200, F("application/json"), "{\"error\":\"wrong user/password\"}");  
+    return;
+  }
+
+  server.send(200, F("application/json"), jsonSendBuffer.c_str());  
 }
 
 ///////////////////////////
@@ -1838,7 +1868,6 @@ void getMeasurementData()
 {
   bool sendJson = !strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? true : false;
   bool sendPrivateCloudJson = !strcmp(configuration.getCloudParameter("privateenabled"), "true") ? true : false;
-  String jsonSendBuffer;
 
   if(configuration.containsKey("gateway") || gatewayMode)
   {      
@@ -1851,8 +1880,8 @@ void getMeasurementData()
         lastMessage = F("\"");
 
         String reply;
-        if(sendJson || sendPrivateCloudJson)
-          jsonSendBuffer = "{";
+//        if(sendJson || sendPrivateCloudJson)
+          jsonSendBuffer = "{\n";
           
         for(int i = 0; i<sd->size; i++)
         {
@@ -1862,11 +1891,11 @@ void getMeasurementData()
 
           if(gatewayMode)
           {
-            if(sendJson || sendPrivateCloudJson)
+//            if(sendJson || sendPrivateCloudJson)
             {
-              jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",";
+              jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",\n";
             }
-            else
+//            else
             {
               mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
             }
@@ -1884,10 +1913,10 @@ void getMeasurementData()
           }
         }
 
-        if(sendJson || sendPrivateCloudJson)
+//        if(sendJson || sendPrivateCloudJson)
         {
-          jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-1);
-          jsonSendBuffer += "}";
+          jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-2);
+          jsonSendBuffer += "\n}";
 
           if(sendJson)
             mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
@@ -1949,6 +1978,7 @@ void handleGatewayLoop()
       server.on(F("/gateway"), handleGateway);
       server.on(F("/NTP"), handleNTP);
       server.on(F("/cloud"), handleCloud);
+      server.on(F("/getLastData"), handleGetLastData);
 
       server.on(F("/j.js"), handleJs);      
       server.on(F("/json"), handleJson);

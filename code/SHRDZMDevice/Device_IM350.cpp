@@ -56,7 +56,7 @@ Device_IM350::Device_IM350()
 
 Device_IM350::~Device_IM350()
 {  
-  DLN(F("IM350 Instance deleted"));
+  DLN(F("IM350 Instance deleted "));
 }
 
 bool Device_IM350::isNewDataAvailable()
@@ -429,7 +429,7 @@ SensorData* Device_IM350::readParameter()
     {
       dt = no;
     }
-    else if(lastReadMessageLen == 110)
+    else if(lastReadMessageLen == 111)
     {
       dt = e450;
     }
@@ -1403,10 +1403,10 @@ bool Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
   }
   else if(dt == e450)
   {
-    inaddi = 27;
-    vect->datasize = 80;
-    iv1start = 13;
-    iv2start = 15;  
+    inaddi = 28;
+    vect->datasize = 82;
+    iv1start = 14;
+    iv2start = 16;  
   }
   else if(dt == e450IRWien)
   {
