@@ -261,6 +261,8 @@ void handleRoot()
   }
 
   String restAddress = "http://"+WiFi.localIP().toString()+"/getLastData?user="+deviceName+"&password="+ESP.getChipId();
+
+// <a href=\"%s\" target=\"_blank\">%s</a>
   
   sprintf(contentBuffer,  
       informationtable_template,
@@ -271,7 +273,8 @@ void handleRoot()
       configuration.get("gateway"),
       configuration.get("gateway"),deviceName.c_str(),
       configuration.get("gateway"),deviceName.c_str(),
-      gatewayipset ? restAddress.c_str() : "Currently not reachable",
+//      gatewayipset ? restAddress.c_str() : "Currently not reachable",
+      gatewayipset ? String("<a href=\""+restAddress+"\" target=\"_blank\">"+restAddress+"</a>").c_str() : "Currently not reachable",
       WiFi.localIP().toString().c_str(),
       WiFi.dnsIP().toString().c_str(),
       WiFi.gatewayIP().toString().c_str(),
