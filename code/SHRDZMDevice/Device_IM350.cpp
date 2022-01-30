@@ -9,7 +9,7 @@ const byte lastByte = 0x7E;
 const int lenNormal = 123;
 const int lenSagemcom = 511;
 const int lenNO = 271;
-const int lenDebug = 512;
+const int lenDebug = 511;
 
 
   // IM350
@@ -429,6 +429,10 @@ SensorData* Device_IM350::readParameter()
     {
       dt = no;
     }
+    else if(lastReadMessageLen == 93 && memcmp(m_cipherkey, "99999999999999999999999999999999", 32) == 0) // Test Slovenia unencrypted
+    {
+      dt = am550SloveniaUnencrypted;  
+    }
     else if(lastReadMessageLen == 111)
     {
       dt = e450;
@@ -499,6 +503,55 @@ SensorData* Device_IM350::readParameter()
   }  
   else
   {
+    if(dt == am550SloveniaUnencrypted)
+    {
+      if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+      {
+        al = new SensorData(11);
+        al->di[10].nameI = F("data");
+        al->di[10].valueI = hexToString(lastReadMessage, lastReadMessageLen); 
+      }
+      else
+        al = new SensorData(10);
+
+      sprintf(meterTime, "%02d-%02d-%02dT%02d:%02d:%02d", (lastReadMessage[18] << 8) + (lastReadMessage[19]),lastReadMessage[20], lastReadMessage[21], lastReadMessage[23], lastReadMessage[24], lastReadMessage[25]);
+
+      al->di[0].nameI = F("timestamp");
+      al->di[0].valueI = String(meterTime); 
+
+      al->di[1].nameI = F("value1");
+      al->di[1].valueI = String(byteToUInt32(lastReadMessage, 51));         
+
+      al->di[2].nameI = F("value2");
+      al->di[2].valueI = String(byteToUInt32(lastReadMessage, 56));         
+
+      al->di[3].nameI = F("value3");
+      al->di[3].valueI = String(byteToUInt32(lastReadMessage, 61));         
+      
+      al->di[4].nameI = F("value4");
+      al->di[4].valueI = String(byteToUInt32(lastReadMessage, 66));         
+      
+      al->di[5].nameI = F("value5");
+      al->di[5].valueI = String(byteToUInt32(lastReadMessage, 71));         
+      
+      al->di[6].nameI = F("value6");
+      al->di[6].valueI = String(byteToUInt32(lastReadMessage, 76));         
+      
+      al->di[7].nameI = F("value7");
+      al->di[7].valueI = String(byteToUInt32(lastReadMessage, 81));         
+      
+      al->di[8].nameI = F("value8");
+      al->di[8].valueI = String(byteToUInt32(lastReadMessage, 86));         
+
+
+      timeToString(str, sizeof(str));
+      al->di[9].nameI = F("uptime");
+      al->di[9].valueI = String(str);          
+
+      return al;
+    }
+
+    // for encypted data
     if(!init_vector(&Vector_SM, m_blockCipherKey, lastReadMessage, dt))
     {
       DLN("Consistency check failed");
@@ -536,7 +589,7 @@ SensorData* Device_IM350::readParameter()
       {
         String data((char *)bufferResult);
         uint8_t counter = 0;
-        
+
         posBufferPosition = posBuffer - (char *)bufferResult;
   
         data = "{"+data.substring(posBufferPosition);
@@ -1400,6 +1453,13 @@ bool Device_IM350::init_vector(Vector_GCM *vect, byte *key_SM, byte *readMessage
     vect->datasize = 90;
     iv1start = 14;
     iv2start = 16;  
+  }
+  else if(dt == am550SloveniaUnencrypted)
+  {
+    inaddi = 0;
+    vect->datasize = 0;
+    iv1start = 0;
+    iv2start = 0;  
   }
   else if(dt == e450)
   {

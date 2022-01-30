@@ -38,6 +38,7 @@ class Device_IM350 : public DeviceBase
       e450,
       e450IRWien,
       am550,
+      am550SloveniaUnencrypted,
       im350Wels,
       sagemcom,
       no,
