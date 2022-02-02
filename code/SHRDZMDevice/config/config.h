@@ -6,10 +6,9 @@
 //#define DEBUG_SHRDZM
 
 
-#define VERSION		"0.5.4"
+#define VERSION		"0.5.5"
 #define NAME		"SHRDZMDevice"
 
-//#define CloudApiAddress "http://api.shrdzm.com/shrdzm/api"
 #define CloudApiAddress "https://api.shrdzm.com/shrdzm/api"
 #define NTP_SERVER "at.pool.ntp.org"
 #define TZ "CET-1CEST,M3.5.0,M10.5.0/3"
@@ -50,14 +49,17 @@
 #include <LittleFS.h>
 #endif
 
+#include <coredecls.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <Ticker.h>
-#include <time.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <time.h>
+#include <sys/time.h>                
+#include <sntp.h>                    
 //#include <TimeLib.h>
 #include "..\Configuration.h"
 

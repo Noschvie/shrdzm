@@ -67,7 +67,7 @@ String subcribeTopicSet;
 String subscribeTopicConfig;
 char websideBuffer[6500];
 char menuContextBuffer[4300];
-char contentBuffer[950];
+char contentBuffer[1050];
 const uint16_t ajaxIntervall = 2;
 String lastMessage = "\"\"";
 String jsonSendBuffer = "{}";
@@ -77,6 +77,8 @@ String cloudID = "";
 bool cloudIsDeviceRegistered = false;
 time_t now;                         
 tm tm; 
+const char compile_date[] = __DATE__ " " __TIME__;
+bool sntpConnected = false;
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -126,6 +128,18 @@ void controlConnectionBlinker(bool enabled)
       digitalWrite(LEDPIN, HIGH);
     }
 #endif    
+}
+
+// Time functions
+uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
+{
+  return 12 * 60 * 60 * 1000UL; // 12 hours
+}
+
+void time_is_set(bool from_sntp)
+{
+  DV(from_sntp);
+  sntpConnected = from_sntp;
 }
 
 /// Configuration Webserver
@@ -179,8 +193,11 @@ void handleJson() {
   time(&now);
   localtime_r(&now, &tm);
 
-  char t[22];
-  sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );
+  char t[23];
+  strcpy(t, "Timeserver unreachable");
+  
+  if(sntpConnected)
+    sprintf(t, "%4d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec );  
 
   message += (F("{\"mqttconnectionstate\":"));
   if(strcmp(configuration.getWlanParameter("MQTTenabled"), "true") == 0)
@@ -261,24 +278,47 @@ void handleRoot()
   }
 
   String restAddress = "http://"+WiFi.localIP().toString()+"/getLastData?user="+deviceName+"&password="+ESP.getChipId();
-
-// <a href=\"%s\" target=\"_blank\">%s</a>
+  char networkInfo[128];
+  int8_t RSSI = 0;
+  String quality = "NA";
   
+  if(gatewayipset)
+  {
+    RSSI = WiFi.RSSI();
+  
+    if (RSSI >= -55)
+      quality = "Excellent";
+    else if (RSSI < -55 & RSSI >= -65)
+      quality = "Very Good";
+    else if (RSSI < -65 & RSSI >= -70)
+      quality = "Good";
+    else if (RSSI < -70 & RSSI >= -78)
+      quality = "Bad";
+    else if (RSSI < -78 & RSSI >= -82)
+      quality = "Very Bad";
+    else 
+      quality = "Catastrophal";
+
+    sprintf(networkInfo, "<br>SSID:%s, Ch:%d (%ddBm), Quality:%s<br>", WiFi.SSID().c_str(), WiFi.channel(), RSSI, quality.c_str());  
+  }
+  
+
   sprintf(contentBuffer,  
       informationtable_template,
       ver.c_str(), ESP.getSketchMD5().c_str(),
+      compile_date,
       configuration.get("devicetype"),
       ESP.getChipId(),
       configuration.getWlanParameter("enabled"),
       configuration.get("gateway"),
       configuration.get("gateway"),deviceName.c_str(),
       configuration.get("gateway"),deviceName.c_str(),
-//      gatewayipset ? restAddress.c_str() : "Currently not reachable",
       gatewayipset ? String("<a href=\""+restAddress+"\" target=\"_blank\">"+restAddress+"</a>").c_str() : "Currently not reachable",
       WiFi.localIP().toString().c_str(),
       WiFi.dnsIP().toString().c_str(),
       WiFi.gatewayIP().toString().c_str(),
-      WiFi.subnetMask().toString().c_str()
+      WiFi.subnetMask().toString().c_str(),
+      gatewayipset ? networkInfo : ""
   );  
 
 #ifdef SMARTMETER
@@ -1655,7 +1695,12 @@ void setup()
   nam = "SHRDZMDevice";  
 #endif
 
+  settimeofday_cb(time_is_set);
+
   WiFi.persistent(false);
+
+  sntp_servermode_dhcp(0);
+  yield();
 
   // set device name
   WiFi.mode(WIFI_STA);  
@@ -1754,7 +1799,7 @@ void setup()
     delay(100);    
     ESP.restart();      
   }  
-
+  
   String lastVersionNumber = configuration.readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
 

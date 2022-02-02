@@ -1,7 +1,8 @@
 const static char informationtable_template[] PROGMEM = 
 {
 "<br>\
-Firmware Version : %s-%s<br><br>\
+Firmware Version : %s-%s<br>\
+Compile Date : %s<br><br>\
 Device Type : %s<br>\
 Chip ID : %d<br>\
 Gateway Mode : %s<br>\
@@ -16,7 +17,8 @@ Date/Time : <span id='timestamp'>Unknown</span>\
 IP : %s<br>\
 DNS : %s<br>\
 Gateway : %s<br>\
-Subnet : %s<br>"
+Subnet : %s<br>\
+%s"
 };
 
 const static char settings_template[] PROGMEM = 

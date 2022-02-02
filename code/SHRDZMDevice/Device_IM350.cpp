@@ -148,10 +148,8 @@ bool Device_IM350::setDeviceParameter(JsonObject obj)
       {
         Serial.begin(baud);  
 
-        Serial.println("Test");
         if(inverted)
                 U0C0 = BIT(UCRXI) | BIT(UCBN) | BIT(UCBN+1) | BIT(UCSBN);        
-        Serial.println("Test1");
       }
     }
   }  
