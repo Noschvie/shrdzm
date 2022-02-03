@@ -302,7 +302,6 @@ void handleRoot()
     sprintf(networkInfo, "<br>SSID:%s, Ch:%d (%ddBm), Quality:%s<br>", WiFi.SSID().c_str(), WiFi.channel(), RSSI, quality.c_str());  
   }
   
-
   sprintf(contentBuffer,  
       informationtable_template,
       ver.c_str(), ESP.getSketchMD5().c_str(),
@@ -312,7 +311,7 @@ void handleRoot()
       configuration.getWlanParameter("enabled"),
       configuration.get("gateway"),
       configuration.get("gateway"),deviceName.c_str(),
-      configuration.get("gateway"),deviceName.c_str(),
+      configuration.get("gateway"),deviceName.c_str(), strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? "/<i><b>&#060;valuename&#062;</b></i>" : "",
       gatewayipset ? String("<a href=\""+restAddress+"\" target=\"_blank\">"+restAddress+"</a>").c_str() : "Currently not reachable",
       WiFi.localIP().toString().c_str(),
       WiFi.dnsIP().toString().c_str(),

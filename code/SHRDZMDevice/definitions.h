@@ -8,7 +8,7 @@ Chip ID : %d<br>\
 Gateway Mode : %s<br>\
 MQTTTopic Gateway : SHRDZM/%s<br>\
 MQTTTopic Device : SHRDZM/%s/%s<br>\
-MQTTTopic Sensor : SHRDZM/%s/%s/sensor/<br>\
+MQTTTopic Sensor : SHRDZM/%s/%s/sensor%s<br>\
 <p>REST Address : <i>%s</i><br><br>\
 <p>MQTT Connection State : <span id='mqttconnectionstate'>UNKNOWN</span><br>\
 Date/Time : <span id='timestamp'>Unknown</span>\
