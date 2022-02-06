@@ -515,7 +515,7 @@ void handleSettings()
         strcat(parameterBuffer, kv1.key().c_str());
         strcat_P(parameterBuffer, PSTR("' name='"));        
         strcat(parameterBuffer, kv1.key().c_str());
-        strcat_P(parameterBuffer, PSTR("' size='10' value='"));        
+        strcat_P(parameterBuffer, PSTR("' size='35' value='"));        
         strcat(parameterBuffer, kv1.value().as<char*>());
         strcat_P(parameterBuffer, PSTR("'></div>"));        
       }    
@@ -665,6 +665,7 @@ void handleCloud()
       strcmp(configuration.getCloudParameter("password"), "") == 0 ? String(ESP.getChipId()).c_str() :
         configuration.getCloudParameter("password"),
       (strlen(configuration.getCloudParameter("userid")) == 0) ? "<i><div style='color:#FF0000';>NOT REGISTERED</div></i>" : configuration.getCloudParameter("userid"),
+//      strcmp(configuration.getCloudParameter("enabled"), "true") == 0 ? "disabled" : "",
       String(configuration.getCloudParameter("privateenabled")) == "true" ? "checked" : "",
       configuration.getCloudParameter("privateendpoint"),
       configuration.getCloudParameter("privateuser"),
@@ -2100,14 +2101,18 @@ void handleGatewayLoop()
   {
     if(dev->isNewDataAvailable())
     {
-      // TODO
+      if(atoi(configuration.get("interval")) == 1)
+        getMeasurementData();     
     }
   }
 
   // only if interval is reached or if preparing ongoing
-  if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
-    return;
-
+  if(atoi(configuration.get("interval")) > 0)
+  {
+    if(millis() - lastIntervalTime < (atoi(configuration.get("interval")) - atoi(configuration.get("preparetime"))) *1000 && !firstMeasurement)
+      return;
+  }
+  
   firstMeasurement = false;
 
   if(preparestart == 0 && atoi(configuration.get("preparetime")) > 0)
@@ -2143,7 +2148,10 @@ void handleGatewayLoop()
     preparing = false;
     preparestart = 0;
 
-    getMeasurementData();
+    if(atoi(configuration.get("interval")) > 1)
+    {
+      getMeasurementData();
+    }
   }
 
   if(!preparing)

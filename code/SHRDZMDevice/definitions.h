@@ -188,6 +188,7 @@ Cloud Settings are optional. More information can be found on <a href=\"http://s
 <div><input type='text' id='password' name='password' placeholder='Password' size='30' value='%s'>\
 <label for='password'>Password</label></div><br/><br/>\
 Unique User ID = %s<br/><br/>\
+//<br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Settings' %s/><br />\      
 <br /> <input type='submit' onclick='submitResetCloudSettings()' value='Reset Settings' /><br />\      
 </p>\
 <br/>\
