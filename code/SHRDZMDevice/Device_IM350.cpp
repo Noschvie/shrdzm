@@ -431,7 +431,7 @@ SensorData* Device_IM350::readParameter()
     {
       dt = am550SloveniaUnencrypted;  
     }
-    else if(lastReadMessageLen == 111)
+    else if(lastReadMessageLen == 111 || lastReadMessageLen == 120) // burgenland
     {
       dt = e450;
     }

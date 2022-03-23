@@ -33,6 +33,7 @@ bool processendReached = false;
 bool configurationMode = false;
 bool gatewayMode = false;
 bool firstMeasurement = true;
+char parameterNameList[265];
 String SSID;
 String password;
 String host;
@@ -79,6 +80,9 @@ time_t now;
 tm tm; 
 const char compile_date[] = __DATE__ " " __TIME__;
 bool sntpConnected = false;
+String homeassistantDiscoveryTopic = "homeassistant/sensor/";
+String currVersionBig;
+
 
 typedef struct struct_esp_message {
   char prefix = '.';
@@ -1680,7 +1684,8 @@ void setup()
   SB();
 
   DV("setup start ");  
-  
+
+  memset(parameterNameList, 0, sizeof(parameterNameList));
   bool writeConfigAndReboot = false;
   
 #ifdef VERSION
@@ -1714,6 +1719,7 @@ void setup()
   configuration.setDeviceName(deviceName.c_str());
 
   DV(deviceName);
+  homeassistantDiscoveryTopic += deviceName + "_";
 
 #ifdef LITTLEFS
   if(!LittleFS.begin())
@@ -1802,6 +1808,8 @@ void setup()
   
   String lastVersionNumber = configuration.readLastVersionNumber();
   String currVersion = ESP.getSketchMD5();
+
+  currVersionBig = ver + "-" + currVersion;
 
   if(configuration.get("pairingpin") != NULL)
   {    
@@ -1916,6 +1924,7 @@ void getMeasurementData()
 {
   bool sendJson = !strcmp(configuration.getWlanParameter("MQTTsendjson"), "true") ? true : false;
   bool sendPrivateCloudJson = !strcmp(configuration.getCloudParameter("privateenabled"), "true") ? true : false;
+  bool sendMQTT = mqttclient.connected();
 
   if(configuration.containsKey("gateway") || gatewayMode)
   {      
@@ -1928,7 +1937,6 @@ void getMeasurementData()
         lastMessage = F("\"");
 
         String reply;
-//        if(sendJson || sendPrivateCloudJson)
           jsonSendBuffer = "{\n";
           
         for(int i = 0; i<sd->size; i++)
@@ -1939,15 +1947,42 @@ void getMeasurementData()
 
           if(gatewayMode)
           {
-//            if(sendJson || sendPrivateCloudJson)
-            {
-              jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",\n";
-            }
-//            else
+            jsonSendBuffer += "\""+sd->di[i].nameI+"\":\""+sd->di[i].valueI+"\",\n";
+
+            if(!sendJson && sendMQTT)
             {
               mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor/"+sd->di[i].nameI).c_str(), sd->di[i].valueI.c_str()); 
             }
+            
+            if(strstr(parameterNameList, String(sd->di[i].nameI+",").c_str()) == NULL && sendMQTT)
+            {
+              strcat(parameterNameList,String(sd->di[i].nameI+",").c_str());
 
+              DLN("new parameter to provide to HomeAssistant = "+sd->di[i].nameI);
+              String parameterNameClean = sd->di[i].nameI;
+              parameterNameClean.replace(".", "-");
+
+              String sendTopic = homeassistantDiscoveryTopic + parameterNameClean + "/config";
+              DV(sendTopic);
+
+              String sendBuffer = 
+                "{\"name\":\""+sd->di[i].nameI+"\","\
+                "\"plattform\":\"mqtt\","\
+                "\"stat_t\":\"SHRDZM/"+deviceName+"/"+deviceName+"/sensor\","\
+                "\"uniq_id\":\"SHRDZM_"+deviceName+"_"+parameterNameClean+"\","\
+                "\"val_tpl\":\"{{value_json['"+sd->di[i].nameI+"']}}\","\
+                "\"dev\":{\"ids\":[\"SHRDZM-"+deviceName+"\"],"\
+                "\"name\":\"SHRDZM-"+deviceName+"\","\
+                "\"mf\":\"SHRDZM\","\
+                "\"mdl\":\"Smartmeter\","\
+                "\"sw\":\""+currVersionBig+"\""\
+                "}}";
+
+              DV(sendBuffer);
+
+              mqttclient.publish(sendTopic.c_str(), sendBuffer.c_str(), true); 
+            }
+            
             // send to cloud
             if(strcmp(configuration.getCloudParameter("enabled"),"true") == 0)
             {
@@ -1961,25 +1996,22 @@ void getMeasurementData()
           }
         }
 
-//        if(sendJson || sendPrivateCloudJson)
+        jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-2);
+        jsonSendBuffer += "\n}";
+
+        if(sendJson && sendMQTT)
+          mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
+
+        if(sendPrivateCloudJson)
         {
-          jsonSendBuffer = jsonSendBuffer.substring(0, jsonSendBuffer.length()-2);
-          jsonSendBuffer += "\n}";
+          jsonSendBuffer = "{\"id\":\"" + String(configuration.getCloudParameter("privateid")) + "\",\"data\":" +
+                          jsonSendBuffer + "}";
 
-          if(sendJson)
-            mqttclient.publish((String(MQTT_TOPIC)+"/"+deviceName+"/sensor").c_str(), jsonSendBuffer.c_str()); 
-
-          if(sendPrivateCloudJson)
-          {
-            jsonSendBuffer = "{\"id\":\"" + String(configuration.getCloudParameter("privateid")) + "\",\"data\":" +
-                            jsonSendBuffer + "}";
-
-            DV(jsonSendBuffer);
-            sendPrivateCloudData(configuration.getCloudParameter("privateendpoint"), 
-                        configuration.getCloudParameter("privateuser"), 
-                        configuration.getCloudParameter("privatepassword"), 
-                        jsonSendBuffer.c_str() );
-          }
+          DV(jsonSendBuffer);
+          sendPrivateCloudData(configuration.getCloudParameter("privateendpoint"), 
+                      configuration.getCloudParameter("privateuser"), 
+                      configuration.getCloudParameter("privatepassword"), 
+                      jsonSendBuffer.c_str() );
         }
         
         delete sd;
