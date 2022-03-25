@@ -573,6 +573,11 @@ void handleSettings()
 
 void handleCloud()
 {
+  // Disable in this version !!!
+  server.send(200, F("text/html"), "Cloud functionality disable in this version");    
+
+  return;
+  
   bool gatewayipset = WiFi.localIP().toString() != F("(IP unset)");
   
   if(server.args() != 0)
