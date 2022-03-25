@@ -669,11 +669,27 @@ SensorData* Device_IM350::readParameter()
               bufferResult[71] == 0x06) || dt == im350 || dt == im350Wels) // AM550/IM350 Carinthia, IM350 Wels
     {
       parse_message(bufferResult, dt);
+
+      if(current_power_usage_in > 50000) // error
+      {
+        if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
+        {
+          al = new SensorData(1);
+          
+          al->di[0].nameI = F("lasterror");
+          al->di[0].valueI = "incosinstent data read";
+
+          return al;
+        }      
+        else
+          return NULL;        
+      }
    
       if(!deviceParameter[F("sendRawData")].isNull() && strcmp(deviceParameter[F("sendRawData")],"YES") == 0)
         al = new SensorData(9);
       else
         al = new SensorData(8);
+
 
       al->di[0].nameI = F("counter_reading_p_in");
       al->di[0].valueI = String(counter_reading_p_in);  
@@ -687,10 +703,10 @@ SensorData* Device_IM350::readParameter()
       al->di[3].nameI = F("counter_reading_q_out");
       al->di[3].valueI = String(counter_reading_q_out);  
     
-      al->di[4].nameI = F("counter_power_usage_in");
+      al->di[4].nameI = F("current_power_usage_in");
       al->di[4].valueI = String(current_power_usage_in);  
     
-      al->di[5].nameI = F("counter_power_usage_out");
+      al->di[5].nameI = F("current_power_usage_out");
       al->di[5].valueI = String(current_power_usage_out); 
     
       al->di[6].nameI = F("timestamp");
